@@ -1,9 +1,9 @@
-import { App } from "./App"; // Assuming you have a main App file
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PrivacyProvider } from "@/lib/privacy-store";
+import { RuntimeProvider } from "@/core/runtime-context";
 
 import Home from "@/pages/home";
 import Assistant from "@/pages/assistant";
@@ -40,14 +40,16 @@ function Router() {
 export default function MainApp() {
   return (
     <QueryClientProvider client={queryClient}>
-      <PrivacyProvider>
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
-      </PrivacyProvider>
+      <RuntimeProvider>
+        <PrivacyProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </PrivacyProvider>
+      </RuntimeProvider>
     </QueryClientProvider>
   );
 }

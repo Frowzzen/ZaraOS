@@ -1,0 +1,358 @@
+Continue development of ZaraOS Alpha 0.1.
+
+I am currently working from my phone only, so do not require me to run local Linux commands, install desktop tools, build an ISO, or perform laptop-only steps yet. Keep everything inside Replit for now.
+
+PROJECT CONTEXT:
+ZaraOS is a local-first, privacy-focused, AI-native operating environment. It will eventually be packaged into a bootable Linux-based USB operating system, but right now we are building the software layer first.
+
+The product vision is:
+- Voice-first
+- Gesture-first
+- Keyboard and mouse as secondary fallback
+- Local AI by default
+- Cloud AI only if the user brings their own API key
+- No company-paid API calls
+- No unnecessary paid services
+- No forced cloud backend
+- Lightweight, secure, modular, and ready for Tauri desktop packaging later
+
+CURRENT STATE:
+ZaraOS Alpha 0.1 already has:
+- React + TypeScript + Vite
+- Tailwind CSS
+- shadcn/ui
+- Framer Motion
+- wouter routing
+- Dashboard
+- Zara Assistant
+- Zara Console
+- App Launcher
+- Files
+- Media
+- Settings
+- Privacy Panel
+- AI Provider Manager
+- Developer Portal
+- AI engine placeholder
+- voice engine placeholder
+- gesture engine placeholder
+- command router
+- privacy store
+
+NEXT DEVELOPMENT GOAL:
+Move ZaraOS from a visual prototype into a stronger production-ready architecture.
+
+Do NOT add random features.
+Do NOT bloat the app.
+Do NOT add paid dependencies.
+Do NOT add cloud services.
+Do NOT connect real external APIs yet.
+Do NOT attempt to build the Linux ISO yet.
+
+Focus on architecture, security, performance, and future Tauri readiness.
+
+TASK 1 — Refactor Into Clear Core Layers
+
+Restructure the code into these layers:
+
+1. UI Layer
+- React components
+- pages
+- panels
+- layouts
+- visual states only
+
+2. Zara Runtime Layer
+- central command orchestration
+- routes all commands
+- handles permissions
+- coordinates AI, voice, gesture, plugins, and system actions
+- UI should call the runtime, not individual engines directly
+
+3. AI Layer
+- provider abstraction
+- local provider placeholder
+- cloud provider placeholder
+- model selection
+- future Ollama support
+- future user API key support
+
+4. Input Layer
+- voice engine
+- gesture engine
+- keyboard/mouse fallback
+- all inputs should flow into the same command router
+
+5. System Layer
+- safe placeholder system actions
+- future Linux/Tauri integration points
+- app launching abstraction
+- file system abstraction
+- no real destructive commands yet
+
+6. Plugin Layer
+- plugin manifest types
+- mock plugin registry
+- permissions model
+- future app store compatibility
+
+7. Security Layer
+- permissions
+- privacy state
+- safe command checks
+- sensitive data handling
+- confirmation requirements
+
+Create clean TypeScript interfaces between these layers.
+
+TASK 2 — Create A Central Zara Runtime
+
+Create a central runtime module, something like:
+
+src/core/zara-runtime.ts
+
+It should expose methods like:
+
+- initialize()
+- executeCommand(input: string, source: "voice" | "gesture" | "keyboard" | "system")
+- requestPermission(permission)
+- getSystemStatus()
+- getPrivacyStatus()
+- selectAIProvider(provider)
+- sendAssistantMessage(message)
+- launchApp(appId)
+- registerPlugin(pluginManifest)
+
+The runtime should become the brain of ZaraOS.
+
+All commands from:
+- Zara Assistant
+- Zara Console
+- Voice Engine
+- Gesture Engine
+- App Launcher
+
+should eventually flow through this runtime.
+
+TASK 3 — Improve Command Routing
+
+Upgrade the command-router so it supports structured command objects.
+
+Instead of only returning strings, it should return something like:
+
+{
+  intent: "open_app",
+  target: "browser",
+  source: "voice",
+  requiresPermission: false,
+  destructive: false,
+  confidence: 0.92,
+  response: "Opening Browser."
+}
+
+Support these intent categories:
+
+- open_app
+- close_app
+- search
+- file_action
+- media_action
+- ai_question
+- system_status
+- privacy_action
+- settings_action
+- developer_action
+- unknown
+
+Keep all real system actions mocked for now.
+
+TASK 4 — Improve Privacy And Permissions
+
+Create a basic permissions system.
+
+Permission categories:
+- microphone
+- camera
+- local_ai
+- cloud_ai
+- network
+- files
+- system_actions
+- plugins
+- developer_mode
+
+Rules:
+- Mic and camera require explicit user toggle.
+- Cloud AI is disabled by default.
+- Local AI is enabled by default.
+- System actions require permission.
+- Destructive actions require confirmation.
+- Plugins must declare permissions.
+- API keys must never be logged.
+- API keys must never be shown unmasked.
+- API keys must never be sent anywhere in Alpha 0.1.
+
+Add a permissions utility module if needed.
+
+TASK 5 — Make Zara Assistant Feel More Like The OS Brain
+
+Improve the Zara Assistant panel so it feels like the central intelligence of the OS.
+
+Add:
+- Zara status states: idle, listening, thinking, speaking, offline, privacy-lock
+- animated assistant presence
+- command source indicators
+- local AI / cloud AI status
+- privacy-safe messaging
+- better mocked responses based on command intent
+
+Zara should feel like the center of the whole operating environment, not a basic chatbot.
+
+TASK 6 — Improve Voice-First And Gesture-First UX
+
+Do not build real voice recognition yet unless easy inside browser.
+
+But improve the architecture and UI.
+
+Add:
+- voice command examples
+- gesture command examples
+- active input mode display
+- “Voice Primary” indicator
+- “Gesture Ready” indicator
+- keyboard fallback note
+- large controls
+- gesture-safe spacing
+
+Design rule:
+Every built-in app panel should be usable by voice and gesture in the future.
+
+TASK 7 — Strengthen Developer Portal For Future App Store
+
+Expand the Developer Portal so it clearly prepares for:
+
+- Zara apps
+- plugins
+- AI skills
+- gesture packs
+- voice command packs
+- automation workflows
+- future Zara Store publishing
+
+Create a stronger plugin manifest specification.
+
+Include fields:
+- id
+- name
+- version
+- developer
+- description
+- category
+- entryPoint
+- permissions
+- voiceCommands
+- gestureCommands
+- aiCapabilities
+- systemAccess
+- priceModel
+- verified
+- sandboxRequired
+
+Add mock examples:
+- Gesture Music Player
+- Local File Summarizer
+- Creator Workflow Agent
+- Privacy Monitor
+
+TASK 8 — Prepare For Future Tauri Packaging
+
+Do not install Tauri yet unless the current Replit environment supports it cleanly.
+
+But prepare the project for Tauri.
+
+Add a document:
+
+docs/TAURI_ROADMAP.md
+
+Explain:
+- why Tauri will be used
+- how the React app will become a native desktop app
+- what system features Tauri will unlock
+- what must remain mocked until Tauri/Linux
+- security concerns around native commands
+- future Linux package strategy
+- future Cubic ISO strategy
+
+TASK 9 — Add Project Documentation
+
+Create or update:
+
+README.md
+docs/ARCHITECTURE.md
+docs/SECURITY.md
+docs/ROADMAP.md
+docs/PLUGIN_SPEC.md
+docs/LOCAL_FIRST_AI.md
+
+These should explain ZaraOS clearly.
+
+Important:
+Write documentation as if this may become a real company product.
+
+TASK 10 — Performance Review
+
+Review the current app for unnecessary bloat.
+
+Do:
+- remove unused dependencies if safe
+- remove duplicate code
+- lazy load heavy panels if practical
+- keep animations smooth but not excessive
+- avoid background loops
+- avoid unnecessary re-renders
+- keep localStorage usage clean
+
+TASK 11 — Security Review
+
+Perform an internal security audit and produce:
+
+docs/SECURITY_AUDIT_ALPHA_0_1.md
+
+Include:
+- current security strengths
+- current risks
+- API key handling risks
+- localStorage limitations
+- future encrypted storage needs
+- mic/camera risk model
+- cloud AI opt-in requirements
+- plugin sandboxing requirements
+- command execution risks
+- recommendations before Alpha 0.2
+
+TASK 12 — Final Output
+
+When finished, provide a summary with:
+
+1. What was changed
+2. What files were created
+3. What files were modified
+4. How the new architecture works
+5. How commands flow through Zara Runtime
+6. What remains mocked
+7. What should be built next
+8. Whether the app still runs successfully
+
+IMPORTANT PRODUCT RULES:
+- ZaraOS must not look or feel like generic Linux.
+- ZaraOS must not be described as merely a Linux distro.
+- ZaraOS is an AI-native operating environment.
+- Linux is only the future hardware compatibility layer.
+- The app must remain local-first.
+- The company must avoid paying inference/API costs.
+- Users may bring their own API keys later.
+- No paid services unless explicitly approved.
+- No cloud dependency unless explicitly approved.
+- Keep everything free internally for now.
+
+Begin the refactor and architecture upgrade now.
