@@ -20,6 +20,7 @@ import {
   Keyboard,
 } from "lucide-react";
 import { GlobalCommandBox } from "@/components/global-command-box";
+import { GestureOverlay } from "@/components/gesture-overlay";
 import { InputModeIndicator } from "@/components/input-mode-indicator";
 import { VoiceWaveform } from "@/components/voice-waveform";
 import { useInputMode } from "@/core/input-mode";
@@ -234,6 +235,9 @@ export function Layout({ children }: LayoutProps) {
 
       {/* ── Global Command Box overlay ── */}
       <GlobalCommandBox />
+
+      {/* ── Gesture Overlay ── */}
+      {gestureActive && <GestureOverlay onClose={toggleGesture} />}
     </div>
   );
 }

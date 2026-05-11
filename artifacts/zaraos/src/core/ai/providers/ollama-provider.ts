@@ -215,15 +215,50 @@ export class OllamaProvider implements AIProviderAdapter {
           lastCheckedAt: this.lastHealthCheck,
         };
       }
-    } catch { /* Not reachable */ }
+    } catch {
+      // The fetch failed. Distinguish between "server not running" and
+      // "server running but CORS is blocking browser access" by trying a
+      // no-cors ping — if it succeeds, the server IS up but blocks this origin.
+      const isCorsBlocked = await this.probeCorsBlocked();
+      this.isAvailable = false;
+      return {
+        available: false,
+        healthy: false,
+        reason: isCorsBlocked
+          ? "Ollama is running but is blocking this browser origin (CORS). " +
+            "Restart Ollama with: OLLAMA_ORIGINS=* ollama serve"
+          : "Ollama not reachable at localhost:11434. Install Ollama and run " +
+            "'OLLAMA_ORIGINS=* ollama serve' to enable.",
+        lastCheckedAt: this.lastHealthCheck,
+      };
+    }
 
     this.isAvailable = false;
     return {
       available: false,
       healthy: false,
-      reason: "Ollama not reachable at localhost:11434. Install Ollama and run 'ollama serve' to enable.",
+      reason: "Ollama returned an unexpected response. Ensure Ollama is up to date.",
       lastCheckedAt: this.lastHealthCheck,
     };
+  }
+
+  /**
+   * Probe whether Ollama is running but blocking CORS.
+   * Uses mode:'no-cors' — succeeds silently even without CORS headers,
+   * but fails with a TypeError if the server is truly unreachable.
+   */
+  private async probeCorsBlocked(): Promise<boolean> {
+    try {
+      await fetch(`${this.baseUrl}/api/version`, {
+        mode: "no-cors",
+        signal: AbortSignal.timeout(2000),
+      });
+      // Fetch succeeded with no-cors → server IS up, CORS is the blocker.
+      return true;
+    } catch {
+      // Server is genuinely unreachable.
+      return false;
+    }
   }
 
   supportsStreaming(): boolean { return true; }

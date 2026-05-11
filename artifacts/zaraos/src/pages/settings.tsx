@@ -20,7 +20,7 @@ import {
   ChevronRight,
   ShieldCheck,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useInputMode, INPUT_MODE_META } from "@/core/input-mode";
 import { gestureEngine } from "@/lib/gesture-engine";
 import { GESTURE_MAPPINGS } from "@/lib/gesture-mapper";
@@ -47,12 +47,19 @@ const MODE_ICONS: Record<InputMode, React.ReactNode> = {
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("general");
   const [lastSimulated, setLastSimulated] = useState<string>("");
+  const [gestureIsTracking, setGestureIsTracking] = useState(gestureEngine.isActive());
+  const [gestureError, setGestureError] = useState<string | null>(null);
   const { mode, setMode, config, voiceActive, gestureActive, keyboardOnly, toggleVoice, toggleGesture } = useInputMode();
 
+  // Keep gesture tracking state in sync with engine
+  useEffect(() => {
+    const unsubStatus = gestureEngine.onStatusChange(setGestureIsTracking);
+    const unsubError  = gestureEngine.onError((msg) => setGestureError(msg));
+    return () => { unsubStatus(); unsubError(); };
+  }, []);
+
   function simulateGesture(gesture: GestureType, label: string) {
-    gestureEngine.startTracking("/settings");
     gestureEngine.simulateGesture(gesture);
-    setTimeout(() => gestureEngine.stopTracking(), 100);
     setLastSimulated(label);
   }
 
@@ -397,27 +404,45 @@ export default function Settings() {
                 <div>
                   <h2 className="text-2xl font-bold text-white mb-1">Gestures</h2>
                   <p className="text-muted-foreground text-sm">
-                    Camera-based hand gesture controls. All gestures route through Zara Runtime.
-                    Real MediaPipe tracking will be wired in Alpha 0.4.
+                    Live hand gesture recognition via MediaPipe HandLandmarker (21-landmark, 30 fps).
+                    All gestures route through the Zara Runtime pipeline identically to voice and keyboard.
                   </p>
                 </div>
 
                 {/* Camera enable */}
                 <Card className="bg-card/40 border-white/5 backdrop-blur">
-                  <CardContent className="pt-5 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-white">Enable Camera Tracking</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        Required for all spatial gestures — uses local MediaPipe (future)
+                  <CardContent className="pt-5 flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-white">Camera Tracking</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {gestureIsTracking
+                            ? "MediaPipe HandLandmarker active — detecting hand gestures at 30 fps"
+                            : "Camera off — enable to start live hand gesture recognition"}
+                        </div>
                       </div>
+                      <Switch
+                        checked={gestureIsTracking}
+                        data-testid="switch-camera-tracking"
+                        onCheckedChange={(v) => {
+                          setGestureError(null);
+                          if (v) void gestureEngine.startTracking();
+                          else gestureEngine.stopTracking();
+                        }}
+                      />
                     </div>
-                    <Switch
-                      data-testid="switch-camera-tracking"
-                      onCheckedChange={(v) => {
-                        if (v) gestureEngine.startTracking();
-                        else gestureEngine.stopTracking();
-                      }}
-                    />
+                    {gestureIsTracking && (
+                      <div className="flex items-center gap-2 text-[11px] font-mono text-purple-400/70 px-0.5 animate-in fade-in duration-300">
+                        <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse flex-shrink-0" />
+                        Tracking active — gesture overlay visible in the bottom-right corner
+                      </div>
+                    )}
+                    {gestureError && (
+                      <div className="flex items-start gap-2 text-[11px] font-mono text-red-400/80 px-0.5 animate-in fade-in duration-300">
+                        <span className="flex-shrink-0 mt-0.5">!</span>
+                        <span>{gestureError}</span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -467,14 +492,18 @@ export default function Settings() {
                   </CardContent>
                 </Card>
 
-                {/* Future note */}
-                <div className="flex items-start gap-3 p-4 rounded-xl border border-purple-500/15 bg-purple-500/5">
+                {/* Implementation note */}
+                <div className="flex items-start gap-3 p-4 rounded-xl border border-purple-500/20 bg-purple-500/5">
                   <Hand className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Real gesture recognition via MediaPipe Hands is planned for Alpha 0.4. The integration point is in{" "}
-                    <span className="text-white font-mono">src/lib/gesture-engine.ts</span>.
-                    All classified gestures will call{" "}
-                    <span className="text-white font-mono">gestureEngine.dispatchGesture()</span> with no other changes needed.
+                    MediaPipe HandLandmarker loads its WASM bundle from CDN on first use (~8 MB, takes 2-4 s).
+                    The classifier maps 21 normalized landmarks to gesture types via finger-extension angles
+                    and wrist velocity history. The WASM bundle is cached after the first load.
+                    All gestures flow through{" "}
+                    <span className="text-white font-mono">gestureEngine.dispatchGesture()</span>{" "}
+                    into the same{" "}
+                    <span className="text-white font-mono">zaraRuntime.executeCommand()</span>{" "}
+                    pipeline as voice and keyboard input.
                   </p>
                 </div>
               </div>

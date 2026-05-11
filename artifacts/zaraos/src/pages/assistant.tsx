@@ -10,6 +10,7 @@
 // ============================================================
 
 import { Layout } from "@/components/layout";
+import { ConnectAIPanel } from "@/components/connect-ai-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VoiceWaveform } from "@/components/voice-waveform";
@@ -32,6 +33,9 @@ import {
   Trash2,
   Database,
   AlertTriangle,
+  Zap,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { ZaraStatus, InputSource } from "@/core/types";
@@ -81,6 +85,7 @@ export default function Assistant() {
   } = useRuntime();
   const { setMicActive, localAIRunning, cloudAIRunning } = usePrivacy();
 
+  const [showConnectPanel, setShowConnectPanel] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -319,6 +324,33 @@ export default function Assistant() {
             </Button>
           </div>
         </div>
+
+        {/* ── Simulated Mode Banner ── */}
+        {aiRuntimeStatus.isSimulated && (
+          <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2.5">
+              <div className="flex items-center gap-2 text-xs font-mono text-amber-400/70">
+                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>Simulated mode — no real AI provider connected</span>
+              </div>
+              <button
+                onClick={() => setShowConnectPanel((v) => !v)}
+                className="flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex-shrink-0 ml-3"
+              >
+                <Zap className="w-3 h-3" />
+                Connect AI
+                {showConnectPanel
+                  ? <ChevronUp className="w-3 h-3 ml-0.5" />
+                  : <ChevronDown className="w-3 h-3 ml-0.5" />}
+              </button>
+            </div>
+            {showConnectPanel && (
+              <div className="px-4 pb-4 border-t border-amber-500/10">
+                <ConnectAIPanel onConnected={() => setShowConnectPanel(false)} />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Chat Panel ── */}
         <div className="flex-1 min-h-0 bg-card/30 border border-white/5 rounded-xl overflow-hidden backdrop-blur-md shadow-2xl flex flex-col">

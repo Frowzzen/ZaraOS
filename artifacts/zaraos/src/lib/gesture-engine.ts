@@ -1,76 +1,246 @@
 // ============================================================
-// ZaraOS Gesture Engine
+// ZaraOS Gesture Engine — Alpha 0.6
 //
-// Manages camera access and gesture classification.
-// Gesture events are mapped to runtime commands via gesture-mapper.ts
-// and then dispatched through zaraRuntime.executeCommand() — the
-// same pipeline as voice and keyboard input.
+// Replaces the Alpha 0.5 simulation stubs with a real
+// MediaPipe HandLandmarker pipeline:
 //
-// Integration point: Replace simulateGesture() / simulateGestureSequence()
-// with real MediaPipe Hands output.
+//   getUserMedia() → HTMLVideoElement → HandLandmarker.detectForVideo()
+//     → gesture-classifier.classifyGesture() → dispatchGesture()
 //
-// MediaPipe integration steps (future):
-//   1. import { Hands } from "@mediapipe/hands";
-//   2. Create Hands instance with model complexity and confidence thresholds
-//   3. Feed webcam frames via requestAnimationFrame loop
-//   4. On result: classify landmarks → GestureType
-//   5. Call this.dispatchGesture(classified) — no other changes needed
+// Architecture notes:
+//  - HandLandmarker is lazily initialized on first startTracking() call.
+//    The WASM bundle (~8 MB) is loaded from CDN; first call takes ~2-4 s.
+//  - The camera stream is stored as a MediaStream and exposed via
+//    getMediaStream() so GestureOverlay can display the camera feed
+//    without sharing DOM elements with the engine.
+//  - Landmarks are broadcast to onLandmarks() subscribers so
+//    GestureOverlay can draw the hand skeleton without polling.
+//  - simulateGesture() is retained for Settings test buttons.
+//  - All recognized gestures still flow through dispatchGesture()
+//    which debounces, maps to a command string via gesture-mapper.ts,
+//    and fires gestureSubs — nothing else in the app changes.
 // ============================================================
 
 import type { GestureType } from "@/core/types";
 import { gestureToCommand, GESTURE_LABELS } from "./gesture-mapper";
+import { classifyGesture } from "./gesture-classifier";
+import type { Landmark } from "./gesture-classifier";
 
-type GestureCallback = (gesture: GestureType, command: string) => void;
+// ── Types ────────────────────────────────────────────────────
+type GestureCallback     = (gesture: GestureType, command: string) => void;
 type GestureStatusCallback = (isTracking: boolean) => void;
+type LandmarksCallback   = (landmarks: Landmark[][] | null) => void;
+type CameraErrorCallback = (error: string) => void;
+
+// ── MediaPipe CDN URLs ────────────────────────────────────────
+// WASM bundle is loaded from jsDelivr CDN — not bundled by Vite
+// so it doesn't inflate the production bundle size.
+const WASM_BUNDLE_URL =
+  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm";
+const HAND_MODEL_URL =
+  "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
 
 class GestureEngine {
-  private isTracking = false;
-  private currentPath = "/";
-  // Set-based subscriptions — consistent with VoiceEngine, supports multiple subscribers.
-  private gestureSubs: Set<GestureCallback>       = new Set();
-  private statusSubs:  Set<GestureStatusCallback> = new Set();
-  private lastGesture?: GestureType;
-  private lastGestureAt = 0;
-  private readonly DEBOUNCE_MS = 600; // Prevent rapid double-fires
+  // ── State ─────────────────────────────────────────────────
+  private isTracking          = false;
+  private currentPath         = "/";
+  private lastGesture?:        GestureType;
+  private lastGestureAt        = 0;
+  private readonly DEBOUNCE_MS = 600;
 
-  // ── Permissions ──────────────────────────────────────────
+  // ── MediaPipe state ───────────────────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private handLandmarker:     any | null = null; // HandLandmarker
+  private handLandmarkerReady = false;
+  private handLandmarkerLoading = false;
+  private mediaStream:        MediaStream | null = null;
+  private videoEl:            HTMLVideoElement | null = null;
+  private rafId:              number | null = null;
+
+  // ── Subscriber sets ───────────────────────────────────────
+  private gestureSubs:  Set<GestureCallback>      = new Set();
+  private statusSubs:   Set<GestureStatusCallback> = new Set();
+  private landmarksSubs: Set<LandmarksCallback>   = new Set();
+  private errorSubs:    Set<CameraErrorCallback>  = new Set();
+
+  // ── Camera permission ─────────────────────────────────────
   public async requestCameraPermission(): Promise<boolean> {
-    // TODO: Real implementation:
-    //   const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    //   stream.getTracks().forEach(t => t.stop()); // Just check permission, don't hold stream
-    //   return true;
-    return Promise.resolve(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach((t) => t.stop());
+      return true;
+    } catch {
+      return false;
+    }
   }
 
-  // ── Tracking Control ─────────────────────────────────────
-  public startTracking(initialPath = "/"): void {
-    this.isTracking = true;
+  // ── MediaPipe initialization ──────────────────────────────
+  // Lazily loads the WASM bundle and hand model on first use.
+  // Subsequent calls return the cached instance immediately.
+  private async ensureHandLandmarker(): Promise<boolean> {
+    if (this.handLandmarkerReady) return true;
+    if (this.handLandmarkerLoading) {
+      // Poll until resolved rather than creating duplicate instances
+      return new Promise((resolve) => {
+        const check = setInterval(() => {
+          if (!this.handLandmarkerLoading) {
+            clearInterval(check);
+            resolve(this.handLandmarkerReady);
+          }
+        }, 100);
+      });
+    }
+
+    this.handLandmarkerLoading = true;
+    try {
+      const { HandLandmarker, FilesetResolver } = await import(
+        "@mediapipe/tasks-vision"
+      );
+      const vision = await FilesetResolver.forVisionTasks(WASM_BUNDLE_URL);
+      this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: HAND_MODEL_URL,
+          delegate: "GPU",
+        },
+        runningMode: "VIDEO",
+        numHands: 1,
+        minHandDetectionConfidence: 0.55,
+        minHandPresenceConfidence: 0.55,
+        minTrackingConfidence:     0.55,
+      });
+      this.handLandmarkerReady = true;
+      return true;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.errorSubs.forEach((cb) =>
+        cb(`MediaPipe init failed: ${msg}. Check network connection.`)
+      );
+      return false;
+    } finally {
+      this.handLandmarkerLoading = false;
+    }
+  }
+
+  // ── Tracking control ──────────────────────────────────────
+  public async startTracking(initialPath = "/"): Promise<void> {
+    if (this.isTracking) return;
     this.currentPath = initialPath;
+
+    // 1. Request camera stream
+    try {
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: "user",
+          frameRate: { ideal: 30 },
+        },
+      });
+    } catch (err) {
+      const isDenied =
+        err instanceof DOMException && err.name === "NotAllowedError";
+      this.errorSubs.forEach((cb) =>
+        cb(
+          isDenied
+            ? "Camera permission denied. Enable it in your browser settings, then try again."
+            : `Camera unavailable: ${err instanceof Error ? err.message : "unknown error"}`
+        )
+      );
+      return;
+    }
+
+    // 2. Wire stream to an off-screen video element used for detection
+    this.videoEl = document.createElement("video");
+    this.videoEl.srcObject = this.mediaStream;
+    this.videoEl.playsInline = true;
+    this.videoEl.muted = true;
+    try {
+      await this.videoEl.play();
+    } catch {
+      // play() can fail if the element is not attached to DOM — tolerated
+    }
+
+    // 3. Load MediaPipe (WASM) — may take 2-4 s on first call
+    const ready = await this.ensureHandLandmarker();
+    if (!ready) {
+      this.stopTracking();
+      return;
+    }
+
+    // 4. Start RAF detection loop
+    this.isTracking = true;
     this.statusSubs.forEach((cb) => cb(true));
-    // TODO: Initialize MediaPipe Hands here and start the RAF loop.
-    // The loop should call this.dispatchGesture(classified) on each recognized gesture.
+    this.runDetectionLoop();
+  }
+
+  private runDetectionLoop(): void {
+    const loop = () => {
+      if (!this.isTracking) return;
+
+      const video = this.videoEl;
+      const detector = this.handLandmarker;
+
+      if (!video || !detector || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+        // Video not ready yet — keep polling
+        this.rafId = requestAnimationFrame(loop);
+        return;
+      }
+
+      const now = performance.now();
+      const results = detector.detectForVideo(video, now);
+
+      if (results.landmarks && results.landmarks.length > 0) {
+        const rawLandmarks = results.landmarks as Landmark[][];
+        this.landmarksSubs.forEach((cb) => cb(rawLandmarks));
+        const gesture = classifyGesture(rawLandmarks[0]);
+        if (gesture) this.dispatchGesture(gesture);
+      } else {
+        this.landmarksSubs.forEach((cb) => cb(null));
+      }
+
+      this.rafId = requestAnimationFrame(loop);
+    };
+
+    this.rafId = requestAnimationFrame(loop);
   }
 
   public stopTracking(): void {
     this.isTracking = false;
+
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach((t) => t.stop());
+      this.mediaStream = null;
+    }
+
+    if (this.videoEl) {
+      this.videoEl.srcObject = null;
+      this.videoEl = null;
+    }
+
     this.statusSubs.forEach((cb) => cb(false));
-    // TODO: Cancel RAF loop and release camera stream.
+    this.landmarksSubs.forEach((cb) => cb(null));
   }
 
   public isActive(): boolean {
     return this.isTracking;
   }
 
-  // ── Path Awareness ────────────────────────────────────────
-  // The engine needs the current navigation path to resolve
-  // SWIPE_LEFT / SWIPE_RIGHT to the correct panels.
+  /** Returns the live MediaStream so GestureOverlay can display the feed */
+  public getMediaStream(): MediaStream | null {
+    return this.mediaStream;
+  }
+
+  // ── Path awareness ────────────────────────────────────────
   public setCurrentPath(path: string): void {
     this.currentPath = path;
   }
 
   // ── Subscriptions ─────────────────────────────────────────
-  // Both return an unsubscribe function — safe to call in useEffect cleanup.
-  // Multiple subscribers are supported (consistent with VoiceEngine).
   public onGesture(callback: GestureCallback): () => void {
     this.gestureSubs.add(callback);
     return () => this.gestureSubs.delete(callback);
@@ -81,29 +251,40 @@ class GestureEngine {
     return () => this.statusSubs.delete(callback);
   }
 
-  // ── Gesture Dispatch ──────────────────────────────────────
-  // The internal dispatch point — all recognized gestures go here,
-  // whether from real MediaPipe output or simulation.
+  /** Subscribe to raw landmark arrays for skeleton rendering */
+  public onLandmarks(callback: LandmarksCallback): () => void {
+    this.landmarksSubs.add(callback);
+    return () => this.landmarksSubs.delete(callback);
+  }
+
+  /** Subscribe to camera / MediaPipe error messages */
+  public onError(callback: CameraErrorCallback): () => void {
+    this.errorSubs.add(callback);
+    return () => this.errorSubs.delete(callback);
+  }
+
+  // ── Internal gesture dispatch ─────────────────────────────
   private dispatchGesture(gesture: GestureType): void {
     if (!this.isTracking) return;
 
-    // Debounce — ignore rapid repeats of the same gesture.
     const now = Date.now();
     if (gesture === this.lastGesture && now - this.lastGestureAt < this.DEBOUNCE_MS) {
       return;
     }
-    this.lastGesture = gesture;
+    this.lastGesture  = gesture;
     this.lastGestureAt = now;
 
     const command = gestureToCommand(gesture, this.currentPath);
     this.gestureSubs.forEach((cb) => cb(gesture, command));
   }
 
-  // ── Simulation (Alpha 0.1) ─────────────────────────────────
-  // Used by the gesture demo panel and settings test buttons.
-  // Remove in production — replace with real MediaPipe dispatch.
+  // ── Simulation (retained for Settings test buttons) ───────
+  // Force-dispatches without requiring tracking to be active.
   public simulateGesture(gesture: GestureType): void {
+    const was = this.isTracking;
+    this.isTracking = true;
     this.dispatchGesture(gesture);
+    this.isTracking = was;
   }
 
   public simulateGestureSequence(gestures: GestureType[], delayMs = 800): void {
