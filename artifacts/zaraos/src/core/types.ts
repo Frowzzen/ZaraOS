@@ -5,13 +5,28 @@
 // AI Layer, Input Layer, System Layer, Plugin Layer, and Security Layer.
 // ============================================================
 
-// ── Input Sources ─────────────────────────────────────────
+// ── Input Modes ────────────────────────────────────────────
+// Hybrid is always the default. Voice is primary within Hybrid.
+// Text is always available as a silent fallback in every mode.
+export type InputMode = "voice" | "gesture" | "text" | "hybrid";
+
+export interface InputModeConfig {
+  mode: InputMode;
+  voiceEnabled: boolean;
+  gestureEnabled: boolean;
+  textEnabled: boolean; // always true
+  commandBoxVisible: boolean;
+}
+
+// ── Input Sources ──────────────────────────────────────────
 export type InputSource = "voice" | "gesture" | "keyboard" | "system" | "plugin";
 
-// ── Command Intents ───────────────────────────────────────
+// ── Command Intents ────────────────────────────────────────
 export type CommandIntent =
   | "open_app"
   | "close_app"
+  | "navigation_action"
+  | "scroll_action"
   | "search"
   | "file_action"
   | "media_action"
@@ -22,7 +37,7 @@ export type CommandIntent =
   | "developer_action"
   | "unknown";
 
-// ── Parsed Command ────────────────────────────────────────
+// ── Parsed Command ─────────────────────────────────────────
 // All input sources (voice, gesture, keyboard, plugin) produce
 // a ParsedCommand before being handed to the Zara Runtime.
 export interface ParsedCommand {
@@ -36,19 +51,19 @@ export interface ParsedCommand {
   confidence: number;
 }
 
-// ── Command Result ────────────────────────────────────────
+// ── Command Result ─────────────────────────────────────────
 // What the Runtime returns after executing a command.
 export interface CommandResult {
   success: boolean;
   intent: CommandIntent;
   response: string;
-  action?: "navigate" | "toggle" | "launch" | "confirm_required" | "permission_denied" | "noop";
+  action?: "navigate" | "toggle" | "launch" | "scroll" | "confirm_required" | "permission_denied" | "noop";
   payload?: string;
   source: InputSource;
   timestamp: number;
 }
 
-// ── Zara Status ───────────────────────────────────────────
+// ── Zara Status ────────────────────────────────────────────
 // Current state of the Zara assistant.
 export type ZaraStatus =
   | "idle"
@@ -58,7 +73,7 @@ export type ZaraStatus =
   | "offline"
   | "privacy-lock";
 
-// ── System Status ─────────────────────────────────────────
+// ── System Status ──────────────────────────────────────────
 export interface SystemStatus {
   cpuUsage: number;
   ramUsed: number;
@@ -69,7 +84,7 @@ export interface SystemStatus {
   zaraStatus: ZaraStatus;
 }
 
-// ── Permission Categories ─────────────────────────────────
+// ── Permission Categories ──────────────────────────────────
 export type PermissionCategory =
   | "microphone"
   | "camera"
@@ -81,7 +96,7 @@ export type PermissionCategory =
   | "plugins"
   | "developer_mode";
 
-// ── Permission Record ─────────────────────────────────────
+// ── Permission Record ──────────────────────────────────────
 export interface PermissionRecord {
   category: PermissionCategory;
   granted: boolean;
@@ -89,7 +104,7 @@ export interface PermissionRecord {
   revokedAt?: number;
 }
 
-// ── AI Provider Types ─────────────────────────────────────
+// ── AI Provider Types ──────────────────────────────────────
 export type AIProvider =
   | "local"
   | "openai"
@@ -111,7 +126,7 @@ export interface AIProviderConfig {
   isPrimary?: boolean;
 }
 
-// ── Plugin Manifest ───────────────────────────────────────
+// ── Plugin Manifest ────────────────────────────────────────
 // Full specification for a ZaraOS plugin or app.
 // Future versions will enforce this schema via a sandbox validator.
 export interface PluginManifest {
@@ -134,24 +149,41 @@ export interface PluginManifest {
   status: "installed" | "available" | "incompatible";
 }
 
-// ── Gesture Types ─────────────────────────────────────────
+// ── Gesture Types ──────────────────────────────────────────
+// Full gesture vocabulary for ZaraOS.
+// Mappings are defined in src/lib/gesture-mapper.ts.
+// Future: MediaPipe Hands produces these as classified outputs.
 export type GestureType =
-  | "OPEN_PALM"
-  | "SWIPE_LEFT"
-  | "SWIPE_RIGHT"
-  | "PINCH"
-  | "GRAB"
-  | "FIST"
-  | "TWO_FINGERS_UP";
+  | "OPEN_PALM"          // Wake Zara — opens assistant
+  | "SWIPE_LEFT"         // Previous panel
+  | "SWIPE_RIGHT"        // Next panel
+  | "SWIPE_UP"           // Scroll down (content moves up)
+  | "SWIPE_DOWN"         // Scroll up (content moves down)
+  | "SWIPE_ACROSS"       // Close active window / go home
+  | "PINCH"              // Select
+  | "GRAB"               // Drag
+  | "FIST"               // Dismiss / go home
+  | "TWO_FINGERS_UP";    // Precision scroll mode
 
-// ── Voice Engine State ────────────────────────────────────
+// ── Gesture Mapping ────────────────────────────────────────
+// A declared gesture → command binding.
+export interface GestureMapping {
+  gesture: GestureType;
+  label: string;
+  description: string;
+  command: string;         // Natural language command fed to Runtime
+  source: InputSource;
+  requiresGestureMode: boolean;
+}
+
+// ── Voice Engine State ─────────────────────────────────────
 export interface VoiceEngineState {
   isListening: boolean;
   permissionGranted: boolean;
   engine: "web_speech" | "whisper" | "vosk" | "none";
 }
 
-// ── Gesture Engine State ──────────────────────────────────
+// ── Gesture Engine State ───────────────────────────────────
 export interface GestureEngineState {
   isTracking: boolean;
   permissionGranted: boolean;

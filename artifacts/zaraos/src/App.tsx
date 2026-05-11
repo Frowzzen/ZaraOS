@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PrivacyProvider } from "@/lib/privacy-store";
 import { RuntimeProvider } from "@/core/runtime-context";
+import { InputModeProvider } from "@/core/input-mode";
 
 import Home from "@/pages/home";
 import Assistant from "@/pages/assistant";
@@ -41,14 +42,16 @@ export default function MainApp() {
   return (
     <QueryClientProvider client={queryClient}>
       <RuntimeProvider>
-        <PrivacyProvider>
-          <TooltipProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <Router />
-            </WouterRouter>
-            <Toaster />
-          </TooltipProvider>
-        </PrivacyProvider>
+        <InputModeProvider>
+          <PrivacyProvider>
+            <TooltipProvider>
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                <Router />
+              </WouterRouter>
+              <Toaster />
+            </TooltipProvider>
+          </PrivacyProvider>
+        </InputModeProvider>
       </RuntimeProvider>
     </QueryClientProvider>
   );
