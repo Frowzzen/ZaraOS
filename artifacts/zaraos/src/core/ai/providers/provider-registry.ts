@@ -240,6 +240,15 @@ export function getProvider(id: string): AIProviderAdapter | undefined {
   return providerRouter.getProvider(id);
 }
 
+// ── Cloud AI gate ─────────────────────────────────────────
+// Must be called whenever the cloud_ai permission changes so
+// the router knows whether cloud providers are allowed.
+// Called by ZaraRuntime.requestPermission / revokePermission.
+
+export function setCloudAIAllowed(allowed: boolean): void {
+  providerRouter.setCloudAIEnabled(allowed);
+}
+
 // ── Auto-initialization ───────────────────────────────────────
 // Providers are initialized synchronously the moment this module is
 // imported. This guarantees they are registered before any React

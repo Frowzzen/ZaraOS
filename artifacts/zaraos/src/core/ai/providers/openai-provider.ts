@@ -1,21 +1,22 @@
 // ============================================================
-// ZaraOS OpenAI Provider
+// ZaraOS OpenAI Provider — Alpha 0.4
 //
-// Cloud provider adapter for OpenAI GPT models.
-// DISABLED by default. Requires explicit user opt-in and
-// a user-provided API key stored in localStorage only.
+// Real HTTP calls to api.openai.com using the user's own API key.
+// Cloud AI — DISABLED by default. Requires:
+//   1. cloud_ai permission granted in Privacy settings
+//   2. User-provided API key saved in AI Provider settings
 //
-// SECURITY RULES:
-//   - This provider is NEVER enabled without explicit user action.
-//   - API keys are stored in localStorage only — never logged,
-//     never transmitted to ZaraOS servers (there are none).
-//   - This adapter only activates when:
-//     a) the user has enabled cloud AI in Privacy settings, AND
-//     b) the user has entered their own OpenAI API key.
-//   - No API calls are made in this file in Alpha 0.3.
+// Security rules:
+//   - Key lives in localStorage only — never sent to any ZaraOS server.
+//   - No inference call is made until both conditions above are true.
+//   - ZaraOS never pays for inference; users bring their own keys.
 //
-// ZaraOS does not pay for cloud inference.
-// Users bring their own API keys.
+// Streaming: OpenAI Server-Sent Events (SSE).
+//   Each chunk: "data: {...}\n\n"
+//   Final chunk: "data: [DONE]\n\n"
+//
+// Health check: GET /v1/models — lightweight, validates the key
+//   without consuming any tokens.
 // ============================================================
 
 import type {
@@ -28,12 +29,15 @@ import type {
 import type { AICapabilities } from "../models/ai-capabilities";
 import { OPENAI_CAPABILITIES } from "../models/ai-capabilities";
 
-const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
-const OPENAI_DEFAULT_MODEL = "gpt-4o-mini";
+const OPENAI_CHAT_URL  = "https://api.openai.com/v1/chat/completions";
+const OPENAI_MODELS_URL = "https://api.openai.com/v1/models";
+const DEFAULT_MODEL    = "gpt-4o-mini";
+const REQUEST_TIMEOUT  = 60_000;
+const HEALTH_TIMEOUT   = 10_000;
 
 export class OpenAIProvider implements AIProviderAdapter {
-  readonly id = "openai";
-  readonly name = "OpenAI";
+  readonly id      = "openai";
+  readonly name    = "OpenAI";
   readonly isLocal = false;
   readonly isCloud = true;
   readonly isEnabled: boolean;
@@ -42,81 +46,203 @@ export class OpenAIProvider implements AIProviderAdapter {
   private apiKey: string | null = null;
 
   constructor(options?: { enabled?: boolean; model?: string; apiKey?: string }) {
-    this.isEnabled = options?.enabled ?? false;
-    this.activeModel = options?.model ?? OPENAI_DEFAULT_MODEL;
-    this.apiKey = options?.apiKey ?? null;
+    this.isEnabled   = options?.enabled ?? false;
+    this.activeModel = options?.model   ?? DEFAULT_MODEL;
+    this.apiKey      = options?.apiKey  ?? null;
   }
 
-  setApiKey(key: string): void {
-    // SECURITY: Key stored in memory only during session.
-    // Persistence to localStorage is handled by the AI settings layer.
-    // Key is never logged.
-    this.apiKey = key || null;
-  }
+  setApiKey(key: string): void { this.apiKey = key || null; }
 
-  async initialize(): Promise<void> {
-    // No initialization needed for cloud provider.
-    // Key is set externally via setApiKey().
-  }
+  async initialize(): Promise<void> {}
+
+  // ── Non-streaming inference ───────────────────────────────
 
   async sendMessage(messages: AIMessage[], options?: AISendOptions): Promise<string> {
     if (!this.apiKey) {
-      return "OpenAI is not configured. Add your API key in AI Provider settings to enable cloud inference.";
+      return "OpenAI: No API key configured. Add your key in AI Provider settings.";
     }
 
-    // FUTURE: Real OpenAI call when user has configured their key.
-    // Requires cloud_ai permission to be granted in Privacy settings.
-    //
-    // const response = await fetch(OPENAI_API_URL, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     Authorization: `Bearer ${this.apiKey}`,
-    //   },
-    //   body: JSON.stringify({
-    //     model: options?.model ?? this.activeModel,
-    //     messages: this.prependSystem(messages, options?.systemPrompt),
-    //     stream: false,
-    //     temperature: options?.temperature ?? 0.7,
-    //     max_tokens: options?.maxTokens ?? 1024,
-    //   }),
-    //   signal: options?.signal,
-    // });
-    // const data = await response.json();
-    // return data.choices[0].message.content;
+    try {
+      const response = await fetch(OPENAI_CHAT_URL, {
+        method: "POST",
+        headers: this.headers(),
+        body: JSON.stringify({
+          model:       options?.model       ?? this.activeModel,
+          messages:    this.buildMessages(messages, options?.systemPrompt),
+          stream:      false,
+          temperature: options?.temperature ?? 0.7,
+          max_tokens:  options?.maxTokens   ?? 1024,
+        }),
+        signal: options?.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT),
+      });
 
-    return "OpenAI cloud inference is configured but disabled in Alpha 0.3. Enable cloud AI in Privacy settings first.";
-  }
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({})) as { error?: { message?: string } };
+        throw new Error(err.error?.message ?? `HTTP ${response.status}`);
+      }
 
-  async streamMessage(messages: AIMessage[], onChunk: AIStreamCallback, _options?: AISendOptions): Promise<void> {
-    const text = await this.sendMessage(messages);
-    for (let i = 0; i < text.length; i += 4) {
-      await new Promise((r) => setTimeout(r, 20));
-      onChunk({ delta: text.slice(i, i + 4), done: i + 4 >= text.length });
+      const data = await response.json() as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+      return data.choices?.[0]?.message?.content ?? "No response from OpenAI.";
+    } catch (e) {
+      return `OpenAI error: ${e instanceof Error ? e.message : "Unknown error"}`;
     }
   }
 
-  async listModels(): Promise<string[]> {
-    return ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"];
+  // ── Streaming inference (SSE) ─────────────────────────────
+
+  async streamMessage(messages: AIMessage[], onChunk: AIStreamCallback, options?: AISendOptions): Promise<void> {
+    if (!this.apiKey) {
+      onChunk({ delta: "OpenAI: No API key configured. Add your key in AI Provider settings.", done: true });
+      return;
+    }
+
+    try {
+      const response = await fetch(OPENAI_CHAT_URL, {
+        method: "POST",
+        headers: this.headers(),
+        body: JSON.stringify({
+          model:       options?.model       ?? this.activeModel,
+          messages:    this.buildMessages(messages, options?.systemPrompt),
+          stream:      true,
+          temperature: options?.temperature ?? 0.7,
+          max_tokens:  options?.maxTokens   ?? 1024,
+        }),
+        signal: options?.signal,
+      });
+
+      if (!response.ok || !response.body) {
+        const err = await response.json().catch(() => ({})) as { error?: { message?: string } };
+        throw new Error(err.error?.message ?? `HTTP ${response.status}`);
+      }
+
+      const reader  = response.body.getReader();
+      const decoder = new TextDecoder();
+      let   buffer  = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? ""; // keep incomplete last line
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data: ")) continue;
+          const payload = trimmed.slice(6).trim();
+          if (payload === "[DONE]") {
+            onChunk({ delta: "", done: true });
+            return;
+          }
+          try {
+            const parsed = JSON.parse(payload) as {
+              choices?: Array<{ delta?: { content?: string }; finish_reason?: string | null }>;
+            };
+            const delta       = parsed.choices?.[0]?.delta?.content ?? "";
+            const finishReason = parsed.choices?.[0]?.finish_reason;
+            const isDone      = finishReason === "stop" || finishReason === "length";
+            if (delta) onChunk({ delta, done: isDone });
+            if (isDone) return;
+          } catch { /* skip malformed chunk */ }
+        }
+      }
+
+      onChunk({ delta: "", done: true });
+    } catch (e) {
+      onChunk({ delta: `\n[OpenAI error: ${e instanceof Error ? e.message : "Unknown"}]`, done: true });
+    }
   }
 
-  getActiveModel(): string { return this.activeModel; }
-  setModel(modelId: string): void { this.activeModel = modelId; }
+  // ── Health check — validates key via GET /v1/models ──────
 
   async healthCheck(): Promise<AIProviderStatus> {
     if (!this.apiKey) {
       return { available: false, healthy: false, reason: "No API key configured", lastCheckedAt: Date.now() };
     }
-    return { available: true, healthy: true, reason: "API key present — cloud access enabled", activeModel: this.activeModel, lastCheckedAt: Date.now() };
+
+    try {
+      const start    = Date.now();
+      const response = await fetch(OPENAI_MODELS_URL, {
+        headers: this.headers(),
+        signal:  AbortSignal.timeout(HEALTH_TIMEOUT),
+      });
+      const latencyMs = Date.now() - start;
+
+      if (response.ok) {
+        return {
+          available:    true,
+          healthy:      true,
+          latencyMs,
+          activeModel:  this.activeModel,
+          reason:       "API key valid — OpenAI is reachable",
+          lastCheckedAt: Date.now(),
+        };
+      }
+
+      const err = await response.json().catch(() => ({})) as { error?: { message?: string } };
+      return {
+        available:    false,
+        healthy:      false,
+        reason:       err.error?.message ?? `HTTP ${response.status}`,
+        lastCheckedAt: Date.now(),
+      };
+    } catch {
+      return {
+        available:    false,
+        healthy:      false,
+        reason:       "OpenAI unreachable — check your internet connection",
+        lastCheckedAt: Date.now(),
+      };
+    }
   }
 
-  supportsStreaming(): boolean { return true; }
-  supportsVision(): boolean { return true; }
-  supportsTools(): boolean { return true; }
-  supportsOffline(): boolean { return false; }
-  getCapabilities(): AICapabilities { return { ...OPENAI_CAPABILITIES }; }
+  // ── Model management ──────────────────────────────────────
 
-  private prependSystem(messages: AIMessage[], systemPrompt?: string): AIMessage[] {
+  async listModels(): Promise<string[]> {
+    if (!this.apiKey) {
+      return ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"];
+    }
+    try {
+      const response = await fetch(OPENAI_MODELS_URL, {
+        headers: this.headers(),
+        signal:  AbortSignal.timeout(HEALTH_TIMEOUT),
+      });
+      if (!response.ok) throw new Error("Not ok");
+      const data = await response.json() as { data?: Array<{ id: string }> };
+      const chatModels = (data.data ?? [])
+        .map((m) => m.id)
+        .filter((id) => id.startsWith("gpt-"))
+        .sort();
+      return chatModels.length > 0
+        ? chatModels
+        : ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"];
+    } catch {
+      return ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"];
+    }
+  }
+
+  getActiveModel(): string { return this.activeModel; }
+  setModel(modelId: string): void { this.activeModel = modelId; }
+
+  supportsStreaming(): boolean { return true; }
+  supportsVision():   boolean { return true; }
+  supportsTools():    boolean { return true; }
+  supportsOffline():  boolean { return false; }
+  getCapabilities():  AICapabilities { return { ...OPENAI_CAPABILITIES }; }
+
+  // ── Helpers ───────────────────────────────────────────────
+
+  private headers(): Record<string, string> {
+    return {
+      "Content-Type":  "application/json",
+      "Authorization": `Bearer ${this.apiKey}`,
+    };
+  }
+
+  private buildMessages(messages: AIMessage[], systemPrompt?: string): AIMessage[] {
     if (!systemPrompt) return messages;
     return [{ role: "system", content: systemPrompt }, ...messages];
   }

@@ -36,6 +36,7 @@ import {
   setProviderApiKey,
   setProviderEndpoint,
   getProviderSummaries,
+  setCloudAIAllowed,
 } from "./ai/providers/provider-registry";
 import type { AIStreamCallback } from "./ai/providers/provider-adapter";
 import type { AIProviderStatus } from "./ai/providers/provider-adapter";
@@ -66,6 +67,10 @@ class ZaraRuntime {
   // ── Lifecycle ─────────────────────────────────────────
   public initialize(): void {
     this.setZaraStatus("idle");
+    // Sync cloud AI routing gate with the current permission state.
+    // This must happen before aiRuntime.initialize() so the router
+    // already knows whether cloud providers are allowed on first route.
+    setCloudAIAllowed(permissionsManager.isGranted("cloud_ai"));
     // Initialize AI Runtime (registers providers + starts or resumes conversation session)
     aiRuntime.initialize().catch(() => {
       // Graceful degradation — AI Runtime failure is non-fatal
@@ -230,14 +235,14 @@ class ZaraRuntime {
   // ── Permission Request ─────────────────────────────────
   public requestPermission(category: PermissionCategory): boolean {
     permissionsManager.grant(category);
+    if (category === "cloud_ai") setCloudAIAllowed(true);
     return true;
   }
 
   public revokePermission(category: PermissionCategory): void {
     permissionsManager.revoke(category);
-    if (category === "microphone") {
-      this.setZaraStatus("idle");
-    }
+    if (category === "microphone") this.setZaraStatus("idle");
+    if (category === "cloud_ai")   setCloudAIAllowed(false);
   }
 
   // ── System Status ──────────────────────────────────────
