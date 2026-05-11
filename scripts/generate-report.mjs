@@ -1,5 +1,6 @@
 // ZaraOS — ChatGPT Catch-Up Report Generator (Alpha 0.4)
 // Run: node scripts/generate-report.mjs
+// Automatically pulls CHANGELOG.md from project root for the feature log section.
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import path from "path";
@@ -765,6 +766,119 @@ bullet("Anthropic messages array",
 
 bullet("Gemini role convention",
   "Gemini uses 'model' for assistant role (not 'assistant'). The adapter converts this transparently.");
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 16 — CHANGELOG (auto-read from CHANGELOG.md)
+// ═══════════════════════════════════════════════════════════
+
+newPage();
+sectionHeader("16. Full Feature Log (from CHANGELOG.md)");
+
+body(
+  "The sections below are generated automatically from CHANGELOG.md at the project root. " +
+  "Every feature, fix, and architectural decision is tracked there. " +
+  "Add a new entry to CHANGELOG.md and re-run this script to update the report."
+);
+
+doc.moveDown(0.3);
+
+const CHANGELOG_PATH = path.join(__dirname, "../CHANGELOG.md");
+const changelogRaw = fs.readFileSync(CHANGELOG_PATH, "utf8");
+
+// Parse CHANGELOG.md into releases
+// A release starts with "## [Alpha X.Y]" or "## Roadmap"
+const lines = changelogRaw.split("\n");
+let currentRelease = null;
+let currentSection = null;    // Added / Changed / Fixed / Architecture
+const releases = [];          // [{ heading, date, sections: { name: [entry] } }]
+
+for (const raw of lines) {
+  const line = raw.trimEnd();
+  if (line.startsWith("## [") || line.startsWith("## Roadmap")) {
+    // New release block
+    const match = line.match(/^## \[(.+?)\](?:\s*—\s*(.+))?/) ||
+                  line.match(/^## (Roadmap.*)/);
+    if (match) {
+      currentRelease = {
+        heading: match[1] || match[0].replace("## ", ""),
+        date: match[2] || null,
+        sections: {},
+      };
+      releases.push(currentRelease);
+      currentSection = null;
+    }
+  } else if (currentRelease && line.startsWith("### ")) {
+    currentSection = line.replace("### ", "").trim();
+    if (!currentRelease.sections[currentSection]) {
+      currentRelease.sections[currentSection] = [];
+    }
+  } else if (currentRelease && currentSection && line.startsWith("- ")) {
+    // Strip markdown bold (**text**) and backtick code spans
+    const cleaned = line
+      .slice(2)
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/`(.+?)`/g, "$1");
+    currentRelease.sections[currentSection].push(cleaned);
+  } else if (currentRelease && currentSection && line.startsWith("  - ")) {
+    // Sub-bullet — attach to previous entry with an indent marker
+    const cleaned = "    · " + line.slice(4)
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/`(.+?)`/g, "$1");
+    const sec = currentRelease.sections[currentSection];
+    if (sec.length > 0) sec.push(cleaned);
+  }
+}
+
+// Render each release
+const SECTION_COLORS = {
+  Added:        GREEN,
+  Changed:      CYAN,
+  Fixed:        AMBER,
+  Architecture: VIOLET,
+};
+
+for (const rel of releases) {
+  if (doc.y > 680) newPage();
+
+  // Release heading
+  doc.moveDown(0.5);
+  const ry = doc.y;
+  doc.rect(56, ry, W, 20).fill(CARD);
+  const isRoadmap = rel.heading.toLowerCase().startsWith("roadmap");
+  const headingColor = isRoadmap ? AMBER : GREEN;
+  doc.fillColor(headingColor).fontSize(9.5).font("Helvetica-Bold")
+    .text(rel.heading, 66, ry + 5, { continued: !!rel.date });
+  if (rel.date) {
+    doc.fillColor(MUTED).font("Helvetica").fontSize(8.5)
+      .text("  —  " + rel.date);
+  } else {
+    doc.text("");
+  }
+  doc.y = ry + 26;
+
+  // Sub-sections
+  for (const [secName, entries] of Object.entries(rel.sections)) {
+    if (!entries.length) continue;
+    if (doc.y > 710) newPage();
+
+    const sc = SECTION_COLORS[secName] || WHITE;
+    doc.fillColor(sc).fontSize(8.5).font("Helvetica-Bold")
+      .text(secName.toUpperCase(), 66, doc.y);
+    doc.moveDown(0.15);
+
+    for (const entry of entries) {
+      if (doc.y > 730) newPage();
+      const isSub = entry.startsWith("    · ");
+      const indent = isSub ? 30 : 10;
+      const text = isSub ? entry.trimStart() : "• " + entry;
+      const tc = isSub ? MUTED : WHITE;
+      doc.fillColor(tc).fontSize(isSub ? 7.5 : 8).font("Helvetica")
+        .text(text, 66 + indent, doc.y, { width: W - 20 - indent, lineGap: 1.5 });
+      doc.moveDown(0.2);
+    }
+    doc.moveDown(0.15);
+  }
+}
 
 // ═══════════════════════════════════════════════════════════
 // FOOTER on all pages
