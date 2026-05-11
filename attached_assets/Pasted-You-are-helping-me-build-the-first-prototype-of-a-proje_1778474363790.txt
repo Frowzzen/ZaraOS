@@ -1,0 +1,266 @@
+You are helping me build the first prototype of a project called ZaraOS.
+
+IMPORTANT CONTEXT:
+ZaraOS is not a traditional Linux distro project yet. The first version is an AI-native desktop assistant and operating environment that will later be packaged into a custom bootable Linux-based USB operating system.
+
+The goal is to build the main ZaraOS software layer first as a cross-platform desktop application. Later, this app will be installed into a customized Linux ISO using tools like Cubic, then flashed to a USB drive for testing.
+
+ZaraOS should feel like a futuristic AI operating system powered by a main assistant named Zara, similar in concept to Jarvis.
+
+CORE PRODUCT VISION:
+ZaraOS is a local-first, privacy-focused, AI-native operating environment where voice and hand gestures are the primary controls. Keyboard and mouse are secondary fallback controls.
+
+The system should be designed for:
+- USB bootable Linux-based deployment later
+- high performance on modest hardware
+- broad hardware compatibility
+- local-first AI processing
+- optional user-provided API keys for external AI engines
+- strong privacy and security
+- future third-party app/plugin development
+
+VERY IMPORTANT COMPATIBILITY NOTE:
+Design the application layer to run on Linux first, but keep the codebase portable so it can later support Windows and macOS. The USB bootable OS itself will most realistically target standard x86_64 PCs first. True universal USB booting across Windows laptops, Linux PCs, Intel Macs, and Apple Silicon MacBooks may require separate builds or different boot strategies later. Do not pretend one ISO will automatically boot every Mac and every PC. Build the app in a portable way so we can support more hardware over time.
+
+BUILD GOAL FOR THIS FIRST VERSION:
+Create ZaraOS Alpha 0.1 as a working desktop prototype app.
+
+This first version should include:
+
+1. Main Zara Assistant Interface
+- A clean futuristic desktop-style interface.
+- Main assistant named Zara.
+- Chat/command area.
+- Voice-first design language.
+- Large gesture-friendly buttons.
+- Dark premium UI.
+- Status indicators for microphone, camera, local AI, and cloud AI.
+- Clear privacy indicators showing whether camera/mic are active.
+
+2. Zara Command Console
+Create a redesigned command prompt that does NOT look like a Linux terminal.
+It should feel like a Zara-native console.
+
+Examples:
+- “open browser”
+- “show files”
+- “open documents”
+- “play video”
+- “listen to audio”
+- “search the web”
+- “create new document”
+- “summarize this folder”
+- “open settings”
+- “enable developer mode”
+
+For now, simulate system actions if full OS control is not available in Replit. Structure the code so real Linux command execution can be added later with permission controls.
+
+3. Voice-First Architecture
+Build the interface as if voice is the default input.
+For now, include:
+- microphone permission UI
+- voice command button
+- placeholder voice recognition module
+- clear code comments showing where Whisper.cpp, Vosk, Web Speech API, or another STT engine can be integrated later
+- command parser that can accept both typed commands and future speech-to-text output
+
+4. Camera + Hand Gesture Architecture
+Build the interface as if webcam hand gestures will become a primary input method.
+For now, include:
+- camera permission UI
+- gesture mode toggle
+- placeholder gesture engine
+- visual gesture status panel
+- code comments showing where MediaPipe Hands, OpenCV, or another hand tracking system can be integrated later
+
+Planned gestures:
+- open palm = activate Zara
+- swipe left/right = switch panels
+- pinch = select
+- grab = drag
+- fist = close/dismiss
+- two fingers up = scroll mode
+
+Do not overbuild gesture recognition yet. Create the clean architecture and UI hooks first.
+
+5. Built-In App Launcher
+Create simple built-in app panels for:
+- Web Browser
+- Files
+- Documents
+- Video Player
+- Audio Player
+- Settings
+- Developer Portal
+- AI Provider Manager
+
+These can be basic placeholder apps for now, but the UI should look polished and functional.
+
+6. Internal Apps Must Be Voice/Gesture Friendly
+Design all built-in app panels with:
+- large buttons
+- minimal clutter
+- clear spoken command names
+- simple navigation
+- accessibility-friendly layout
+- no tiny controls as primary UI
+
+7. AI Provider Manager
+Create a settings panel where users can later add their own API keys.
+
+Supported future providers:
+- OpenAI
+- Anthropic
+- Google Gemini
+- Grok
+- DeepSeek
+- Local Ollama
+- Local llama.cpp
+
+Important business rule:
+The company behind ZaraOS should not pay for user API calls. Users bring their own API keys if they want cloud AI. Local AI should be the default where possible.
+
+For Alpha 0.1, create the UI and secure storage abstraction only. Do not hardcode real API keys. Do not expose secrets. Do not send keys anywhere.
+
+8. Local AI First
+Add an abstraction layer called AIEngine or ZaraAIProvider.
+It should support:
+- local provider placeholder
+- cloud provider placeholder
+- provider selection
+- model selection
+- fallback logic
+- future Ollama connection
+
+For now, responses can be mocked if needed.
+
+9. Security Requirements
+Security must be prioritized from the beginning.
+
+Rules:
+- Never hardcode secrets.
+- Never log API keys.
+- Never expose environment variables in the UI.
+- Never create destructive commands without confirmation.
+- Any future system command execution must use allowlists and permission prompts.
+- Microphone and camera access must require user consent.
+- Add visible indicators when mic/camera are active.
+- Local-first processing should be the default.
+- Cloud AI should be optional.
+- Create a privacy status panel that tells the user what is running.
+- Add a future permissions model for files, camera, mic, network, and system actions.
+
+10. Performance Requirements
+Build lightweight and modular.
+Prioritize:
+- fast startup
+- low memory usage
+- responsive UI
+- lazy loading of heavy modules
+- no unnecessary background loops
+- no bloated dependencies unless needed
+- clean component structure
+
+11. Future App Ecosystem
+Create a Developer Portal placeholder.
+It should explain that ZaraOS will later support:
+- third-party apps
+- plugins
+- AI skills
+- automation workflows
+- gesture-enabled apps
+- voice-command APIs
+
+Create a simple plugin manifest concept.
+
+Example future plugin structure:
+- app name
+- description
+- voice commands
+- gesture commands
+- permissions needed
+- entry point
+
+For now, create a mock plugin registry and show a few example plugins.
+
+12. Recommended Tech Stack
+Choose the best stack for a Replit-friendly prototype.
+
+Preferred:
+- React + TypeScript
+- Vite
+- clean component architecture
+- local storage for prototype settings
+- no backend unless needed
+
+Structure it so it can later be ported to:
+- Tauri desktop app
+- Linux package
+- custom ZaraOS ISO
+
+Do not build a normal SaaS website. Build a desktop-style web app prototype that can become a Tauri app later.
+
+13. Branding Direction
+Use the name ZaraOS.
+Assistant name: Zara.
+Style:
+- premium
+- futuristic
+- clean
+- dark mode
+- AI-native
+- not childish
+- not cartoonish
+- not generic Linux
+
+Suggested UI sections:
+- Home
+- Zara Assistant
+- Console
+- Apps
+- Files
+- Web
+- Media
+- Settings
+- Privacy
+- Developers
+
+14. First Deliverable
+Build a working prototype with:
+- main ZaraOS home screen
+- Zara assistant panel
+- command console
+- built-in app launcher
+- mock internal apps
+- settings panel
+- AI provider manager
+- privacy panel
+- developer portal
+- placeholder voice control
+- placeholder camera/gesture control
+- clean responsive UI
+- clear folder structure
+- comments explaining next development steps
+
+15. Development Instructions
+Start by creating the project.
+Then build the UI.
+Then create the command router.
+Then create the mock app system.
+Then create the AI provider manager.
+Then create the privacy/security panel.
+Then create the developer/plugin placeholder.
+Then test the app.
+
+After each major step, explain:
+- what was built
+- what files were created
+- how to run it
+- what still needs to be added
+
+Do not make unsafe system-level changes.
+Do not attempt to build the Linux ISO in Replit.
+Do not claim this is a full operating system yet.
+This is ZaraOS Alpha 0.1, the app layer that will later be packaged into a bootable Linux-based USB OS.
+
+Now begin building ZaraOS Alpha 0.1.
