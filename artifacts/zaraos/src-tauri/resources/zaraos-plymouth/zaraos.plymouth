@@ -1,0 +1,15 @@
+# ============================================================
+# ZaraOS — Plymouth Boot Splash Theme Descriptor
+#
+# Install to: /usr/share/plymouth/themes/zaraos/zaraos.plymouth
+# Enable:     sudo plymouth-set-default-theme zaraos --rebuild-initrd
+# ============================================================
+
+[Plymouth Theme]
+Name=ZaraOS
+Description=ZaraOS boot splash — dark theme with cyan Z logo
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/zaraos
+ScriptFile=/usr/share/plymouth/themes/zaraos/zaraos.script

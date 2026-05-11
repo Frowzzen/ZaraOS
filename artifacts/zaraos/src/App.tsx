@@ -12,7 +12,8 @@
 //   vendor-ui     — radix-ui, lucide-react, framer-motion
 // ============================================================
 
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
+import { FirstBootSetup } from "@/components/first-boot-setup";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -83,6 +84,8 @@ function Router() {
 }
 
 export default function MainApp() {
+  const [firstBootDone, setFirstBootDone] = useState(false);
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -96,6 +99,10 @@ export default function MainApp() {
                   </ErrorBoundary>
                 </WouterRouter>
                 <Toaster />
+                {/* First-boot wizard: only renders on native app, first launch */}
+                {!firstBootDone && (
+                  <FirstBootSetup onComplete={() => setFirstBootDone(true)} />
+                )}
               </TooltipProvider>
             </PrivacyProvider>
           </InputModeProvider>

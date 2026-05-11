@@ -19,12 +19,32 @@ import {
   Terminal,
   ChevronRight,
   ShieldCheck,
+  Wifi,
+  WifiOff,
+  Sun,
+  Power,
+  RotateCcw,
+  Moon,
+  Lock,
+  RefreshCw,
+  Loader2,
+  Signal,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useInputMode, INPUT_MODE_META } from "@/core/input-mode";
 import { gestureEngine } from "@/lib/gesture-engine";
 import { GESTURE_MAPPINGS } from "@/lib/gesture-mapper";
 import type { InputMode, GestureType } from "@/core/types";
+import {
+  getVolume, setVolume, getBrightness, setBrightness,
+  systemPower, listWifiNetworks, connectWifi, disconnectWifi,
+  signalLabel, signalBars,
+} from "@/core/tauri/tauri-system-controls";
+import type { WifiNetwork } from "@/core/tauri/tauri-system-controls";
+import { isTauriRuntime } from "@/core/tauri/tauri-bridge";
+import { getSystemStats } from "@/core/tauri/tauri-system";
+import type { SystemStats } from "@/core/tauri/tauri-system";
+import { Input } from "@/components/ui/input";
 
 const TABS = [
   { id: "general",    label: "General",    icon: SettingsIcon },
@@ -33,6 +53,7 @@ const TABS = [
   { id: "input",      label: "Input Mode", icon: Layers       },
   { id: "gestures",   label: "Gestures",   icon: Hand         },
   { id: "system",     label: "System",     icon: Cpu          },
+  { id: "network",    label: "Network",    icon: Wifi         },
 ];
 
 const ALL_MODES: InputMode[] = ["hybrid", "voice", "gesture", "text"];
@@ -50,6 +71,47 @@ export default function Settings() {
   const [gestureIsTracking, setGestureIsTracking] = useState(gestureEngine.isActive());
   const [gestureError, setGestureError] = useState<string | null>(null);
   const { mode, setMode, config, voiceActive, gestureActive, keyboardOnly, toggleVoice, toggleGesture } = useInputMode();
+  const isTauri = isTauriRuntime();
+
+  // ── System controls state ─────────────────────────────────
+  const [volume, setVolumeState] = useState(70);
+  const [brightness, setBrightnessState] = useState(80);
+  const [sysStats, setSysStats] = useState<SystemStats | null>(null);
+
+  // ── Network state ─────────────────────────────────────────
+  const [wifiNetworks, setWifiNetworks] = useState<WifiNetwork[]>([]);
+  const [wifiLoading, setWifiLoading] = useState(false);
+  const [connectingTo, setConnectingTo] = useState<string | null>(null);
+  const [connectPassword, setConnectPassword] = useState("");
+  const [selectedSsid, setSelectedSsid] = useState<string | null>(null);
+  const [connectError, setConnectError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isTauri) return;
+    void getVolume().then(setVolumeState);
+    void getBrightness().then(setBrightnessState);
+    void getSystemStats().then(setSysStats);
+  }, [isTauri]);
+
+  const refreshWifi = useCallback(async () => {
+    if (!isTauri) {
+      const { listWifiNetworks: lwn } = await import("@/core/tauri/tauri-system-controls");
+      const nets = await lwn();
+      setWifiNetworks(nets);
+      return;
+    }
+    setWifiLoading(true);
+    try {
+      const nets = await listWifiNetworks();
+      setWifiNetworks(nets);
+    } finally {
+      setWifiLoading(false);
+    }
+  }, [isTauri]);
+
+  useEffect(() => {
+    if (activeTab === "network") void refreshWifi();
+  }, [activeTab, refreshWifi]);
 
   // Keep gesture tracking state in sync with engine
   useEffect(() => {
@@ -513,9 +575,11 @@ export default function Settings() {
             {activeTab === "system" && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col gap-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-1">System Status</h2>
-                  <p className="text-muted-foreground text-sm">Hardware resources and kernel parameters.</p>
+                  <h2 className="text-2xl font-bold text-white mb-1">System</h2>
+                  <p className="text-muted-foreground text-sm">Hardware resources, display, audio, and power controls.</p>
                 </div>
+
+                {/* Hardware stats */}
                 <Card className="bg-card/40 border-white/5 backdrop-blur">
                   <CardContent className="p-0">
                     <div className="grid grid-cols-2 divide-x divide-y divide-white/5">
@@ -524,33 +588,266 @@ export default function Settings() {
                           <Cpu className="w-4 h-4" />
                           <span className="text-sm font-medium">Processor</span>
                         </div>
-                        <div className="text-lg font-bold text-white">Neural Core X1</div>
-                        <div className="text-xs font-mono text-green-400 mt-1.5">Optimal (45°C)</div>
+                        <div className="text-base font-bold text-white truncate">
+                          {sysStats ? sysStats.cpu_brand : "—"}
+                        </div>
+                        <div className="text-xs font-mono text-primary mt-1.5">
+                          {sysStats ? `${sysStats.cpu_usage_percent.toFixed(1)}% · ${sysStats.cpu_cores} cores` : "Loading..."}
+                        </div>
                       </div>
                       <div className="p-6">
                         <div className="flex items-center gap-2.5 mb-2 text-muted-foreground">
                           <HardDrive className="w-4 h-4" />
                           <span className="text-sm font-medium">Memory</span>
                         </div>
-                        <div className="text-lg font-bold text-white">32 GB LPDDR6</div>
-                        <div className="text-xs font-mono text-primary mt-1.5">18.4 GB Available</div>
+                        <div className="text-base font-bold text-white">
+                          {sysStats ? `${sysStats.ram_total_gb} GB RAM` : "—"}
+                        </div>
+                        <div className="text-xs font-mono text-primary mt-1.5">
+                          {sysStats ? `${sysStats.ram_used_gb} GB used (${sysStats.ram_used_percent.toFixed(0)}%)` : "Loading..."}
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-5 border-t border-white/5 flex gap-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/30"
-                        data-testid="button-restart-system"
-                      >
-                        Restart System
-                      </Button>
-                      <Button variant="outline" size="sm" className="border-white/10 hover:bg-white/5">
-                        Export Diagnostics
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Volume */}
+                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                  <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Volume2 className="w-4 h-4 text-primary" />Volume</CardTitle></CardHeader>
+                  <CardContent className="flex items-center gap-4 pb-6">
+                    <span className="text-xs font-mono text-muted-foreground w-6">0</span>
+                    <Slider
+                      value={[volume]}
+                      min={0} max={100} step={1}
+                      className="flex-1"
+                      onValueChange={([v]) => {
+                        setVolumeState(v);
+                        void setVolume(v);
+                      }}
+                    />
+                    <span className="text-xs font-mono text-white w-10 text-right">{volume}%</span>
+                  </CardContent>
+                </Card>
+
+                {/* Brightness */}
+                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                  <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Sun className="w-4 h-4 text-amber-400" />Brightness</CardTitle></CardHeader>
+                  <CardContent className="flex items-center gap-4 pb-6">
+                    <span className="text-xs font-mono text-muted-foreground w-6">5</span>
+                    <Slider
+                      value={[brightness]}
+                      min={5} max={100} step={1}
+                      className="flex-1"
+                      onValueChange={([v]) => {
+                        setBrightnessState(v);
+                        void setBrightness(v);
+                      }}
+                    />
+                    <span className="text-xs font-mono text-white w-10 text-right">{brightness}%</span>
+                  </CardContent>
+                </Card>
+
+                {/* Power actions */}
+                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                  <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Power className="w-4 h-4 text-red-400" />Power</CardTitle></CardHeader>
+                  <CardContent className="flex flex-wrap gap-3 pb-6">
+                    {[
+                      { label: "Lock Screen", icon: Lock,      action: "lock"     as const, cls: "border-primary/30 text-primary hover:bg-primary/10"         },
+                      { label: "Suspend",     icon: Moon,      action: "suspend"  as const, cls: "border-blue-500/30 text-blue-400 hover:bg-blue-500/10"       },
+                      { label: "Restart",     icon: RotateCcw, action: "reboot"   as const, cls: "border-amber-500/30 text-amber-400 hover:bg-amber-500/10"    },
+                      { label: "Shut Down",   icon: Power,     action: "shutdown" as const, cls: "border-red-500/30 text-red-400 hover:bg-red-500/10"          },
+                    ].map(({ label, icon: Icon, action, cls }) => (
+                      <Button
+                        key={action}
+                        variant="outline"
+                        size="sm"
+                        data-testid={`button-power-${action}`}
+                        className={`gap-2 bg-transparent border ${cls} ${!isTauri ? "opacity-40 cursor-not-allowed" : ""}`}
+                        onClick={() => { if (isTauri) void systemPower(action); }}
+                        title={isTauri ? undefined : "Native app only"}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        {label}
+                      </Button>
+                    ))}
+                    {!isTauri && (
+                      <p className="w-full text-[10px] font-mono text-muted-foreground/40 mt-1">
+                        Power controls require the native desktop app
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Network */}
+            {activeTab === "network" && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col gap-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-1">Network</h2>
+                    <p className="text-muted-foreground text-sm">WiFi networks managed via NetworkManager (nmcli).</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void refreshWifi()}
+                    disabled={wifiLoading}
+                    className="gap-2 border-white/10 hover:bg-white/5 mt-1"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${wifiLoading ? "animate-spin" : ""}`} />
+                    Scan
+                  </Button>
+                </div>
+
+                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                  <CardContent className="p-0">
+                    {wifiNetworks.length === 0 && !wifiLoading ? (
+                      <div className="flex flex-col items-center gap-3 py-12 text-center">
+                        <WifiOff className="w-8 h-8 text-muted-foreground/30" />
+                        <p className="text-sm text-muted-foreground font-mono">
+                          {isTauri ? "No networks found — click Scan" : "Mock networks shown — browser mode"}
+                        </p>
+                      </div>
+                    ) : wifiLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-white/5">
+                        {wifiNetworks.map((net) => (
+                          <div key={net.bssid || net.ssid} className="p-4">
+                            <div
+                              className="flex items-center gap-4 cursor-pointer"
+                              onClick={() => {
+                                setSelectedSsid(selectedSsid === net.ssid ? null : net.ssid);
+                                setConnectPassword("");
+                                setConnectError(null);
+                              }}
+                            >
+                              {/* Signal bars */}
+                              <div className="flex items-end gap-0.5 h-5 flex-shrink-0">
+                                {[1,2,3,4].map((bar) => (
+                                  <div
+                                    key={bar}
+                                    className={`w-1.5 rounded-sm transition-colors ${
+                                      bar <= signalBars(net.signal)
+                                        ? net.connected ? "bg-green-400" : "bg-primary"
+                                        : "bg-white/10"
+                                    }`}
+                                    style={{ height: `${bar * 25}%` }}
+                                  />
+                                ))}
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className={`font-medium text-sm ${net.connected ? "text-green-400" : "text-white"}`}>
+                                    {net.ssid}
+                                  </span>
+                                  {net.connected && (
+                                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-green-500/30 bg-green-500/10 text-green-400">
+                                      Connected
+                                    </span>
+                                  )}
+                                  {net.security && net.security !== "--" && (
+                                    <span className="text-[10px] font-mono text-muted-foreground/50">{net.security}</span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-muted-foreground/50 font-mono mt-0.5">
+                                  {signalLabel(net.signal)} · {net.signal}%
+                                </div>
+                              </div>
+
+                              {net.connected ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-400/60 hover:text-red-400 hover:bg-red-500/10 text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void disconnectWifi();
+                                  }}
+                                >
+                                  Disconnect
+                                </Button>
+                              ) : (
+                                <ChevronRight className={`w-4 h-4 text-muted-foreground/30 transition-transform ${selectedSsid === net.ssid ? "rotate-90" : ""}`} />
+                              )}
+                            </div>
+
+                            {/* Inline connect form */}
+                            {selectedSsid === net.ssid && !net.connected && (
+                              <div className="mt-3 pl-10 flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                                {net.security && net.security !== "--" && (
+                                  <Input
+                                    type="password"
+                                    placeholder="Password"
+                                    value={connectPassword}
+                                    onChange={(e) => setConnectPassword(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        void (async () => {
+                                          setConnectingTo(net.ssid);
+                                          setConnectError(null);
+                                          try {
+                                            await connectWifi(net.ssid, connectPassword);
+                                            await refreshWifi();
+                                            setSelectedSsid(null);
+                                          } catch (err) {
+                                            setConnectError(err instanceof Error ? err.message : "Connection failed");
+                                          } finally {
+                                            setConnectingTo(null);
+                                          }
+                                        })();
+                                      }
+                                    }}
+                                    className="h-8 text-sm bg-black/40 border-white/10 focus:border-primary/30"
+                                    autoFocus
+                                  />
+                                )}
+                                {connectError && (
+                                  <p className="text-[11px] font-mono text-red-400/80">{connectError}</p>
+                                )}
+                                <Button
+                                  size="sm"
+                                  className="w-full gap-2"
+                                  disabled={!!connectingTo}
+                                  onClick={() => void (async () => {
+                                    setConnectingTo(net.ssid);
+                                    setConnectError(null);
+                                    try {
+                                      await connectWifi(net.ssid, connectPassword);
+                                      await refreshWifi();
+                                      setSelectedSsid(null);
+                                    } catch (err) {
+                                      setConnectError(err instanceof Error ? err.message : "Connection failed");
+                                    } finally {
+                                      setConnectingTo(null);
+                                    }
+                                  })()}
+                                >
+                                  {connectingTo === net.ssid ? (
+                                    <><Loader2 className="w-3.5 h-3.5 animate-spin" />Connecting...</>
+                                  ) : (
+                                    <><Wifi className="w-3.5 h-3.5" />Connect</>
+                                  )}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {!isTauri && (
+                  <div className="flex items-center gap-3 p-3 rounded-xl border border-white/8 bg-white/3 text-xs font-mono text-muted-foreground/50">
+                    <Signal className="w-4 h-4 flex-shrink-0" />
+                    Real WiFi scanning requires the native desktop app. Showing mock networks.
+                  </div>
+                )}
               </div>
             )}
 

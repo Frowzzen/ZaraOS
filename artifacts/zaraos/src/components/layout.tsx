@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
   Home,
@@ -18,7 +18,13 @@ import {
   MicOff,
   Hand,
   Keyboard,
+  Power,
+  RotateCcw,
+  Moon,
+  Lock,
 } from "lucide-react";
+import { systemPower } from "@/core/tauri/tauri-system-controls";
+import { isTauriRuntime } from "@/core/tauri/tauri-bridge";
 import { GlobalCommandBox } from "@/components/global-command-box";
 import { GestureOverlay } from "@/components/gesture-overlay";
 import { InputModeIndicator } from "@/components/input-mode-indicator";
@@ -48,6 +54,8 @@ const navItems = [
 
 export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
+  const [showPowerMenu, setShowPowerMenu] = useState(false);
+  const isTauri = isTauriRuntime();
   const {
     toggleCommandBox,
     voiceActive,
@@ -219,6 +227,43 @@ export function Layout({ children }: LayoutProps) {
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse flex-shrink-0" />
               <span className="text-sm font-medium hidden md:block">Optimal</span>
             </div>
+          </div>
+
+          {/* Power Menu */}
+          <div className="relative w-full">
+            <button
+              onClick={() => setShowPowerMenu((v) => !v)}
+              title="Power options"
+              data-testid="button-power-menu"
+              className="w-full flex items-center justify-center md:justify-start gap-2 px-2.5 py-2 rounded-lg border border-white/8 text-muted-foreground/50 hover:text-red-400 hover:border-red-500/20 hover:bg-red-500/5 transition-all duration-200"
+            >
+              <Power style={{ width: "0.875rem", height: "0.875rem" }} className="flex-shrink-0" />
+              <span className="hidden md:block text-xs font-medium">Power</span>
+            </button>
+
+            {showPowerMenu && (
+              <div className="absolute bottom-full mb-1 left-0 right-0 bg-card border border-white/10 rounded-xl overflow-hidden shadow-2xl shadow-black/50 animate-in fade-in slide-in-from-bottom-2 duration-150 z-50">
+                {[
+                  { label: "Lock Screen", icon: Lock,      action: "lock"     as const, color: "text-primary"    },
+                  { label: "Suspend",     icon: Moon,      action: "suspend"  as const, color: "text-blue-400"   },
+                  { label: "Restart",     icon: RotateCcw, action: "reboot"   as const, color: "text-amber-400"  },
+                  { label: "Shut Down",   icon: Power,     action: "shutdown" as const, color: "text-red-400"    },
+                ].map(({ label, icon: Icon, action, color }) => (
+                  <button
+                    key={action}
+                    onClick={() => {
+                      setShowPowerMenu(false);
+                      if (isTauri) void systemPower(action);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/5 transition-colors ${isTauri ? color : "text-muted-foreground/40"}`}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span>{label}</span>
+                    {!isTauri && <span className="ml-auto text-[10px] font-mono text-muted-foreground/30">native only</span>}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </aside>

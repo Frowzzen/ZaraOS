@@ -1,0 +1,41 @@
+# ============================================================
+# ZaraOS — Ollama systemd User Service
+#
+# Install to: ~/.config/systemd/user/ollama.service
+#
+# Commands:
+#   systemctl --user enable --now ollama   # enable + start
+#   systemctl --user status ollama         # check status
+#   journalctl --user -u ollama -f         # live logs
+#
+# Ollama automatically picks up GPU via CUDA/ROCm if available.
+# On the Dell i7-8850H + NVIDIA Quadro P2000:
+#   - Install: sudo apt-get install nvidia-driver-535
+#   - Ollama will use CUDA automatically
+# ============================================================
+
+[Unit]
+Description=Ollama Local LLM Server
+Documentation=https://ollama.com
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ollama serve
+Restart=always
+RestartSec=3
+
+# Resource limits — adjust for your hardware
+# Dell i7-8850H + 64 GB RAM: these are conservative
+Environment=OLLAMA_MAX_LOADED_MODELS=2
+Environment=OLLAMA_NUM_PARALLEL=2
+Environment=OLLAMA_HOST=127.0.0.1:11434
+
+# Keep models in memory for 10 minutes between requests
+Environment=OLLAMA_KEEP_ALIVE=10m
+
+# Standard XDG dirs — Ollama stores models in ~/.ollama/models
+Environment=HOME=%h
+
+[Install]
+WantedBy=default.target

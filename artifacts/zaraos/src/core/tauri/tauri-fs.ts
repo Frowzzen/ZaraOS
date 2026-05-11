@@ -65,3 +65,11 @@ export async function fsExists(path: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Execute a shell command and return its combined stdout+stderr output.
+ * Only available in the native Tauri app — throws in the browser.
+ */
+export async function shellExec(command: string): Promise<string> {
+  return tauriInvoke<string>("shell_exec", { command });
+}

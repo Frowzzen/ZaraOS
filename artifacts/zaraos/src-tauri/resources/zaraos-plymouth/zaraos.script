@@ -1,0 +1,69 @@
+// ============================================================
+// ZaraOS — Plymouth Boot Script
+//
+// Renders: pure black background + pulsing cyan "Z" logo +
+// progress bar at the bottom.
+//
+// Plymouth scripting language (not JavaScript — similar syntax).
+// ============================================================
+
+// ── Background ────────────────────────────────────────────────
+background_color.red   = 0.04;
+background_color.green = 0.04;
+background_color.blue  = 0.08;
+
+Window.SetBackgroundTopColor(background_color);
+Window.SetBackgroundBottomColor(background_color);
+
+// ── Logo sprite ───────────────────────────────────────────────
+logo.image = Image("zaraos-logo.png");
+logo.sprite = Sprite(logo.image);
+logo.sprite.SetX(Window.GetWidth() / 2 - logo.image.GetWidth() / 2);
+logo.sprite.SetY(Window.GetHeight() / 2 - logo.image.GetHeight() / 2 - 40);
+
+// ── Progress bar ─────────────────────────────────────────────
+progress_box.image   = Image.CreateFilledRectangle(320, 3, 0.15, 0.15, 0.22, 1.0);
+progress_bar.image   = Image.CreateFilledRectangle(1,   3, 0.0,  0.94, 1.0,  1.0);
+
+progress_box.sprite = Sprite(progress_box.image);
+progress_box.sprite.SetX(Window.GetWidth() / 2 - 160);
+progress_box.sprite.SetY(Window.GetHeight() * 0.75);
+
+progress_bar.sprite = Sprite();
+progress_bar.sprite.SetX(Window.GetWidth() / 2 - 160);
+progress_bar.sprite.SetY(Window.GetHeight() * 0.75);
+
+// ── Animation loop ────────────────────────────────────────────
+counter = 0;
+
+fun refresh_callback() {
+  counter++;
+  // Pulse the logo opacity: 0.4 ↔ 1.0 over ~2 s
+  opacity = Math.Sin(counter / 30) * 0.3 + 0.7;
+  logo.sprite.SetOpacity(opacity);
+}
+
+Plymouth.SetRefreshFunction(refresh_callback);
+
+// ── Boot progress ─────────────────────────────────────────────
+fun boot_progress_callback(duration, progress) {
+  bar_width = Math.Int(320 * progress);
+  if (bar_width > 0) {
+    progress_bar.image = Image.CreateFilledRectangle(bar_width, 3, 0.0, 0.94, 1.0, 1.0);
+    progress_bar.sprite.SetImage(progress_bar.image);
+  }
+}
+
+Plymouth.SetBootProgressFunction(boot_progress_callback);
+
+// ── Message display (fsck etc.) ───────────────────────────────
+message_sprite = Sprite();
+message_sprite.SetX(20);
+message_sprite.SetY(Window.GetHeight() - 30);
+
+fun message_callback(text) {
+  my_image = Image.Text(text, 0.5, 0.5, 0.5, 1, "monospace 9");
+  message_sprite.SetImage(my_image);
+}
+
+Plymouth.SetMessageFunction(message_callback);

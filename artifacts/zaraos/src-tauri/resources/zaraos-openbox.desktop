@@ -1,0 +1,14 @@
+# ============================================================
+# ZaraOS — Openbox Session Desktop Entry
+#
+# Install to: /usr/share/xsessions/zaraos-openbox.desktop
+#
+# This registers ZaraOS as a valid X session so LightDM
+# can start it as the 'user-session=zaraos-openbox' session.
+# ============================================================
+
+[Desktop Entry]
+Name=ZaraOS
+Comment=ZaraOS AI-native desktop (Openbox)
+Exec=/usr/local/bin/zaraos-session
+Type=Application

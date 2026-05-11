@@ -19,19 +19,14 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-
-// Static — never changes at runtime, no need to allocate inside the component.
-const SYSTEM_STATS = [
-  { label: "CPU Usage",    value: "14%",         icon: Cpu,       color: "text-primary"     },
-  { label: "RAM Usage",    value: "3.2 / 16 GB", icon: HardDrive, color: "text-secondary"   },
-  { label: "Neural Cores", value: "Active",       icon: Zap,       color: "text-purple-400"  },
-  { label: "Network IO",   value: "1.2 MB/s",     icon: Network,   color: "text-green-400"   },
-];
+import { getSystemStats, formatUptime } from "@/core/tauri/tauri-system";
+import type { SystemStats } from "@/core/tauri/tauri-system";
 
 export default function Home() {
   const privacy = usePrivacy();
   const { aiRuntimeStatus, getAIMemoryStats } = useRuntime();
   const [time, setTime] = useState(new Date());
+  const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
   const [memStats, setMemStats] = useState(() => {
     try { return getAIMemoryStats(); } catch { return null; }
   });
@@ -43,6 +38,16 @@ export default function Home() {
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Poll real hardware stats every 2 s (Tauri) or once (browser mock)
+  useEffect(() => {
+    const refresh = () => {
+      getSystemStats().then(setSystemStats).catch(() => {});
+    };
+    refresh();
+    const id = setInterval(refresh, 2000);
+    return () => clearInterval(id);
   }, []);
 
   // Refresh memory stats every 10 seconds. Depends on a stable ref, never resets.
@@ -93,7 +98,32 @@ export default function Home() {
 
         {/* ── System Stats ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {SYSTEM_STATS.map((stat) => (
+          {[
+            {
+              label: "CPU Usage",
+              value: systemStats ? `${systemStats.cpu_usage_percent.toFixed(1)}%` : "—",
+              sub: systemStats ? `${systemStats.cpu_cores} cores` : "",
+              icon: Cpu, color: "text-primary",
+            },
+            {
+              label: "RAM Usage",
+              value: systemStats ? `${systemStats.ram_used_gb} / ${systemStats.ram_total_gb} GB` : "—",
+              sub: systemStats ? `${systemStats.ram_used_percent.toFixed(0)}% used` : "",
+              icon: HardDrive, color: "text-secondary",
+            },
+            {
+              label: "Disk Free",
+              value: systemStats ? `${systemStats.disk_free_gb} GB` : "—",
+              sub: systemStats ? `of ${systemStats.disk_total_gb} GB` : "",
+              icon: Zap, color: "text-purple-400",
+            },
+            {
+              label: "Network RX",
+              value: systemStats ? `${(systemStats.network_rx_kbps / 1024).toFixed(1)} MB/s` : "—",
+              sub: systemStats ? `up ${formatUptime(systemStats.uptime_seconds)}` : "",
+              icon: Network, color: "text-green-400",
+            },
+          ].map((stat) => (
             <Card key={stat.label} className="bg-card/50 border-white/5 backdrop-blur-sm hover:border-primary/30 transition-colors duration-300">
               <CardContent className="p-6 flex items-center gap-4">
                 <div className={`p-3 rounded-lg bg-background ${stat.color} shadow-[0_0_15px_currentColor] opacity-80`}>
@@ -102,6 +132,7 @@ export default function Home() {
                 <div>
                   <div className="text-sm text-muted-foreground font-mono">{stat.label}</div>
                   <div className="text-2xl font-bold text-white">{stat.value}</div>
+                  {stat.sub && <div className="text-xs text-muted-foreground/50 font-mono mt-0.5">{stat.sub}</div>}
                 </div>
               </CardContent>
             </Card>
