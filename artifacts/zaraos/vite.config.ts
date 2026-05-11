@@ -59,6 +59,40 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        // Split vendor code into stable long-cache chunks.
+        // App page chunks are created automatically by React.lazy() imports.
+        manualChunks(id) {
+          // Core React runtime — almost never changes, cache indefinitely
+          if (
+            id.includes("node_modules/react/") ||
+            id.includes("node_modules/react-dom/") ||
+            id.includes("node_modules/scheduler/")
+          ) {
+            return "vendor-react";
+          }
+          // Routing + data fetching — stable deps
+          if (
+            id.includes("node_modules/wouter/") ||
+            id.includes("node_modules/@tanstack/")
+          ) {
+            return "vendor-react";
+          }
+          // UI component library — Radix primitives + animations + icons
+          if (
+            id.includes("node_modules/@radix-ui/") ||
+            id.includes("node_modules/lucide-react/") ||
+            id.includes("node_modules/framer-motion/") ||
+            id.includes("node_modules/class-variance-authority/") ||
+            id.includes("node_modules/clsx/") ||
+            id.includes("node_modules/tailwind-merge/")
+          ) {
+            return "vendor-ui";
+          }
+        },
+      },
+    },
   },
   server: {
     port,
