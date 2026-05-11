@@ -6,3 +6,9 @@ id = "t7HaIt2G3Vylh4DS04wBC"
 uri = "file://zaraos-build-report.pdf"
 type = "pdf"
 title = "ZaraOS Build Report — Input Mode System & Global Controls"
+
+[[outputs]]
+id = "vol2ZVa22J1b-vO4GphWQ"
+uri = "file://zaraos-alpha02-build-report.pdf"
+type = "pdf"
+title = "ZaraOS Alpha 0.2 — Skills Hub Build Report"
