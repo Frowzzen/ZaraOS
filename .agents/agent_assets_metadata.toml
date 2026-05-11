@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "t7HaIt2G3Vylh4DS04wBC"
+uri = "file://zaraos-build-report.pdf"
+type = "pdf"
+title = "ZaraOS Build Report — Input Mode System & Global Controls"
