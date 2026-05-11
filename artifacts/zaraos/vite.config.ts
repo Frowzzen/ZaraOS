@@ -2,39 +2,41 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+
+// ── Environment resolution ──────────────────────────────────────────────────
+//
+// All values have safe defaults so the project builds and runs on any machine
+// without needing Replit-provided environment variables.
+//
+// Replit's workflow system sets PORT and BASE_PATH in artifact.toml, which
+// overrides these defaults when running inside Replit. But they are never
+// *required* — the app is fully portable.
+//
+//   PORT      default 5173  (Vite's own default dev port)
+//   BASE_PATH default "/"   (root-mounted, correct for any standalone deploy)
 
 const rawPort = process.env.PORT;
+const port = rawPort && !Number.isNaN(Number(rawPort)) && Number(rawPort) > 0
+  ? Number(rawPort)
+  : 5173;
 
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
+const basePath = process.env.BASE_PATH || "/";
 
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
-
-const basePath = process.env.BASE_PATH;
-
-if (!basePath) {
-  throw new Error(
-    "BASE_PATH environment variable is required but was not provided.",
-  );
-}
+// Replit-only dev plugins are loaded only when running inside Replit.
+// Outside Replit (GitHub clone, local dev, CI, Tauri build) they are skipped.
+const isReplitEnv = process.env.REPL_ID !== undefined;
+const isDev = process.env.NODE_ENV !== "production";
 
 export default defineConfig({
   base: basePath,
   plugins: [
     react(),
     tailwindcss(),
-    runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
+    ...(isDev && isReplitEnv
       ? [
+          await import("@replit/vite-plugin-runtime-error-modal").then(
+            (m) => m.default(),
+          ),
           await import("@replit/vite-plugin-cartographer").then((m) =>
             m.cartographer({
               root: path.resolve(import.meta.dirname, ".."),
@@ -60,7 +62,7 @@ export default defineConfig({
   },
   server: {
     port,
-    strictPort: true,
+    strictPort: false,
     host: "0.0.0.0",
     allowedHosts: true,
     fs: {

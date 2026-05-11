@@ -3,7 +3,8 @@
 This document outlines the future path from the current React web app to a fully bootable
 ZaraOS USB Linux OS. It is honest about what exists now versus what must be built later.
 
-**Current state:** ZaraOS is a React + TypeScript frontend — the software layer for the OS.  
+**Current state:** ZaraOS is a React + TypeScript frontend — the software layer for the OS.
+The project builds and runs normally on any Linux, macOS, or Windows machine.
 **Future state:** A bootable Ubuntu/KDE-based Linux ISO with ZaraOS as the default desktop shell.
 
 ---
@@ -12,9 +13,12 @@ ZaraOS USB Linux OS. It is honest about what exists now versus what must be buil
 
 | Layer | Status |
 |---|---|
-| ZaraOS React app (frontend shell) | BUILT — Alpha 0.2 |
-| ZaraOS skill and plugin architecture | BUILT — Alpha 0.2 |
-| AI engine integration (Ollama / Whisper.cpp) | NOT YET — stubs in place |
+| ZaraOS React app (frontend shell) | BUILT — Alpha 0.3 |
+| ZaraOS runtime, permissions, skills architecture | BUILT — Alpha 0.3 |
+| ZaraOS AI Runtime (6 providers, memory, tools, context) | BUILT — Alpha 0.3 |
+| Local AI integration (Ollama / llama.cpp) | Provider adapters written — enable with one flag |
+| Voice input (Whisper.cpp / Web Speech API) | Architecture stub — integration point ready |
+| Gesture recognition (MediaPipe Hands) | Architecture stub — integration point ready |
 | Tauri native desktop wrapper | NOT YET — planned Alpha 0.4 |
 | Linux system commands (real exec) | NOT YET — mocked |
 | File system access (real) | NOT YET — mocked |
@@ -25,22 +29,31 @@ ZaraOS USB Linux OS. It is honest about what exists now versus what must be buil
 
 ## Full Path: Web App → Bootable USB OS
 
-### Step 1: Export ZaraOS to GitHub
+### Step 1: Clone and Build on Any Machine
+
+ZaraOS builds without any special environment setup:
 
 ```bash
 git clone https://github.com/<your-username>/zaraos.git
 cd zaraos
 pnpm install
+
+# Run dev server
 pnpm --filter @workspace/zaraos run dev
+# Opens at http://localhost:5173
+
+# Or build for production
+pnpm --filter @workspace/zaraos run build
+# Output: artifacts/zaraos/dist/public/
 ```
 
-See `GITHUB_EXPORT_GUIDE.md` for full instructions.
+No environment variables required. See `GITHUB_EXPORT_GUIDE.md` for full instructions.
 
 ---
 
 ### Step 2: Run on a Linux Development Machine
 
-**Recommended:** Ubuntu 22.04 LTS or Ubuntu 24.04 LTS with KDE Plasma desktop.
+**Recommended:** Ubuntu 22.04 LTS or Ubuntu 24.04 LTS.
 
 ```bash
 # Install Node.js 20
@@ -65,12 +78,12 @@ At this stage ZaraOS runs as a browser-based app — no system integration yet.
 
 ```bash
 pnpm --filter @workspace/zaraos run build
-# Output: artifacts/zaraos/dist/
+# Output: artifacts/zaraos/dist/public/
 ```
 
-The `dist/` folder is a standard Vite static build:
-- `index.html` — entry point
-- `assets/` — JS, CSS, fonts
+The `dist/public/` folder is a standard Vite static build:
+- `index.html` — SPA entry point
+- `assets/` — bundled JS, CSS, fonts
 - Can be served by any static file server or embedded in a Tauri app
 
 ---
@@ -108,7 +121,7 @@ Configure `src-tauri/tauri.conf.json`:
     "beforeBuildCommand": "pnpm build",
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:5173",
-    "frontendDist": "../dist"
+    "frontendDist": "../dist/public"
   },
   "app": {
     "windows": [
@@ -152,7 +165,8 @@ curl -fsSL https://ollama.ai/install.sh | sh
 ollama pull llama3
 ```
 
-Update `ai-engine.ts` to call `http://localhost:11434/api/generate`.
+The Ollama provider adapter is already written in `core/ai/providers/ollama-provider.ts`.
+Enable it by setting `isEnabled: true` in that file — no other changes needed.
 
 #### Voice (Whisper.cpp)
 ```bash
@@ -161,10 +175,12 @@ cd whisper.cpp && make
 ./main -m models/ggml-base.bin -f audio.wav
 ```
 
-Wire into `voice-engine.ts` via Tauri command for microphone capture + transcription.
+Wire into `lib/voice-engine.ts` via Tauri command for microphone capture + transcription.
+The integration point is clearly marked with a TODO comment.
 
 #### Gesture (MediaPipe Hands)
-Wire into `gesture-engine.ts` — MediaPipe runs entirely in the browser (no cloud).
+Wire into `lib/gesture-engine.ts` — MediaPipe runs entirely in the browser (no cloud).
+The integration point is clearly marked with a TODO comment.
 
 ---
 
@@ -187,10 +203,7 @@ Outputs:
 
 **Tool: [Cubic](https://github.com/PJ-Singh-001/Cubic)**
 
-Cubic is a custom Ubuntu ISO creator with a GUI.
-
 ```bash
-# Install Cubic
 sudo apt-add-repository ppa:cubic-wizard/release
 sudo apt install cubic
 ```
@@ -217,9 +230,6 @@ EOF
 # Install Ollama for local AI
 curl -fsSL https://ollama.ai/install.sh | sh
 ollama pull llama3
-
-# Optional: pre-pull Whisper model
-# whisper.cpp install steps here
 ```
 
 4. Customize branding:
@@ -230,6 +240,9 @@ ollama pull llama3
    - App name in GRUB: edit `/etc/default/grub`
 
 5. Exit Cubic chroot → Generate ISO
+
+**Note: The ISO build must be done on a Linux development machine, not inside Replit.
+The Replit environment is used exclusively for developing the React web app layer.**
 
 ---
 
@@ -252,14 +265,8 @@ sudo dd if=zaraos-alpha.iso of=/dev/sdX bs=4M status=progress oflag=sync
 - Minimum: 4 GB RAM, 8 GB USB drive
 - Recommended: 8 GB RAM, 16 GB USB drive for Ollama models
 
-#### Test targets
-- UEFI boot (modern machines)
-- Legacy BIOS boot (older machines)
-- Secure Boot (may need signing — advanced)
-
 #### Virtual machine testing first
 ```bash
-# Test in QEMU before real hardware
 qemu-system-x86_64 \
   -cdrom zaraos-alpha.iso \
   -m 4G \
@@ -272,24 +279,25 @@ qemu-system-x86_64 \
 ## Architecture: What ZaraOS Is vs. What Linux Provides
 
 ```
-┌─────────────────────────────────────┐
-│  ZaraOS UI Layer                    │  ← We build this (React + Vite)
-│  (Panels, Assistant, Console, etc.) │
-├─────────────────────────────────────┤
-│  ZaraOS Runtime Layer               │  ← We build this (TypeScript)
-│  (Commands, Skills, Permissions)    │
-├─────────────────────────────────────┤
-│  Tauri Native Bridge                │  ← We configure this (Rust)
-│  (File I/O, IPC, System calls)      │
-├─────────────────────────────────────┤
-│  KDE Plasma / Wayland               │  ← Linux provides this
-│  (Window manager, display server)   │
-├─────────────────────────────────────┤
-│  Ubuntu Linux Kernel                │  ← Linux provides this
-│  (Hardware drivers, networking)     │
-├─────────────────────────────────────┤
-│  x86_64 Hardware                    │  ← User's machine
-└─────────────────────────────────────┘
++-------------------------------------+
+|  ZaraOS UI Layer                    |  <- We build this (React + Vite)
+|  (Panels, Assistant, Console, etc.) |
++-------------------------------------+
+|  ZaraOS Runtime + AI Layer          |  <- We build this (TypeScript)
+|  (Commands, Skills, Permissions,    |
+|   AI Runtime, Memory, Tools)        |
++-------------------------------------+
+|  Tauri Native Bridge                |  <- We configure this (Rust)
+|  (File I/O, IPC, System calls)      |
++-------------------------------------+
+|  KDE Plasma / Wayland               |  <- Linux provides this
+|  (Window manager, display server)   |
++-------------------------------------+
+|  Ubuntu Linux Kernel                |  <- Linux provides this
+|  (Hardware drivers, networking)     |
++-------------------------------------+
+|  x86_64 Hardware                    |  <- User's machine
++-------------------------------------+
 ```
 
 ZaraOS does not replace the kernel. Linux handles hardware support underneath.
@@ -299,13 +307,13 @@ ZaraOS is the application layer — the AI-native user experience on top of Linu
 
 ## Timeline (Estimated)
 
-| Milestone | Description | When |
+| Milestone | Description | Status |
 |---|---|---|
 | Alpha 0.1 | React shell, all panels, runtime architecture | DONE |
-| Alpha 0.2 | Input modes, skills system, gesture mapper | DONE |
-| Alpha 0.3 | Ollama AI integration, real voice input | Next |
-| Alpha 0.4 | Tauri wrapper, native file access | After 0.3 |
-| Beta 0.5 | Real skill execution (search, calendar, files) | After 0.4 |
+| Alpha 0.2 | Input modes, skills system, gesture mapper, command flow | DONE |
+| Alpha 0.3 | Full AI Runtime layer (28 files), 6 provider adapters, memory, tools, context | DONE |
+| Alpha 0.4 | Enable Ollama, real voice input, real tool execution, Tauri wrapper | Next |
+| Beta 0.5 | Real skill execution (search, calendar, files), PostgreSQL backend | After 0.4 |
 | Beta 0.8 | Custom ISO, boot testing | After 0.5 |
 | v1.0 | Stable USB bootable OS | TBD |
 

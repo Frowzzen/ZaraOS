@@ -1,7 +1,7 @@
 # ZaraOS — Replit Independence Audit
 
-**Date:** Alpha 0.2  
-**Status:** PASSED — No blocking Replit lock-in found  
+**Date:** Alpha 0.3 (updated post-portability fix)
+**Status:** PASSED — No Replit lock-in. Builds and runs on any machine.
 **Auditor:** ZaraOS Dev Session
 
 ---
@@ -14,121 +14,151 @@ or included in a custom Linux ISO — without any Replit-specific dependency bre
 
 ---
 
+## Portability Fix Applied in Alpha 0.3
+
+A build portability issue was identified and fixed before the Alpha 0.3 release:
+
+**Root cause:** `vite.config.ts` threw fatal errors if `PORT` or `BASE_PATH` were not
+set in the environment. Since Replit's workflow system injects these variables, builds
+inside Replit worked fine, but `pnpm --filter @workspace/zaraos run build` failed on
+any machine without them.
+
+**Fix applied:**
+- `PORT` now defaults to `5173` (Vite's standard dev port) if not set.
+- `BASE_PATH` now defaults to `"/"` if not set.
+- Neither variable is required. Replit may still override them via `artifact.toml`
+  `[services.env]` — the app reads them if present, uses defaults if not.
+- Replit-specific Vite plugins (`@replit/vite-plugin-cartographer`,
+  `@replit/vite-plugin-dev-banner`, `@replit/vite-plugin-runtime-error-modal`)
+  are now conditionally loaded only when `REPL_ID` is present in the environment.
+  Outside Replit they are silently skipped.
+- `strictPort: false` so the dev server finds the next available port if 5173 is taken.
+
+**Result:** All four standard scripts now work without any environment setup:
+
+```bash
+pnpm --filter @workspace/zaraos run dev
+pnpm --filter @workspace/zaraos run build
+pnpm --filter @workspace/zaraos run preview
+pnpm --filter @workspace/zaraos run typecheck
+```
+
+---
+
 ## What Was Checked
 
 ### 1. Replit Database (Neon / Replit DB / key-value store)
-**Status: NOT USED in ZaraOS frontend (Alpha 0.1 / 0.2)**
+**Status: NOT USED in ZaraOS frontend (Alpha 0.x)**
 
 - No `@replit/database` import found anywhere.
 - No `REPLIT_DB_URL` environment variable referenced.
 - The `api-server` artifact uses PostgreSQL via Drizzle ORM with a standard `DATABASE_URL`
   connection string — this works with any Postgres instance (local, Supabase, Neon, Railway, etc.).
-- ZaraOS Alpha 0.1/0.2 uses `localStorage` only — no backend calls at all.
+- ZaraOS Alpha 0.x uses `localStorage` only — no backend calls at all.
 
 ### 2. Replit Auth
 **Status: NOT USED**
 
 - No `@replit/passport` import found.
 - No `REPLIT_ID`, `REPLIT_PUBKEY`, `REPLIT_IDENTITY`, or similar auth env vars referenced.
-- No authentication system at all in Alpha 0.1/0.2 (by design — local OS, no multi-user yet).
+- No authentication system in Alpha 0.x (by design — local OS, no multi-user yet).
 
-### 3. Replit-Specific Environment Variables
-**Status: SAFE — only standard vars used**
+### 3. Environment Variables
+**Status: ALL OPTIONAL — safe defaults provided**
 
-| Variable | Usage | Portable? |
-|---|---|---|
-| `PORT` | Dev server port (set by Replit workflow, but standard) | YES — any runner sets this |
-| `BASE_PATH` | Reverse proxy path prefix | YES — standard pattern |
-| `DATABASE_URL` | Postgres connection string | YES — any Postgres |
-| `SESSION_SECRET` | Express session signing | YES — standard env var |
+| Variable | Usage | Default | Portable? |
+|---|---|---|---|
+| `PORT` | Dev/preview server port | `5173` | YES |
+| `BASE_PATH` | App base path for routing | `"/"` | YES |
+| `DATABASE_URL` | Postgres connection string (API server only) | None needed for frontend | YES |
+| `SESSION_SECRET` | Express session signing (API server only) | None needed for frontend | YES |
+| `REPL_ID` | Detects Replit environment | Absent outside Replit | YES — only loads optional Replit plugins |
 
-No `REPL_ID`, `REPL_OWNER`, `REPL_SLUG`, `REPLIT_CLUSTER`, or other Replit-only vars used.
+No `REPL_OWNER`, `REPL_SLUG`, `REPLIT_CLUSTER`, or other Replit-only vars used in
+any required code path.
 
-### 4. Hardcoded replit.app URLs
+### 4. Hardcoded Replit URLs
 **Status: NOT FOUND**
 
-- No hardcoded `*.replit.app` URLs found in source code.
+- No hardcoded `*.replit.app` URLs in source code.
 - No hardcoded `localhost:PORT` bypassing the proxy.
-- All internal routing uses relative paths (e.g. `/api`, `/assets`).
+- All internal routing uses relative paths.
 
-### 5. Replit Secrets / Secrets Manager
+### 5. Replit Secrets Manager
 **Status: NOT USED**
 
-- `SESSION_SECRET` is referenced as a standard `process.env.SESSION_SECRET` — works anywhere.
-- API keys in AI Provider Manager are stored in `localStorage` only (by design).
-- No Replit secrets API (`@replit/sdk`) imported.
+- `SESSION_SECRET` is referenced as standard `process.env.SESSION_SECRET` — works anywhere.
+- API keys in the AI Provider Manager are stored in `localStorage` only (by design).
+- No `@replit/sdk` or Replit secrets API imported.
 
-### 6. Server Assumptions (Replit-only execution environment)
-**Status: PORTABLE**
+### 6. Replit-Only Vite Plugins
+**Status: OPTIONAL — conditionally loaded**
 
-- `api-server` uses Express 5 — runs on any Node.js 18+ machine.
-- Build uses esbuild — cross-platform.
-- No Replit-specific port forwarding or reverse proxy assumptions in code.
-- `artifact.toml` files define service routing but the apps themselves don't depend on the proxy —
-  they bind to `process.env.PORT` (standard) and can run directly with `PORT=5000 node server.js`.
+The three Replit Vite plugins are included in `devDependencies` and **will be installed**
+by `pnpm install` on any machine (they are small packages). However, they are **only
+activated** when `REPL_ID` is present:
+
+```ts
+const isReplitEnv = process.env.REPL_ID !== undefined;
+// plugins only loaded if isDev && isReplitEnv
+```
+
+Outside Replit, `REPL_ID` is absent, so the plugins are skipped. No error, no warning.
+The packages install harmlessly and are tree-shaken from the production build.
 
 ### 7. Absolute Paths
-**Status: NOT FOUND**
+**Status: NOT FOUND in source**
 
 - No hardcoded `/home/runner/` or `/nix/store/` paths in source code.
-- All file imports use relative paths or TypeScript path aliases (`@/`).
+- All imports use relative paths or TypeScript path aliases (`@/`).
 - `@/` alias resolves to `src/` via `tsconfig.json` — standard Vite/TS pattern.
+- `@assets` alias points to `attached_assets/` — this directory may not exist outside
+  Replit, but nothing in the current source imports from `@assets`. If it is used in
+  future, either commit the assets or conditionally handle the missing directory.
 
 ### 8. Hidden Cloud Dependencies
 **Status: NONE**
 
-- No external API calls in Alpha 0.1/0.2 source code.
-- AI engine (`ai-engine.ts`) is mocked — returns canned responses.
-- Voice engine (`voice-engine.ts`) is a stub — no cloud speech API.
-- Gesture engine (`gesture-engine.ts`) is a stub — no MediaPipe cloud.
-- All skill executions are mocked — no real network requests.
+- No external API calls in Alpha 0.3 source code.
+- AI runtime (`core/ai/`) uses a simulated local provider by default.
+- Ollama and llama.cpp providers are present but disabled by default (require explicit enable).
+- Cloud providers (OpenAI, Anthropic, Gemini) require the user's own API key and the
+  `cloud_ai` permission to be granted — they make no calls otherwise.
+- Voice engine and gesture engine are stubs — no cloud APIs.
 
 ### 9. Package Manager
 **Status: PORTABLE**
 
 - Uses `pnpm` workspaces — works on any machine with `pnpm` installed.
 - `pnpm-lock.yaml` is committed — reproducible installs.
-- Node.js 20+ required (documented in README).
+- Node.js 20+ required (documented).
 
 ### 10. Build System
 **Status: PORTABLE**
 
-- Vite 6 — cross-platform, no Replit dependency.
-- Tailwind CSS — PostCSS-based, cross-platform.
+- Vite 7 — cross-platform, no Replit dependency.
+- Tailwind CSS v4 — PostCSS-based, cross-platform.
 - TypeScript 5.9 — standard.
 - esbuild — cross-platform binary.
 
 ---
 
-## What Was Found
+## What Was Found and Fixed
 
-**Zero blocking issues.** The codebase is already portable.
+One issue was identified and fixed in Alpha 0.3:
 
-Minor items noted (non-blocking):
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 1 | `vite.config.ts` threw fatal errors if `PORT` or `BASE_PATH` were not set | **Blocking** | **Fixed** |
 
-1. **`.replit` file** — Defines Replit workflow configuration. Not needed outside Replit but
-   also harmless. Added to `.gitignore` (optional — keeping it doesn't break anything on Linux).
+Minor items (non-blocking, no action needed):
 
-2. **`replit.nix`** — Nix environment definition. Only used by Replit's Nix environment.
-   Added to `.gitignore`.
-
-3. **`artifact.toml` files** — Replit-specific service routing configuration. Not needed
-   outside Replit. On a Linux machine, run services directly with `PORT=3000 pnpm dev`.
-   These can stay in the repo as documentation.
-
-4. **`.local/` directory** — Replit-generated AI skill definitions. Already in `.gitignore`.
-
----
-
-## What Remains Replit-Compatible (But Not Replit-Dependent)
-
-These patterns work equally well on Replit and on a local Linux/Mac machine:
-
-- `process.env.PORT` — any dev runner or systemd unit can set this.
-- `process.env.DATABASE_URL` — standard for any Postgres-backed app.
-- `process.env.SESSION_SECRET` — standard for any Express app.
-- pnpm workspaces — works identically on any OS.
-- Vite dev server — identical behavior everywhere.
+| # | Finding | Severity | Status |
+|---|---|---|---|
+| 2 | `.replit` file — Replit workflow config, harmless outside Replit | Low | No action |
+| 3 | `replit.nix` — Nix environment definition, only used by Replit | Low | In .gitignore |
+| 4 | `artifact.toml` files — Replit service routing, apps don't depend on them | Low | Kept for reference |
+| 5 | `.local/` directory — Replit AI skill definitions | Low | In .gitignore |
 
 ---
 
@@ -139,41 +169,39 @@ These patterns work equally well on Replit and on a local Linux/Mac machine:
 git clone https://github.com/<your-username>/zaraos.git
 cd zaraos
 
-# 2. Install Node.js 20+ (nvm recommended)
-nvm install 20
-nvm use 20
-
-# 3. Install pnpm
+# 2. Install Node.js 20+ and pnpm
+nvm install 20 && nvm use 20
 npm install -g pnpm
 
-# 4. Install dependencies
+# 3. Install dependencies
 pnpm install
 
-# 5. Run the ZaraOS frontend
-cd artifacts/zaraos
-PORT=5173 pnpm dev
-
-# Or from root:
+# 4. Run dev server (opens at http://localhost:5173)
 pnpm --filter @workspace/zaraos run dev
 
-# 6. Open in browser
-# http://localhost:5173
+# 5. Build for production
+pnpm --filter @workspace/zaraos run build
+# Output: artifacts/zaraos/dist/public/
 
-# Optional: Run the API server (not used by ZaraOS Alpha)
-cd artifacts/api-server
-DATABASE_URL=postgresql://user:pass@localhost:5432/zaraos \
-SESSION_SECRET=your-random-secret \
-PORT=5000 pnpm dev
+# 6. Preview the production build
+pnpm --filter @workspace/zaraos run preview
+
+# 7. TypeScript check
+pnpm --filter @workspace/zaraos run typecheck
 ```
+
+No environment variables required for any of the above commands.
 
 ---
 
 ## Audit Conclusion
 
-**ZaraOS is fully portable.** No Replit lock-in exists. The project can be:
+**ZaraOS is fully portable.** The one blocking issue (required env vars) has been fixed.
+The project can be:
 
-- Pushed to GitHub today
-- Cloned and run on any Ubuntu / Debian / Arch / macOS machine
+- Pushed to GitHub and cloned on any machine
+- Built on any Linux / macOS / Windows machine without environment setup
+- Run in CI/CD pipelines without Replit-specific configuration
 - Converted to a Tauri desktop app without restructuring
 - Included in a custom Linux ISO as a desktop application
 
