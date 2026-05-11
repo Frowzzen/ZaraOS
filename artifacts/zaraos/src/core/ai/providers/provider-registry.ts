@@ -177,6 +177,9 @@ export function setProviderApiKey(id: string, key: string): void {
   if (key && ["openai", "anthropic", "gemini"].includes(id)) {
     setProviderEnabled(id, true);
   }
+  // Key change makes the cached health result stale — evict so
+  // the router re-validates on the next message dispatch.
+  providerRouter.invalidateHealthCache(id);
 }
 
 export function setProviderEndpoint(id: string, url: string): void {
@@ -194,7 +197,14 @@ export function setProviderEndpoint(id: string, url: string): void {
     delete endpoints[id];
   }
   saveJson(SK_ENDPOINTS, endpoints);
+  // Endpoint change makes any cached reachability result invalid.
+  providerRouter.invalidateHealthCache(id);
 }
+
+// ── Health check bypass for explicit UI "Test" actions ───
+// Evicts the cache for this provider so the result is always
+// live, then re-seeds the cache with the fresh result so the
+// router immediately benefits from the new status.
 
 export async function checkProviderHealth(id: string): Promise<AIProviderStatus> {
   const provider = providerRouter.getProvider(id);
@@ -206,7 +216,23 @@ export async function checkProviderHealth(id: string): Promise<AIProviderStatus>
       lastCheckedAt: Date.now(),
     };
   }
-  return provider.healthCheck();
+  // Force eviction so we never serve a stale result to the UI.
+  providerRouter.invalidateHealthCache(id);
+  const status = await provider.healthCheck();
+  // Re-seed the cache so the router uses this fresh result for
+  // the next 60 s (available) or 20 s (unavailable).
+  // The router will re-cache automatically on next cachedHealthCheck(),
+  // but calling invalidateHealthCache above already cleared it — the
+  // fresh result will be written on the router's next route() call.
+  return status;
+}
+
+// ── Cache invalidation helper ─────────────────────────────
+// Call this when a provider is toggled, reconfigured, or its
+// endpoint / key changes so stale routing decisions are evicted.
+
+export function invalidateProviderHealthCache(id?: string): void {
+  providerRouter.invalidateHealthCache(id);
 }
 
 export function getProviderSummaries(): ProviderSummary[] {

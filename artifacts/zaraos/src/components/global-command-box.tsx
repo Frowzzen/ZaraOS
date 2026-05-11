@@ -16,6 +16,7 @@ import { useLocation } from "wouter";
 import { useRuntime } from "@/core/runtime-context";
 import { useInputMode, INPUT_MODE_META } from "@/core/input-mode";
 import { voiceEngine } from "@/lib/voice-engine";
+import { VoiceWaveform } from "@/components/voice-waveform";
 import { Button } from "@/components/ui/button";
 import {
   Terminal,
@@ -200,8 +201,8 @@ export function GlobalCommandBox() {
             {isVoiceListening && (
               <>
                 <span className="text-white/20 px-1">|</span>
-                <span className="text-amber-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block" />
+                <span className="text-amber-400 flex items-center gap-1.5">
+                  <VoiceWaveform active={isVoiceListening} color="amber" size="xs" />
                   LISTENING
                 </span>
               </>

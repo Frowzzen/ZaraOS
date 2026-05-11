@@ -12,6 +12,7 @@
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { VoiceWaveform } from "@/components/voice-waveform";
 import { useRuntime } from "@/core/runtime-context";
 import { voiceEngine } from "@/lib/voice-engine";
 import { usePrivacy } from "@/lib/privacy-store";
@@ -411,7 +412,7 @@ export default function Assistant() {
             {/* Voice listening indicator */}
             {isListening && (
               <div className="flex items-center gap-2 mb-3 px-1">
-                <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <VoiceWaveform active={isListening} color="amber" size="sm" />
                 <span className="text-xs font-mono text-amber-400">
                   LISTENING{interimTranscript ? ` — "${interimTranscript}"` : " — speak now"}
                 </span>

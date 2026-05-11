@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { GlobalCommandBox } from "@/components/global-command-box";
 import { InputModeIndicator } from "@/components/input-mode-indicator";
+import { VoiceWaveform } from "@/components/voice-waveform";
 import { useInputMode } from "@/core/input-mode";
 import { gestureEngine } from "@/lib/gesture-engine";
 import { zaraRuntime } from "@/core/zara-runtime";
@@ -147,10 +148,13 @@ export function Layout({ children }: LayoutProps) {
                 <span className="hidden md:block text-xs font-medium leading-none">
                   Voice
                 </span>
-                {/* Active dot */}
-                <span className={`hidden md:block ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                  voiceActive ? "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.6)]" : "bg-white/10"
-                }`} />
+                {/* Active indicator — waveform when on, dim dot when off */}
+                <span className="hidden md:block ml-auto flex-shrink-0">
+                  {voiceActive
+                    ? <VoiceWaveform active color="amber" size="xs" />
+                    : <span className="block w-1.5 h-1.5 rounded-full bg-white/10" />
+                  }
+                </span>
               </button>
 
               {/* Gesture toggle */}

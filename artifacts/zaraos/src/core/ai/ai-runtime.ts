@@ -276,7 +276,7 @@ class AIRuntime {
     message: string,
     intent?: string
   ): { systemPrompt: string; messages: Array<{ role: "user" | "assistant" | "system"; content: string }> } {
-    const baseSystemPrompt = buildSystemPrompt();
+    const baseSystemPrompt = buildSystemPrompt(undefined, intent);
 
     const injectionInput: InjectionInput = {
       system: this.systemOverrides,
