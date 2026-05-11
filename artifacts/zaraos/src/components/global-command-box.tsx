@@ -39,7 +39,7 @@ interface CommandHistoryEntry {
 const MAX_HISTORY = 5;
 
 export function GlobalCommandBox() {
-  const { isCommandBoxOpen, closeCommandBox } = useInputMode();
+  const { isCommandBoxOpen, closeCommandBox, mode } = useInputMode();
   const { executeCommand, zaraStatus } = useRuntime();
   const [, navigate] = useLocation();
 
@@ -174,8 +174,7 @@ export function GlobalCommandBox() {
     }
   };
 
-  const modeKey = "hybrid" as const;
-  const modeMeta = INPUT_MODE_META[modeKey];
+  const modeMeta = INPUT_MODE_META[mode];
 
   if (!isCommandBoxOpen) return null;
 

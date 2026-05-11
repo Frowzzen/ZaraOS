@@ -67,9 +67,10 @@ export function Layout({ children }: LayoutProps) {
 
   // Wire gesture engine output into the Zara Runtime
   useEffect(() => {
-    gestureEngine.onGesture((_gesture, command) => {
+    const unsub = gestureEngine.onGesture((_gesture, command) => {
       zaraRuntime.executeCommand(command, "gesture");
     });
+    return unsub;
   }, []);
 
   return (

@@ -177,7 +177,7 @@ export default function Memory() {
       purgeAllAIMemory();
     }
     setConfirmTarget(null);
-    setTimeout(refresh, 100);
+    refresh();
   };
 
   const handleToggleMemory = (enabled: boolean) => {
@@ -210,7 +210,7 @@ export default function Memory() {
       const json = ev.target?.result as string;
       try {
         importAIMemory(json);
-        setTimeout(refresh, 100);
+        refresh();
         setExportMessage("Import complete. Memory restored from file.");
         setTimeout(() => setExportMessage(""), 4000);
       } catch {

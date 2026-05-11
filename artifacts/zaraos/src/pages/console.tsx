@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
-import { routeCommand } from "@/lib/command-router";
+import { useRuntime } from "@/core/runtime-context";
 import { useLocation } from "wouter";
 import { useState, useRef, useEffect } from "react";
 import { Terminal as TerminalIcon } from "lucide-react";
@@ -18,7 +18,8 @@ export default function Console() {
     { type: "system", text: "Type a command e.g., 'open browser', 'show files', 'enable developer mode'" }
   ]);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [, setLocation] = useLocation();
+  const [, navigate] = useLocation();
+  const { executeCommand } = useRuntime();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -26,25 +27,27 @@ export default function Console() {
     }
   }, [logs]);
 
-  const handleCommand = () => {
+  const handleCommand = async () => {
     if (!input.trim()) return;
-    
+
     const cmd = input;
     setInput("");
-    
+
     setLogs(prev => [...prev, { type: "input", text: `> ${cmd}` }]);
-    
-    // Simulate processing delay
-    setTimeout(() => {
-      const response = routeCommand(cmd);
-      setLogs(prev => [...prev, { type: "output", text: response.output }]);
-      
-      if (response.action === "navigate" && response.payload) {
-        setTimeout(() => {
-          setLocation(response.payload!);
-        }, 1000);
+
+    try {
+      const result = await executeCommand(cmd, "keyboard");
+      setLogs(prev => [...prev, { type: "output", text: result.response }]);
+
+      if (result.action === "navigate" && result.payload) {
+        setTimeout(() => navigate(result.payload!), 1000);
       }
-    }, 400);
+    } catch (err) {
+      setLogs(prev => [...prev, {
+        type: "output",
+        text: err instanceof Error ? `Error: ${err.message}` : "Command failed.",
+      }]);
+    }
   };
 
   return (

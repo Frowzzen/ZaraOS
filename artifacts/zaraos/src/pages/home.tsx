@@ -18,7 +18,15 @@ import {
   Radio,
   ArrowRight,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+// Static — never changes at runtime, no need to allocate inside the component.
+const SYSTEM_STATS = [
+  { label: "CPU Usage",    value: "14%",         icon: Cpu,       color: "text-primary"     },
+  { label: "RAM Usage",    value: "3.2 / 16 GB", icon: HardDrive, color: "text-secondary"   },
+  { label: "Neural Cores", value: "Active",       icon: Zap,       color: "text-purple-400"  },
+  { label: "Network IO",   value: "1.2 MB/s",     icon: Network,   color: "text-green-400"   },
+];
 
 export default function Home() {
   const privacy = usePrivacy();
@@ -28,48 +36,42 @@ export default function Home() {
     try { return getAIMemoryStats(); } catch { return null; }
   });
 
+  // Stable ref to getAIMemoryStats — avoids resetting the 10 s interval on every clock tick.
+  const getAIMemoryStatsRef = useRef(getAIMemoryStats);
+  useEffect(() => { getAIMemoryStatsRef.current = getAIMemoryStats; }, [getAIMemoryStats]);
+
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Refresh memory stats every 10 seconds
+  // Refresh memory stats every 10 seconds. Depends on a stable ref, never resets.
   useEffect(() => {
     const refresh = () => {
-      try { setMemStats(getAIMemoryStats()); } catch { /* ignore */ }
+      try { setMemStats(getAIMemoryStatsRef.current()); } catch { /* ignore */ }
     };
     refresh();
     const t = setInterval(refresh, 10_000);
     return () => clearInterval(t);
-  }, [getAIMemoryStats]);
-
-  const stats = [
-    { label: "CPU Usage",    value: "14%",        icon: Cpu,       color: "text-primary" },
-    { label: "RAM Usage",    value: "3.2 / 16 GB", icon: HardDrive, color: "text-secondary" },
-    { label: "Neural Cores", value: "Active",      icon: Zap,       color: "text-purple-400" },
-    { label: "Network IO",   value: "1.2 MB/s",    icon: Network,   color: "text-green-400" },
-  ];
+  }, []);
 
   const isRealInference = !aiRuntimeStatus.isSimulated;
   const isCloud = aiRuntimeStatus.isCloud;
   const phase = aiRuntimeStatus.phase;
 
-  const aiPhaseIcon = () => {
-    if (phase === "thinking" || phase === "streaming") {
-      return <Loader2 className="w-3 h-3 animate-spin text-primary" />;
-    }
-    return isRealInference
-      ? (isCloud ? <Cloud className="w-3 h-3 text-amber-400" /> : <Server className="w-3 h-3 text-green-400" />)
-      : <Radio className="w-3 h-3 text-muted-foreground/50" />;
-  };
+  const aiPhaseIcon =
+    phase === "thinking" || phase === "streaming"
+      ? <Loader2 className="w-3 h-3 animate-spin text-primary" />
+      : isRealInference
+        ? (isCloud ? <Cloud className="w-3 h-3 text-amber-400" /> : <Server className="w-3 h-3 text-green-400" />)
+        : <Radio className="w-3 h-3 text-muted-foreground/50" />;
 
-  const aiStatusText = () => {
-    if (phase === "thinking") return "Thinking...";
-    if (phase === "streaming") return "Streaming...";
-    if (phase === "error") return "Error — check AI providers";
-    if (isRealInference) return isCloud ? "Real inference (cloud)" : "Real inference (local)";
-    return "Simulated (offline mode)";
-  };
+  const aiStatusText =
+    phase === "thinking" ? "Thinking..." :
+    phase === "streaming" ? "Streaming..." :
+    phase === "error" ? "Error — check AI providers" :
+    isRealInference ? (isCloud ? "Real inference (cloud)" : "Real inference (local)") :
+    "Simulated (offline mode)";
 
   return (
     <Layout>
@@ -91,7 +93,7 @@ export default function Home() {
 
         {/* ── System Stats ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat) => (
+          {SYSTEM_STATS.map((stat) => (
             <Card key={stat.label} className="bg-card/50 border-white/5 backdrop-blur-sm hover:border-primary/30 transition-colors duration-300">
               <CardContent className="p-6 flex items-center gap-4">
                 <div className={`p-3 rounded-lg bg-background ${stat.color} shadow-[0_0_15px_currentColor] opacity-80`}>
@@ -130,7 +132,7 @@ export default function Home() {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">AI Engine</span>
-                      {aiPhaseIcon()}
+                      {aiPhaseIcon}
                     </div>
                     <p className="text-white font-semibold text-sm">
                       {aiRuntimeStatus.providerName}
@@ -151,7 +153,7 @@ export default function Home() {
                           : "text-green-400 bg-green-500/10 border-green-500/20"
                         : "text-muted-foreground/40 bg-white/5 border-white/10"
                     }`}>
-                      {aiStatusText()}
+                      {aiStatusText}
                     </div>
                     {memStats && (
                       <p className="text-[10px] font-mono text-muted-foreground/40">

@@ -45,10 +45,8 @@ const INTENT_RULES: IntentRule[] = [
     destructive: false,
     baseConfidence: 0.99,
   })),
-  // Go home (SWIPE_ACROSS / FIST)
-  { keywords: ["go home", "close active window", "dismiss"], intent: "navigation_action", target: "/", baseConfidence: 0.98 },
-  // Dashboard
-  { keywords: ["go to dashboard", "show dashboard", "home screen", "main screen"], intent: "navigation_action", target: "/", baseConfidence: 0.97 },
+  // Go home (SWIPE_ACROSS / FIST / text / voice). Consolidated from former duplicate rules.
+  { keywords: ["go home", "close active window", "dismiss", "go to dashboard", "show dashboard", "home screen", "main screen"], intent: "navigation_action", target: "/", baseConfidence: 0.98 },
 
   // ── Scroll (gesture SWIPE_UP / SWIPE_DOWN / TWO_FINGERS_UP)
   { keywords: ["scroll down", "scroll up", "enable precision scroll", "precision scroll"], intent: "scroll_action", baseConfidence: 0.98 },
@@ -64,7 +62,6 @@ const INTENT_RULES: IntentRule[] = [
   { keywords: ["ai providers", "open ai providers", "manage ai", "ai manager"], intent: "settings_action", target: "/ai-providers", baseConfidence: 0.94 },
   { keywords: ["open privacy", "privacy panel", "privacy settings", "show privacy", "privacy status"], intent: "privacy_action", target: "/privacy", baseConfidence: 0.97 },
   { keywords: ["open apps", "app launcher", "show apps", "launch app"], intent: "open_app", target: "/apps", baseConfidence: 0.95 },
-  { keywords: ["go home", "dashboard", "home screen"], intent: "open_app", target: "/", baseConfidence: 0.97 },
   // OPEN_PALM gesture → wake Zara → open assistant
   { keywords: ["open assistant", "zara assistant", "talk to zara", "ask zara", "wake zara"], intent: "open_app", target: "/assistant", baseConfidence: 0.97 },
   { keywords: ["open console", "zara console", "command console"], intent: "open_app", target: "/console", baseConfidence: 0.96 },

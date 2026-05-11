@@ -51,7 +51,7 @@ export function PrivacyProvider({ children }: { children: React.ReactNode }) {
         setCameraActive: (cameraActive) => updateState({ cameraActive }),
         setLocalAIRunning: (localAIRunning) => updateState({ localAIRunning }),
         setCloudAIRunning: (cloudAIRunning) => updateState({ cloudAIRunning }),
-        incrementNetworkRequests: () => updateState({ networkRequests: state.networkRequests + 1 }),
+        incrementNetworkRequests: () => setState((prev) => ({ ...prev, networkRequests: prev.networkRequests + 1 })),
       }}
     >
       {children}

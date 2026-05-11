@@ -14,6 +14,8 @@ import {
   Zap,
   XCircle,
   AlertTriangle,
+  Mail,
+  Phone,
 } from "lucide-react";
 
 // Skills that require each sensitive permission
@@ -132,9 +134,9 @@ export default function Privacy() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
-                { name: "Email Account",      icon: <Mic className="w-4 h-4 text-blue-400" />,   status: "Disconnected" },
+                { name: "Email Account",      icon: <Mail className="w-4 h-4 text-blue-400" />,   status: "Disconnected" },
                 { name: "Calendar Service",   icon: <Cloud className="w-4 h-4 text-cyan-400" />,  status: "Disconnected" },
-                { name: "Phone / SMS",        icon: <Mic className="w-4 h-4 text-green-400" />,   status: "Disconnected" },
+                { name: "Phone / SMS",        icon: <Phone className="w-4 h-4 text-green-400" />, status: "Disconnected" },
                 { name: "Ollama (Local AI)",  icon: <Cpu className="w-4 h-4 text-purple-400" />,  status: "Disconnected" },
                 { name: "OpenAI",             icon: <Cloud className="w-4 h-4 text-emerald-400" />, status: "Disconnected" },
                 { name: "Contacts Sync",      icon: <Network className="w-4 h-4 text-amber-400" />, status: "Disconnected" },

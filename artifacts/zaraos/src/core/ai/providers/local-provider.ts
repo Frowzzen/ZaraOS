@@ -92,14 +92,15 @@ export class LocalProvider implements AIProviderAdapter {
     messages: AIMessage[],
     options?: AISendOptions
   ): Promise<string> {
-    // Simulate inference latency.
-    await sleep(randomLatency());
+    // Simulate inference latency. Capture once so reported latency matches actual delay.
+    const latencyMs = randomLatency();
+    await sleep(latencyMs);
 
     const intent = extractIntentHint(messages);
     const response = getSimulatedResponse(intent, messages[messages.length - 1]?.content);
 
     // Update latency stat.
-    this.status.latencyMs = Math.round(randomLatency());
+    this.status.latencyMs = Math.round(latencyMs);
     this.status.lastCheckedAt = Date.now();
 
     return response;

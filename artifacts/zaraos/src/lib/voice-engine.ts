@@ -98,6 +98,7 @@ class VoiceEngine {
   private _state: VoiceState = "idle";
   private _errorMessage = "";
   private _isSupported: boolean;
+  private _simInterval: ReturnType<typeof setInterval> | null = null;
 
   private resultSubs:  Set<VoiceResultCallback> = new Set();
   private stateSubs:   Set<VoiceStateCallback>  = new Set();
@@ -238,6 +239,11 @@ class VoiceEngine {
 
   // abort — immediately cancels without firing onresult
   abort(): void {
+    // Cancel any in-progress simulation so it stops streaming after abort.
+    if (this._simInterval !== null) {
+      clearInterval(this._simInterval);
+      this._simInterval = null;
+    }
     if (this.recognition) {
       this.recognition.abort();
       this.recognition = null;
@@ -251,14 +257,17 @@ class VoiceEngine {
 
   simulateVoiceInput(text: string): void {
     if (this._state !== "listening") return;
-    // Simulate streaming characters as interim
+    // Simulate streaming characters as interim. Store ID so abort() can cancel.
     let i = 0;
-    const interval = setInterval(() => {
+    this._simInterval = setInterval(() => {
       i += 3;
       if (i < text.length) {
         this.resultSubs.forEach((cb) => cb(text.slice(0, i), false));
       } else {
-        clearInterval(interval);
+        if (this._simInterval !== null) {
+          clearInterval(this._simInterval);
+          this._simInterval = null;
+        }
         this.resultSubs.forEach((cb) => cb(text, true));
         this.setState("idle");
       }

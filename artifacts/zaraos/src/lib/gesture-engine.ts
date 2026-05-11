@@ -26,8 +26,9 @@ type GestureStatusCallback = (isTracking: boolean) => void;
 class GestureEngine {
   private isTracking = false;
   private currentPath = "/";
-  private onGestureCallback?: GestureCallback;
-  private onStatusCallback?: GestureStatusCallback;
+  // Set-based subscriptions — consistent with VoiceEngine, supports multiple subscribers.
+  private gestureSubs: Set<GestureCallback>       = new Set();
+  private statusSubs:  Set<GestureStatusCallback> = new Set();
   private lastGesture?: GestureType;
   private lastGestureAt = 0;
   private readonly DEBOUNCE_MS = 600; // Prevent rapid double-fires
@@ -45,14 +46,14 @@ class GestureEngine {
   public startTracking(initialPath = "/"): void {
     this.isTracking = true;
     this.currentPath = initialPath;
-    this.onStatusCallback?.(true);
+    this.statusSubs.forEach((cb) => cb(true));
     // TODO: Initialize MediaPipe Hands here and start the RAF loop.
     // The loop should call this.dispatchGesture(classified) on each recognized gesture.
   }
 
   public stopTracking(): void {
     this.isTracking = false;
-    this.onStatusCallback?.(false);
+    this.statusSubs.forEach((cb) => cb(false));
     // TODO: Cancel RAF loop and release camera stream.
   }
 
@@ -67,13 +68,17 @@ class GestureEngine {
     this.currentPath = path;
   }
 
-  // ── Callbacks ─────────────────────────────────────────────
-  public onGesture(callback: GestureCallback): void {
-    this.onGestureCallback = callback;
+  // ── Subscriptions ─────────────────────────────────────────
+  // Both return an unsubscribe function — safe to call in useEffect cleanup.
+  // Multiple subscribers are supported (consistent with VoiceEngine).
+  public onGesture(callback: GestureCallback): () => void {
+    this.gestureSubs.add(callback);
+    return () => this.gestureSubs.delete(callback);
   }
 
-  public onStatusChange(callback: GestureStatusCallback): void {
-    this.onStatusCallback = callback;
+  public onStatusChange(callback: GestureStatusCallback): () => void {
+    this.statusSubs.add(callback);
+    return () => this.statusSubs.delete(callback);
   }
 
   // ── Gesture Dispatch ──────────────────────────────────────
@@ -91,7 +96,7 @@ class GestureEngine {
     this.lastGestureAt = now;
 
     const command = gestureToCommand(gesture, this.currentPath);
-    this.onGestureCallback?.(gesture, command);
+    this.gestureSubs.forEach((cb) => cb(gesture, command));
   }
 
   // ── Simulation (Alpha 0.1) ─────────────────────────────────
