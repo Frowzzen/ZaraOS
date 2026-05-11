@@ -1,497 +1,790 @@
+// ZaraOS — ChatGPT Catch-Up Report Generator (Alpha 0.4)
+// Run: node scripts/generate-report.mjs
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const OUT = path.join(__dirname, "../zaraos-build-report.pdf");
-
-const CYAN   = "#00F0FF";
-const WHITE  = "#FFFFFF";
-const DIM    = "#8A9BB0";
-const BG     = "#0D1117";
-const CARD   = "#161C26";
-const BORDER = "#1E2A38";
-const AMBER  = "#FBBF24";
-const PURPLE = "#C084FC";
-const GREEN  = "#4ADE80";
+const OUT = path.join(__dirname, "../zaraos-chatgpt-report.pdf");
 
 const doc = new PDFDocument({
   size: "A4",
   margins: { top: 56, bottom: 56, left: 56, right: 56 },
   bufferPages: true,
   info: {
-    Title: "ZaraOS Build Report — Input Mode System & Global Controls",
-    Author: "ZaraOS Dev Session",
-    Subject: "Alpha 0.2 feature summary",
+    Title: "ZaraOS Alpha 0.4 — Full Implementation Report",
+    Author: "ZaraOS Build System",
+    Subject: "Complete architecture and implementation briefing for ChatGPT",
+    CreationDate: new Date(),
   },
 });
 
 doc.pipe(fs.createWriteStream(OUT));
 
-const W = doc.page.width - 112; // usable width
+// ── Palette ────────────────────────────────────────────────
+const CYAN   = "#22d3ee";
+const WHITE  = "#f1f5f9";
+const MUTED  = "#94a3b8";
+const BG     = "#0f172a";
+const CARD   = "#1e293b";
+const VIOLET = "#a78bfa";
+const AMBER  = "#fbbf24";
+const GREEN  = "#4ade80";
+const BORDER = "#334155";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+const W = doc.page.width - 112;
 
-function rect(x, y, w, h, fill, radius = 6) {
-  doc.roundedRect(x, y, w, h, radius).fill(fill);
+// ── Helpers ────────────────────────────────────────────────
+
+function newPage() {
+  doc.addPage();
+  doc.rect(0, 0, doc.page.width, doc.page.height).fill(BG);
 }
 
 function rule(color = BORDER) {
-  doc.moveTo(56, doc.y).lineTo(56 + W, doc.y).strokeColor(color).lineWidth(0.5).stroke();
-  doc.moveDown(0.5);
-}
-
-function sectionHeading(text) {
-  doc.moveDown(0.8);
-  const y = doc.y;
-  rect(56, y - 4, W, 28, CARD);
-  doc.rect(56, y - 4, 3, 28).fill(CYAN);
-  doc.font("Helvetica-Bold").fontSize(12).fillColor(CYAN).text(text, 68, y + 2, { width: W - 20 });
-  doc.moveDown(1.0);
-}
-
-function subHeading(text) {
+  doc.moveTo(56, doc.y).lineTo(56 + W, doc.y)
+    .strokeColor(color).lineWidth(0.5).stroke();
   doc.moveDown(0.4);
-  doc.font("Helvetica-Bold").fontSize(10).fillColor(WHITE).text(text, { width: W });
+}
+
+function sectionHeader(text) {
+  doc.moveDown(0.7);
+  if (doc.y > 700) newPage();
+  const y = doc.y;
+  doc.rect(56, y, W, 24).fill(CARD);
+  doc.rect(56, y, 4, 24).fill(CYAN);
+  doc.fillColor(CYAN).fontSize(10).font("Helvetica-Bold")
+    .text(text.toUpperCase(), 68, y + 7, { width: W - 20 });
+  doc.y = y + 30;
+}
+
+function subHeader(text, color = WHITE) {
+  doc.moveDown(0.4);
+  if (doc.y > 720) newPage();
+  doc.fillColor(color).fontSize(9.5).font("Helvetica-Bold").text(text, 56, doc.y, { width: W });
+  doc.moveDown(0.2);
+}
+
+function body(text, color = MUTED) {
+  doc.fillColor(color).fontSize(8.5).font("Helvetica")
+    .text(text, 56, doc.y, { width: W, lineGap: 2.5 });
   doc.moveDown(0.3);
 }
 
-function body(text, options = {}) {
-  doc.font("Helvetica").fontSize(9).fillColor(DIM).text(text, { width: W, lineGap: 2, ...options });
-}
-
-function bullet(text, indent = 0) {
-  const x = 56 + indent;
-  const bw = W - indent;
-  const cy = doc.y + 5;
-  doc.circle(x + 4, cy, 2).fill(CYAN);
-  doc.font("Helvetica").fontSize(9).fillColor(DIM)
-    .text(text, x + 12, doc.y, { width: bw - 12, lineGap: 2 });
-}
-
-function badge(text, color) {
-  const tw = doc.font("Helvetica-Bold").fontSize(7).widthOfString(text) + 10;
-  const bx = 56;
-  const by = doc.y;
-  doc.roundedRect(bx, by, tw, 14, 3).fill(color + "22");
-  doc.font("Helvetica-Bold").fontSize(7).fillColor(color).text(text, bx + 5, by + 3.5, { width: tw });
-  doc.moveDown(0.8);
-}
-
-function tableRow(cols, widths, isHeader = false) {
-  const x0 = 56;
-  const rowH = 20;
+function bullet(label, desc, lc = CYAN) {
+  if (doc.y > 730) newPage();
   const y = doc.y;
-  if (isHeader) {
-    doc.rect(x0, y, W, rowH).fill(CARD);
-  }
-  let cx = x0 + 8;
-  cols.forEach((col, i) => {
-    doc
-      .font(isHeader ? "Helvetica-Bold" : "Helvetica")
-      .fontSize(8)
-      .fillColor(isHeader ? CYAN : DIM)
-      .text(col, cx, y + 5, { width: widths[i] - 8, lineBreak: false });
-    cx += widths[i];
+  doc.fillColor(lc).fontSize(8.5).font("Helvetica-Bold")
+    .text("• " + label, 66, y, { width: 155, lineBreak: false });
+  doc.fillColor(WHITE).font("Helvetica")
+    .text(desc, 226, y, { width: W - 170, lineGap: 2 });
+  doc.moveDown(0.25);
+}
+
+function codeLine(text) {
+  if (doc.y > 730) newPage();
+  doc.fillColor("#e2e8f0").fontSize(7.5).font("Courier")
+    .text(text, 66, doc.y, { width: W - 20, lineGap: 1.5 });
+  doc.moveDown(0.05);
+}
+
+function codeBlock(text) {
+  if (doc.y > 660) newPage();
+  const lines = text.trim().split("\n");
+  const lh = 12;
+  const pad = 8;
+  const h = lines.length * lh + pad * 2;
+  const y = doc.y;
+  doc.rect(56, y, W, h).fill("#0d1117");
+  doc.fillColor("#e2e8f0").fontSize(7.5).font("Courier");
+  lines.forEach((ln, i) => {
+    doc.text(ln, 64, y + pad + i * lh, { lineBreak: false });
   });
-  doc.rect(x0, y + rowH - 0.5, W, 0.5).fill(BORDER);
-  doc.y = y + rowH;
+  doc.y = y + h + 6;
+  doc.moveDown(0.2);
 }
 
-function fileRow(status, files) {
+function providerRow(id, name, when, desc, color) {
+  if (doc.y > 725) newPage();
   const y = doc.y;
-  const statusW = 80;
-  const col = status === "New" ? GREEN : status === "Rewritten" ? AMBER : PURPLE;
-  doc.roundedRect(56, y, statusW - 8, 16, 3).fill(col + "22");
-  doc.font("Helvetica-Bold").fontSize(8).fillColor(col).text(status, 60, y + 4, { width: statusW - 16, lineBreak: false });
-  doc.font("Helvetica").fontSize(8).fillColor(DIM).text(files, 56 + statusW, y + 4, { width: W - statusW, lineBreak: false });
-  doc.y = y + 20;
+  doc.rect(56, y, 4, 16).fill(color);
+  doc.fillColor(color).fontSize(9).font("Helvetica-Bold")
+    .text(name, 66, y + 1, { continued: true });
+  doc.fillColor(MUTED).font("Helvetica").fontSize(8)
+    .text(`  (${id})  [${when}]`, { continued: true });
+  doc.fillColor(WHITE).text("  " + desc);
+  doc.moveDown(0.3);
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// PAGE 1 — COVER
-// ══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// COVER
+// ═══════════════════════════════════════════════════════════
 
-rect(0, 0, doc.page.width, doc.page.height, BG, 0);
+doc.rect(0, 0, doc.page.width, doc.page.height).fill(BG);
 
-// Logo block
-rect(56, 56, 44, 44, CYAN + "22", 10);
-doc.rect(56, 56, 3, 44).fill(CYAN);
-doc.font("Helvetica-Bold").fontSize(28).fillColor(CYAN).text("Z", 70, 67);
+// Header stripe
+doc.rect(0, 0, doc.page.width, 200).fill("#060d1a");
 
-doc.font("Helvetica-Bold").fontSize(26).fillColor(WHITE).text("ZaraOS", 112, 62);
-doc.font("Helvetica").fontSize(10).fillColor(CYAN).text("ALPHA 0.1  ·  BUILD REPORT", 113, 92);
+// Z mark
+doc.rect(56, 50, 44, 44).fill(CYAN);
+doc.fillColor(BG).fontSize(30).font("Helvetica-Bold")
+  .text("Z", 56, 55, { width: 44, align: "center" });
 
-doc.moveDown(3);
-rule(CYAN + "40");
-doc.moveDown(0.5);
+// Title
+doc.fillColor(WHITE).fontSize(28).font("Helvetica-Bold").text("ZaraOS", 114, 55);
+doc.fillColor(CYAN).fontSize(9).font("Helvetica").text("FULL IMPLEMENTATION REPORT  ·  ALPHA 0.4", 115, 88);
 
-doc.font("Helvetica-Bold").fontSize(18).fillColor(WHITE)
-  .text("Input Mode System & Global Controls", 56, doc.y, { width: W });
-doc.moveDown(0.4);
-doc.font("Helvetica").fontSize(10).fillColor(DIM)
-  .text("A full account of every file created, rewritten, and extended in the Alpha 0.2 input session.", { width: W });
+// Date
+doc.fillColor(MUTED).fontSize(8)
+  .text(`Generated ${new Date().toLocaleDateString("en-US", { year:"numeric", month:"long", day:"numeric" })}`, 115, 103);
+doc.fillColor(GREEN).fontSize(8).text("Status: Published & Live", 115, 116);
+
+doc.moveTo(56, 175).lineTo(56 + W, 175).strokeColor(CYAN).lineWidth(1).stroke();
+
+doc.fillColor(WHITE).fontSize(10).font("Helvetica-Bold")
+  .text("Briefing for ChatGPT — Complete context to resume work on ZaraOS", 56, 185);
+
+doc.y = 215;
+doc.fillColor(MUTED).fontSize(9).font("Helvetica")
+  .text(
+    "ZaraOS is a futuristic AI-native desktop operating environment prototype. It runs entirely in the browser " +
+    "(React + Vite), has no backend dependencies for Alpha 0.4, and is designed to be packaged as a Tauri " +
+    "desktop app and eventually a bootable Linux ISO. The core philosophy is local-first AI: all inference " +
+    "runs on-device by default; cloud providers are opt-in with the user's own API keys. This document " +
+    "captures every system built, all architectural decisions, the complete AI provider stack, and the roadmap.",
+    56, doc.y, { width: W, lineGap: 3 }
+  );
 
 doc.moveDown(1.2);
-rule();
+rule(CYAN);
 doc.moveDown(0.5);
 
-// Meta grid
-const metaItems = [
-  ["Session",   "Alpha 0.2 — Input Mode System"],
-  ["Date",      new Date().toLocaleDateString("en-US", { year:"numeric", month:"long", day:"numeric" })],
-  ["Status",    "Running — no errors"],
-  ["Scope",     "10 files changed (4 new, 5 rewritten, 1 extended)"],
+// Contents
+doc.fillColor(WHITE).fontSize(9).font("Helvetica-Bold").text("Contents", 56, doc.y);
+doc.moveDown(0.4);
+[
+  "1.  Project Overview & Core Constraints",
+  "2.  Tech Stack & Monorepo Structure",
+  "3.  Architecture — Command Flow",
+  "4.  AI Provider Stack (all 6 providers)",
+  "5.  Health Check Caching",
+  "6.  System Prompt System & Intent Addendums",
+  "7.  Conversation Memory",
+  "8.  Voice Engine & Waveform Animation",
+  "9.  Permissions System",
+  "10. Pages & Panels",
+  "11. Global Command Box",
+  "12. Completed Implementation Items (7 items)",
+  "13. Upcoming Roadmap",
+  "14. Key File Map",
+  "15. Important Gotchas",
+].forEach((item) => {
+  doc.fillColor(MUTED).fontSize(8.5).font("Helvetica").text(item, 70, doc.y, { width: W - 14 });
+  doc.moveDown(0.28);
+});
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 1 — OVERVIEW
+// ═══════════════════════════════════════════════════════════
+
+newPage();
+
+sectionHeader("1. Project Overview & Core Constraints");
+
+body(
+  "ZaraOS is a web-based prototype of an AI-first operating environment. It runs entirely in the browser " +
+  "(React + Vite), has no backend dependencies for Alpha 0.4, and is designed to be packaged later as a " +
+  "Tauri desktop app and eventually a bootable Linux ISO."
+);
+
+subHeader("Vision");
+bullet("Short term",   "Feature-complete browser prototype with real AI inference, voice, and gesture");
+bullet("Medium term",  "Tauri-packaged desktop app (Windows / macOS / Linux) with Whisper.cpp offline voice");
+bullet("Long term",    "Bootable ZaraOS Linux ISO with Ollama pre-installed, Zara as the shell");
+
+subHeader("Core Constraints — Never Break These");
+bullet("No emojis",                 "in the UI ever, no exceptions");
+bullet("Always dark mode",          "no light mode toggle at the OS level");
+bullet("Deny-by-default",           "mic, camera, cloud AI, network, files — all off at launch");
+bullet("UI → Runtime only",         "UI calls useRuntime(), never calls AI/voice/gesture engines directly");
+bullet("Local AI default",          "cloud AI is opt-in, user-provided keys, ZaraOS pays nothing for inference");
+bullet("Transparent AI state",      "Zara always tells the user when she is in simulated mode vs real AI");
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 2 — STACK
+// ═══════════════════════════════════════════════════════════
+
+sectionHeader("2. Tech Stack & Monorepo Structure");
+
+subHeader("Stack");
+bullet("Package manager",  "pnpm workspaces (monorepo) — workspace packages use @workspace/ prefix");
+bullet("Runtime",          "Node.js 24, TypeScript 5.9 strict mode throughout");
+bullet("Frontend",         "React + Vite — code-split with React.lazy() + Suspense on all 11 pages");
+bullet("Styling",          "Tailwind CSS + shadcn/ui component library");
+bullet("Animation",        "framer-motion — used for VoiceWaveform and panel transitions");
+bullet("Routing",          "wouter (lightweight client-side router)");
+bullet("State",            "React Context + localStorage — no backend for Alpha 0.4");
+bullet("API Server",       "Express 5 artifact exists but is NOT yet called by ZaraOS");
+bullet("Database",         "PostgreSQL + Drizzle ORM schema exists but is NOT yet wired");
+bullet("Build",            "esbuild for API server CJS bundle; Vite for frontend");
+
+subHeader("Monorepo layout");
+codeBlock(
+`artifacts/zaraos/        ← ZaraOS frontend (this is the main product)
+artifacts/api-server/     ← Express 5 API server (Alpha 0.5+)
+artifacts/mockup-sandbox/ ← Canvas design sandbox (internal tooling)
+lib/api-spec/             ← OpenAPI contract + React Query codegen
+lib/db/                   ← Drizzle ORM schema
+scripts/                  ← Utility scripts (this file)`
+);
+
+subHeader("Key commands");
+bullet("pnpm --filter @workspace/zaraos run dev",      "Start the ZaraOS frontend");
+bullet("pnpm --filter @workspace/zaraos run typecheck","TypeScript check (always run after changes)");
+bullet("pnpm run typecheck",                           "Full workspace typecheck including libs");
+bullet("pnpm --filter @workspace/api-spec run codegen","Regenerate API hooks from OpenAPI spec");
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 3 — ARCHITECTURE
+// ═══════════════════════════════════════════════════════════
+
+sectionHeader("3. Architecture — Command Flow");
+
+body(
+  "Every user input — voice, gesture, keyboard, or plugin — flows through the same layered pipeline. " +
+  "The UI calls useRuntime() exclusively. No component touches an AI provider or hardware engine directly."
+);
+
+codeBlock(
+`UI (useRuntime hook)
+  └─ ZaraRuntime.executeCommand(input, source)
+       ├─ parseAndRoute(input, source) → ParsedCommand
+       │     { raw, normalized, intent, target, skillId,
+       │       source, requiresPermission, destructive, confidence }
+       │
+       ├─ intent === "skill_action"  → SkillRuntime.executeSkill()
+       ├─ requiresPermission check  → permission_denied gate
+       ├─ destructive check         → confirm_required gate
+       ├─ intent === "ai_question"  → streamAssistantMessage()
+       │     └─ aiRuntime.streamMessage(msg, onChunk, source, intent)
+       │           → buildRequestPayload(msg, intent)
+       │               → buildSystemPrompt(undefined, intent)   ← intent-aware
+       │               → buildContextBlock(injectionInput)      ← live OS state
+       │               → conversationMemory.getMessagesForContext(3000)
+       │           → requestRouter.dispatch()
+       │               → providerRouter.route()                 ← cached health
+       │               → modelRouter.selectModel()
+       │               → provider.streamMessage()
+       └─ all other intents         → CommandResult { action, payload }`
+);
+
+subHeader("Key TypeScript types (src/core/types.ts)");
+bullet("CommandIntent",   "open_app | close_app | navigation_action | scroll_action | search | file_action | media_action | ai_question | system_status | privacy_action | settings_action | developer_action | skill_action | unknown");
+bullet("ZaraStatus",      "idle | listening | thinking | speaking | offline | privacy-lock");
+bullet("InputSource",     "voice | gesture | keyboard | system | plugin");
+bullet("ParsedCommand",   "raw, normalized, intent, target, skillId, source, requiresPermission, destructive, confidence");
+bullet("CommandResult",   "success, intent, response, action, payload, skillId, requiresConfirmation, dangerous, confirmationReason, source, timestamp");
+bullet("PermissionCategory", "microphone | camera | cloud_ai | network | files | system_actions | developer_mode | plugins | local_ai");
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 4 — AI PROVIDER STACK
+// ═══════════════════════════════════════════════════════════
+
+sectionHeader("4. AI Provider Stack (src/core/ai/)");
+
+body(
+  "The AI layer is fully layered: AIRuntime → RequestRouter → ProviderRouter → Provider. " +
+  "No component in the UI touches a provider directly. All 6 providers implement the same " +
+  "AIProviderAdapter interface."
+);
+
+subHeader("Provider priority — local_first strategy (default)");
+providerRow("local",     "Zara Local Runtime", "Always",    "Simulated responses. Guaranteed fallback. Always registered.", GREEN);
+providerRow("ollama",    "Ollama",             "If running","Real local LLM at localhost:11434. NDJSON streaming. /api/version health check.", CYAN);
+providerRow("llamacpp",  "llama.cpp Server",   "If running","Real local LLM at localhost:8080. OpenAI-compatible REST API.", CYAN);
+providerRow("openai",    "OpenAI",             "Opt-in",    "SSE streaming to api.openai.com. /v1/models health check. Default: gpt-4o-mini.", VIOLET);
+providerRow("anthropic", "Anthropic",          "Opt-in",    "SSE streaming. anthropic-dangerous-direct-browser-access header required. Default: claude-3-5-haiku-latest.", VIOLET);
+providerRow("gemini",    "Google Gemini",      "Opt-in",    "SSE via ?alt=sse. API key as URL query param. /v1beta/models health check. Default: gemini-1.5-flash.", VIOLET);
+
+doc.moveDown(0.3);
+subHeader("Provider routing logic");
+body("When preferredProviderId is set, the router tries that provider first and falls back on failure. " +
+     "In local_first mode: tries Ollama → llama.cpp → local. If cloudAIEnabled=true, tries cloud providers " +
+     "as a last resort before the guaranteed local fallback.");
+
+subHeader("CORS details per cloud provider");
+bullet("OpenAI",    "Natively allows browser CORS. Standard Authorization: Bearer {key} header.");
+bullet("Anthropic", "Requires 'anthropic-dangerous-direct-browser-access: true' header on every request. Official opt-in.");
+bullet("Gemini",    "No auth header used. API key passed as ?key=... URL query param. Google permits browser CORS.");
+
+subHeader("Provider Adapter Interface");
+codeBlock(
+`interface AIProviderAdapter {
+  id: string;  name: string;  isLocal: boolean;  isCloud: boolean;  isEnabled: boolean;
+  initialize(): Promise<void>;
+  sendMessage(messages: AIMessage[], options?: AISendOptions): Promise<string>;
+  streamMessage(messages: AIMessage[], onChunk: AIStreamCallback, options?: AISendOptions): Promise<void>;
+  healthCheck(): Promise<AIProviderStatus>;
+  listModels(): Promise<string[]>;
+  getActiveModel(): string;  setModel(modelId: string): void;
+  supportsStreaming(): boolean;  supportsVision(): boolean;
+  supportsTools(): boolean;     supportsOffline(): boolean;
+}`
+);
+
+subHeader("Cloud AI Gate");
+body("ProviderRouter.cloudAIEnabled is false at startup. It is set to true only when the user grants " +
+     "the cloud_ai permission in Privacy settings. Wired via: ZaraRuntime.initialize() → setCloudAIAllowed() " +
+     "and ZaraRuntime.requestPermission('cloud_ai') / revokePermission('cloud_ai'). " +
+     "This was a critical bug fixed in Alpha 0.4 — the gate was never being set before.");
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 5 — HEALTH CHECK CACHING
+// ═══════════════════════════════════════════════════════════
+
+sectionHeader("5. Health Check Caching (ProviderRouter)");
+
+body("Without caching, every message dispatch triggered a healthCheck() on Ollama and llama.cpp — each " +
+     "with a 2-3 second network timeout when those servers are not running. This created a 3+ second " +
+     "penalty before every AI response.");
+
+subHeader("Cache policy");
+bullet("available=true",  "Cache for 60 seconds — re-validates healthy providers once per minute");
+bullet("available=false", "Cache for 20 seconds — allows quick detection when a local server starts");
+bullet("Cache bypass",    "invalidateHealthCache(id) is called before explicit UI 'Test' button clicks");
+bullet("Auto-eviction",   "Cache cleared on: API key change, endpoint change, provider re-registration");
+bullet("getCachedStatus(id)", "Peek at cache without triggering a live check — used by the UI status display");
+
+subHeader("Implementation");
+codeBlock(
+`// ProviderRouter.cachedHealthCheck() — called by route() on every dispatch
+private async cachedHealthCheck(provider): Promise<AIProviderStatus> {
+  const cached = this.healthCache.get(provider.id);
+  if (cached && Date.now() < cached.expiresAt) return cached.status;   // HIT
+  const status = await provider.healthCheck();                          // MISS → live
+  const ttl = status.available ? 60_000 : 20_000;
+  this.healthCache.set(provider.id, { status, expiresAt: Date.now() + ttl });
+  return status;
+}`
+);
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 6 — SYSTEM PROMPT
+// ═══════════════════════════════════════════════════════════
+
+newPage();
+sectionHeader("6. System Prompt System (src/core/ai/prompts/zara-system-prompt.ts)");
+
+body("The system prompt is composed dynamically per request. When a concrete intent is known, a " +
+     "per-intent addendum replaces the generic ZARA_COMMAND_PARSING section. This allows Zara to " +
+     "respond with the exact behavior appropriate for the command class.");
+
+subHeader("Composition order");
+codeBlock(
+`1. ZARA_BASE_SYSTEM_PROMPT       — identity, personality, voice & tone, what Zara is not
+2. ZARA_PRIVACY_PRINCIPLES        — 6 local-first privacy principles
+3. ZARA_LOCAL_FIRST_PHILOSOPHY    — local AI default, cloud opt-in, BYOK model
+4. ZARA_CONFIRMATION_RULES        — destructive action gates
+5. ZARA_SKILL_PHILOSOPHY          — skill routing transparency
+6. ZARA_SAFETY_RULES              — permission enforcement rules
+7. ZARA_INTENT_ADDENDUMS[intent]  — OR ZARA_COMMAND_PARSING (fallback)
+8. CURRENT SYSTEM STATE block     — live OS context (provider, model, permissions, panel)`
+);
+
+subHeader("buildSystemPrompt(context?, intent?)");
+body("Selects the matching addendum when intent is a key of ZARA_INTENT_ADDENDUMS. Falls back to " +
+     "generic ZARA_COMMAND_PARSING when intent is undefined or unrecognized. The intent is already in " +
+     "scope in buildRequestPayload() via the intent parameter passed from aiRuntime.streamMessage().");
+
+subHeader("Intent-Specific Addendums (14 entries)");
+[
+  ["ai_question",       "Conversational tone, 1-4 sentences, no OS jargon, don't fabricate live data"],
+  ["search",            "Lead with the answer, name ZaraOS location, suggest alternatives if missing"],
+  ["open_app",          "One-sentence confirmation, permission check, closest match if app unknown"],
+  ["close_app",         "One-sentence confirm, check for unsaved work before closing"],
+  ["navigation_action", "Single short confirm, don't re-describe the destination panel"],
+  ["scroll_action",     "Acknowledge briefly or silently, note if no scrollable area present"],
+  ["file_action",       "State action + target before executing, files permission gate, always confirm destructive ops"],
+  ["media_action",      "Minimal acknowledgement, no preamble"],
+  ["system_status",     "Data-driven short list from context block, no speculation, mark unknowns"],
+  ["privacy_action",    "Announce what changes before applying, note mid-session interruptions"],
+  ["settings_action",   "Confirm setting + new value in one line, note any side effects"],
+  ["developer_action",  "Technical precision, surface security implications explicitly"],
+  ["skill_action",      "Name the skill, state required permissions, explicit confirm request before executing"],
+  ["unknown",           "No guessing, no action, ask for clarification with a specific suggestion"],
+].forEach(([k, v]) => bullet(k, v));
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 7 — MEMORY
+// ═══════════════════════════════════════════════════════════
+
+sectionHeader("7. Conversation Memory (src/core/ai/memory/)");
+
+bullet("ConversationSession",     "Started or resumed on aiRuntime.initialize(). Sessions resume if last activity < 30 min.");
+bullet("Message storage",         "All messages in localStorage under zaraos_session_* keys. Restored on reload.");
+bullet("Context pruning",         "getMessagesForContext(3000) — walks backwards, stops at ~3000 tokens (1 token ≈ 4 chars).");
+bullet("Memory entries",          "Separate from messages — persistent facts, session facts, pinned entries. Survive session resets.");
+bullet("Skill usage tracking",    "Every skill execution logged: skillId, lastUsedAt, useCount, lastResult.");
+bullet("User preferences",        "Stored separately, survive all purge operations except purgeAll().");
+bullet("clearAllHistory()",       "Wipes messages, preserves pinned entries.");
+bullet("purgeAll()",              "Nuclear option — wipes everything including preferences.");
+bullet("estimateStorageBytes()",  "Returns current localStorage usage estimate for memory stats display.");
+
+subHeader("Storage keys");
+codeBlock(
+`zaraos_session_current_id   ← current session ID
+zaraos_session_{id}          ← full session object with messages array
+zaraos_memory_entries        ← persistent/session/pinned MemoryEntry[]
+zaraos_skill_usage           ← SkillUsageRecord[]
+zaraos_preferences           ← UserPreferences object`
+);
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 8 — VOICE ENGINE
+// ═══════════════════════════════════════════════════════════
+
+sectionHeader("8. Voice Engine & Waveform Animation");
+
+subHeader("VoiceEngine (src/lib/voice-engine.ts) — Alpha 0.4, fully wired");
+body("Real voice input via the Web Speech API. Alpha 0.5+ will replace with Whisper.cpp via Tauri " +
+     "subprocess. The engine interface will stay identical — only the internals change.");
+
+bullet("Browser support",       "Chrome 33+, Edge 79+, Safari iOS 14+. Firefox: NOT supported.");
+bullet("States",                "idle → listening → idle / error / unsupported");
+bullet("Interim results",       "Streamed character-by-character to the input box as the user speaks");
+bullet("Final results",         "Fired on utterance completion, routed to zaraRuntime.executeCommand()");
+bullet("Error handling",        "11 named error codes with user-facing messages. 'aborted' is silent.");
+bullet("simulateVoiceInput()",  "Dev/testing helper — fires interim+final callbacks without a real mic");
+bullet("Alpha 0.5+ plan",       "Whisper.cpp via Tauri: window.__TAURI__.invoke('transcribe') → same onResult callbacks");
+
+subHeader("VoiceWaveform (src/components/voice-waveform.tsx) — Alpha 0.4, new");
+body("7 framer-motion bars with staggered animation speeds and peak amplitudes. Collapses to a flat " +
+     "resting state (scaleY=0.12) when active=false. Three surface deployments:");
+bullet("Assistant page",       "Replaces the pulsing amber dot above the input bar during LISTENING state");
+bullet("Global command box",   "Replaces the pulsing dot in the header LISTENING badge");
+bullet("Sidebar Voice toggle", "Replaces the static active dot when voice mode is enabled");
+body("Props: active (bool), color ('amber' | 'cyan' | 'purple'), size ('xs' | 'sm' | 'md').", MUTED);
+
+codeBlock(
+`// 7 bars — each tuple: [peakScaleY, durationSeconds, delaySeconds]
+const BAR_CONFIGS = [
+  [0.35, 0.70, 0.00], [0.90, 0.52, 0.08], [0.60, 0.80, 0.16],
+  [1.00, 0.46, 0.04], [0.55, 0.64, 0.12], [0.80, 0.56, 0.20], [0.30, 0.74, 0.06],
+];`
+);
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 9 — PERMISSIONS
+// ═══════════════════════════════════════════════════════════
+
+sectionHeader("9. Permissions System (src/core/permissions.ts)");
+
+body("Deny-by-default. All permissions are OFF at launch. State persists to localStorage. " +
+     "The UI requests permissions through ZaraRuntime.requestPermission(category).");
+
+[
+  ["microphone",     "Required for voice input (VoiceEngine.startListening())"],
+  ["camera",         "Reserved for future vision / gesture features"],
+  ["cloud_ai",       "Required for cloud providers. Also gates ProviderRouter.cloudAIEnabled."],
+  ["network",        "General network access for non-AI network calls"],
+  ["files",          "File system read/write access"],
+  ["system_actions", "OS-level actions (shutdown, reboot, etc.)"],
+  ["developer_mode", "Plugin development, raw API access"],
+  ["plugins",        "Third-party plugin installation and execution"],
+  ["local_ai",       "Local AI inference (Ollama, llama.cpp)"],
+].forEach(([p, d]) => bullet(p, d));
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 10 — PAGES
+// ═══════════════════════════════════════════════════════════
+
+newPage();
+sectionHeader("10. Pages & Panels (src/pages/)");
+
+[
+  ["home.tsx — Dashboard",        "Live clock, CPU/RAM/Network/Neural stats, Privacy Fortress panel, System Activity feed"],
+  ["assistant.tsx — Assistant",   "Full AI chat — SSE streaming, ZaraStatus states, voice input with interim transcript, memory stats, VoiceWaveform, conversation clear"],
+  ["console.tsx — Console",       "Natural language command console, intent routing, command history, source badges (voice/gesture/keyboard)"],
+  ["apps.tsx — App Launcher",     "App grid with voice command hints per tile. Launches via zaraRuntime.launchApp()"],
+  ["files.tsx — Files",           "Placeholder file browser — permission-gated behind files permission"],
+  ["media.tsx — Media",           "Combined audio/video player placeholder"],
+  ["settings.tsx — Settings",     "System configuration, Input Mode tab, Gestures tab with test buttons"],
+  ["privacy.tsx — Privacy",       "Mic/camera/AI/network/files status and enable/disable toggles — directly calls requestPermission()"],
+  ["ai-providers.tsx — AI Providers", "Full provider manager: enable/disable, API key entry, endpoint config, Test button, preferred provider pin, health status display"],
+  ["developers.tsx — Developers", "Plugin registry, PluginManifest spec, 4 example plugins, Zara Store preview"],
+  ["skills.tsx — Skills",         "Skill hub — lists all registered skills with permission status, usage stats, enable/disable"],
+  ["not-found.tsx",               "404 fallback page"],
+].forEach(([page, desc]) => bullet(page, desc));
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 11 — GLOBAL COMMAND BOX
+// ═══════════════════════════════════════════════════════════
+
+sectionHeader("11. Global Command Box (src/components/global-command-box.tsx)");
+
+body("A Spotlight/Alfred-style overlay accessible from anywhere via Ctrl+Space. Supports voice and " +
+     "keyboard input. Routes all commands through zaraRuntime.executeCommand() — same pipeline as everything else.");
+
+bullet("Trigger",             "Ctrl+Space global keyboard shortcut (registered once in InputModeProvider)");
+bullet("Voice button",        "Inside the box — same VoiceEngine as the assistant page");
+bullet("LISTENING badge",     "Shows VoiceWaveform (xs, amber) + 'LISTENING' when voice is active in the box");
+bullet("Command routing",     "All commands: zaraRuntime.executeCommand(input, 'voice' | 'keyboard')");
+bullet("Auto-navigation",     "If result.action === 'navigate', box closes and wouter.navigate() fires");
+bullet("History",             "Up/Down arrows navigate last 5 commands. Shown as clickable chips.");
+bullet("Quick suggestions",   "6 suggestion chips pre-populated with common commands");
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 12 — COMPLETED ITEMS
+// ═══════════════════════════════════════════════════════════
+
+sectionHeader("12. Completed Implementation Items");
+
+const items = [
+  {
+    num: "Item 1", title: "Ollama Provider Routing", status: "DONE",
+    details: [
+      "Real HTTP POST to localhost:11434/api/chat (OpenAI-compatible format)",
+      "NDJSON streaming: each line is JSON with { message: { content }, done }",
+      "healthCheck() via GET /api/version — 3 second timeout",
+      "Graceful fallback to simulated responses if Ollama is not running",
+      "Router priority: Ollama → llama.cpp → local (in local_first strategy)",
+      "Tauri plan: Rust backend will manage Ollama process via std::process::Command",
+    ]
+  },
+  {
+    num: "Item 2", title: "Web Speech API Voice Input", status: "DONE",
+    details: [
+      "Real voice input via SpeechRecognition / webkitSpeechRecognition",
+      "Interim results (isFinal=false) stream to the input box character by character",
+      "Final result (isFinal=true) fires zaraRuntime.executeCommand(transcript, 'voice')",
+      "11 named error codes with user-facing messages. 'aborted' is silent.",
+      "Firefox unsupported notice displayed when SpeechRecognition is unavailable",
+      "Wired into assistant.tsx and global-command-box.tsx",
+    ]
+  },
+  {
+    num: "Item 3", title: "Route-Based Code Splitting", status: "DONE",
+    details: [
+      "All 11 page components wrapped in React.lazy() + Suspense",
+      "Initial bundle loads only the OS shell (layout, sidebar, routing)",
+      "Each panel chunk loads on first navigation to that route",
+      "Loading skeleton displayed during chunk fetch",
+      "Vite automatically splits at dynamic import boundaries",
+    ]
+  },
+  {
+    num: "Item 4", title: "Real Cloud Provider HTTP Inference", status: "DONE",
+    details: [
+      "OpenAI: SSE streaming to api.openai.com/v1/chat/completions (stream: true)",
+      "OpenAI: healthCheck via GET /v1/models — validates key without token use",
+      "Anthropic: SSE streaming with 'anthropic-dangerous-direct-browser-access: true' header",
+      "Anthropic: system prompt via top-level 'system' field (not in messages array)",
+      "Anthropic: healthCheck via GET /v1/models",
+      "Gemini: SSE via ?alt=sse to /v1beta/models/{model}:streamGenerateContent",
+      "Gemini: API key as ?key= URL param, 'model' role for assistant messages",
+      "Gemini: healthCheck via GET /v1beta/models?key=...",
+      "BUG FIX: providerRouter.cloudAIEnabled was always false — wired setCloudAIAllowed()",
+      "through ZaraRuntime.initialize() / requestPermission() / revokePermission()",
+    ]
+  },
+  {
+    num: "Item 5", title: "Health Check Caching", status: "DONE",
+    details: [
+      "ProviderRouter wraps all healthCheck() calls in cachedHealthCheck()",
+      "TTL: 60s for available providers, 20s for unavailable",
+      "Cache evicted on: API key change, endpoint change, re-registration, UI 'Test' click",
+      "Eliminates 2-3 second network timeout penalty on every message dispatch",
+      "getCachedStatus(id) for UI to peek without triggering a live check",
+      "invalidateHealthCache(id?) for selective or full eviction",
+    ]
+  },
+  {
+    num: "Item 6", title: "Voice Waveform Animation", status: "DONE",
+    details: [
+      "VoiceWaveform: 7 framer-motion bars, staggered amplitudes (0.30–1.00) and durations (0.46–0.80s)",
+      "Collapses to scaleY=0.12 flat resting state when active=false",
+      "Props: active (bool), color ('amber'|'cyan'|'purple'), size ('xs'|'sm'|'md')",
+      "Deployed in: assistant.tsx listening bar, global-command-box.tsx header, sidebar Voice toggle",
+      "Replaces static pulsing amber dots in all three surfaces",
+    ]
+  },
+  {
+    num: "Item 7", title: "Intent-Aware System Prompts", status: "DONE",
+    details: [
+      "ZARA_INTENT_ADDENDUMS: 14 intent-specific behavioral sections",
+      "buildSystemPrompt(context?, intent?) selects matching addendum when intent is known",
+      "Falls back to generic ZARA_COMMAND_PARSING when intent is undefined/unknown",
+      "Intent is already in buildRequestPayload() scope — one-line wire-up",
+      "Each addendum tells Zara exactly what tone, format, and constraints apply",
+    ]
+  },
 ];
-metaItems.forEach(([k, v]) => {
+
+items.forEach((item) => {
+  if (doc.y > 650) newPage();
+  doc.moveDown(0.4);
   const y = doc.y;
-  doc.font("Helvetica-Bold").fontSize(9).fillColor(CYAN).text(k.toUpperCase(), 56, y, { width: 90, lineBreak: false });
-  doc.font("Helvetica").fontSize(9).fillColor(WHITE).text(v, 150, y, { width: W - 94, lineBreak: false });
-  doc.moveDown(0.55);
-});
-
-doc.moveDown(0.8);
-rule();
-doc.moveDown(0.5);
-
-// Contents list
-doc.font("Helvetica-Bold").fontSize(9).fillColor(WHITE).text("Contents", { width: W });
-doc.moveDown(0.4);
-const contents = [
-  "1.  Core Type System Expansion",
-  "2.  Input Mode Context",
-  "3.  Gesture Mapper",
-  "4.  Gesture Engine",
-  "5.  Global Command Box",
-  "6.  Input Mode Indicator",
-  "7.  Sidebar Layout",
-  "8.  Settings Page",
-  "9.  Command Router",
-  "10. App Root",
-  "11. Gesture → Command Reference Table",
-  "12. File Manifest",
-  "13. What Remains Mocked",
-];
-contents.forEach(c => {
-  doc.font("Helvetica").fontSize(9).fillColor(DIM).text(c, 68, doc.y, { width: W - 12 });
-  doc.moveDown(0.25);
-});
-
-// ══════════════════════════════════════════════════════════════════════════════
-// PAGE 2+  — BODY
-// ══════════════════════════════════════════════════════════════════════════════
-
-doc.addPage({ background: BG });
-rect(0, 0, doc.page.width, doc.page.height, BG, 0);
-
-// ─ 1. Types ─
-sectionHeading("1.  Core Type System Expansion  ·  src/core/types.ts");
-body("Extended the shared type contract. All runtime layers import from this single source of truth.");
-doc.moveDown(0.4);
-subHeading("Added types:");
-[
-  ["InputMode", `"voice" | "gesture" | "text" | "hybrid"  — the four OS-level input profiles`],
-  ["InputModeConfig", "Carries voiceEnabled, gestureEnabled, textEnabled, commandBoxVisible booleans"],
-  ["GestureMapping", "Typed binding of GestureType → command string → InputSource"],
-  ["SWIPE_UP / SWIPE_DOWN / SWIPE_ACROSS", "Three new GestureType enum values"],
-  ["navigation_action", "New CommandIntent — gesture-driven panel navigation"],
-  ["scroll_action", "New CommandIntent — gesture-driven scroll commands"],
-  [`"scroll"`, `New action value in CommandResult alongside navigate, toggle, launch`],
-].forEach(([name, desc]) => {
-  const y = doc.y;
-  doc.font("Courier-Bold").fontSize(8.5).fillColor(CYAN).text(name, 68, y, { width: 180, lineBreak: false });
-  doc.font("Helvetica").fontSize(8.5).fillColor(DIM).text(desc, 260, y, { width: W - 204, lineBreak: false });
-  doc.moveDown(0.55);
-});
-
-// ─ 2. Input Mode Context ─
-sectionHeading("2.  Input Mode Context  ·  src/core/input-mode.tsx  [NEW FILE]");
-body("A React context that manages all input mode state across the OS. Wraps the entire app via InputModeProvider in App.tsx.");
-doc.moveDown(0.4);
-
-subHeading("State managed (all persisted to localStorage):");
-bullet("mode — selected profile (hybrid / voice / gesture / text)");
-bullet("voiceActive — independent microphone toggle, separate from mode profile");
-bullet("gestureActive — independent camera/gesture toggle, separate from mode profile");
-bullet("isCommandBoxOpen — whether the floating command box is visible");
-bullet("keyboardOnly — derived: true when both voice and gesture are off");
-
-doc.moveDown(0.4);
-subHeading("Key design decision:");
-body("voiceActive and gestureActive are independent of the mode profile. A user can stay on Hybrid mode but flip the microphone off. The mode label reflects preferred style; the hardware toggles reflect what is actually running. Both are stored in separate localStorage keys so they survive mode switches.");
-
-doc.moveDown(0.4);
-subHeading("Exported API:");
-[
-  "setMode(mode)         — switch mode profile",
-  "cycleMode()           — rotate through all four modes in order",
-  "toggleVoice()         — flip microphone state",
-  "setVoice(bool)        — set microphone state explicitly",
-  "toggleGesture()       — flip camera state",
-  "setGesture(bool)      — set camera state explicitly",
-  "toggleCommandBox()    — open or close the floating command box",
-  "openCommandBox()      — open explicitly",
-  "closeCommandBox()     — close explicitly",
-].forEach(line => bullet(line));
-
-doc.moveDown(0.4);
-subHeading("Global keyboard shortcut:");
-body("Ctrl+Space toggles the command box from anywhere in the OS. Escape closes it. Both registered via a single useEffect in the provider — no per-page listener setup needed.");
-
-doc.moveDown(0.4);
-subHeading("INPUT_MODE_META registry:");
-body("Each mode has a label, shortLabel, description, and Tailwind color/border/bg tokens. Any component can render mode-appropriate styling without hardcoding colors — they import from this registry.");
-
-// ─ 3. Gesture Mapper ─
-doc.addPage({ background: BG });
-rect(0, 0, doc.page.width, doc.page.height, BG, 0);
-
-sectionHeading("3.  Gesture Mapper  ·  src/lib/gesture-mapper.ts  [NEW FILE]");
-body("The canonical layer converting raw GestureType values into natural language command strings fed into zaraRuntime.executeCommand(). This is the clean interface between hardware recognition and the command pipeline — when real MediaPipe integration arrives, nothing in this file changes.");
-
-doc.moveDown(0.4);
-subHeading("PANEL_ORDER array:");
-body("Defines the canonical left-to-right order of all 10 ZaraOS panels. Used by getPreviousPanel() and getNextPanel() helpers so SWIPE_LEFT/RIGHT always resolve to the correct target regardless of which panel is currently active.");
-
-doc.moveDown(0.4);
-subHeading("Gesture → Command Reference:");
-doc.moveDown(0.2);
-tableRow(["Gesture", "Command fed to Zara Runtime", "Notes"], [120, 220, W - 340], true);
-[
-  ["OPEN_PALM",      "open assistant",               "Always opens /assistant"],
-  ["SWIPE_LEFT",     "navigate to /[previous panel]","Panel-aware via getPreviousPanel()"],
-  ["SWIPE_RIGHT",    "navigate to /[next panel]",    "Panel-aware via getNextPanel()"],
-  ["SWIPE_UP",       "scroll down",                  "Content moves upward"],
-  ["SWIPE_DOWN",     "scroll up",                    "Content moves downward"],
-  ["SWIPE_ACROSS",   "go home",                      "Closes active window"],
-  ["PINCH",          "select focused",               "Selects focused element"],
-  ["GRAB",           "begin drag",                   "Requires gesture mode"],
-  ["FIST",           "go home",                      "Dismiss / go home"],
-  ["TWO_FINGERS_UP", "enable precision scroll",      "Requires gesture mode"],
-].forEach(row => tableRow(row, [120, 220, W - 340]));
-
-doc.moveDown(0.6);
-subHeading("GESTURE_MAPPINGS export:");
-body("Full typed mapping table consumed by the Settings Gestures tab to render the reference UI and test buttons. Each entry includes gesture, label, description, command, source, and requiresGestureMode fields.");
-
-// ─ 4. Gesture Engine ─
-sectionHeading("4.  Gesture Engine  ·  src/lib/gesture-engine.ts  [REWRITTEN]");
-body("Upgraded from a thin placeholder to a properly structured, integration-ready class. All gesture events dispatch through the same runtime pipeline as voice and keyboard.");
-
-doc.moveDown(0.3);
-subHeading("New capabilities:");
-bullet("setCurrentPath(path) — engine knows the current panel for accurate swipe navigation");
-bullet("onGesture(callback) — callback now receives both GestureType and the resolved command string");
-bullet("onStatusChange(callback) — separate callback for tracking start/stop state changes");
-bullet("600ms debounce window per gesture — prevents rapid double-fires from hand jitter");
-bullet("simulateGestureSequence(gestures[], delayMs) — fires a series with configurable delay");
-bullet("isActive() / getLastGesture() / getLastGestureLabel() — readable state for UI displays");
-
-doc.moveDown(0.3);
-subHeading("MediaPipe integration point (clearly marked in source):");
-[
-  "1.  Import @mediapipe/hands",
-  "2.  Create Hands instance with model complexity and confidence thresholds",
-  "3.  Feed webcam frames via requestAnimationFrame loop",
-  "4.  Classify hand landmarks → GestureType",
-  "5.  Call this.dispatchGesture(classified) — no other changes needed",
-].forEach(s => bullet(s));
-
-// ─ 5. Global Command Box ─
-sectionHeading("5.  Global Command Box  ·  src/components/global-command-box.tsx  [NEW FILE]");
-body("A persistent floating text input accessible from every panel. The privacy-first alternative to voice — lets users type natural language commands without making any sound or activating the microphone.");
-
-doc.moveDown(0.3);
-subHeading("UX design:");
-bullet("Triggered by Ctrl+Space keyboard shortcut or the Command Box sidebar button");
-bullet("Slides up from the bottom with glass/blur backdrop overlay");
-bullet("Full-width panel constrained to max-w-2xl, centred on screen");
-bullet("Header bar with ZARA COMMAND label and current input mode badge");
-bullet("Large clean input field with auto-focus on open");
-bullet("Arrow Up/Down navigates command history — last 5 commands stored");
-bullet("Three most recent commands shown as clickable history entries above input");
-bullet("Six quick-fill suggestion chips for the most common commands");
-bullet("Mic icon button (voice input integration point, to be wired in Alpha 0.4)");
-bullet("Status line showing Zara's live status and a privacy confirmation note");
-
-doc.moveDown(0.3);
-subHeading("Routing:");
-body("All submitted commands call zaraRuntime.executeCommand(text, \"keyboard\") — same pipeline as voice and gesture. If the result has action: \"navigate\", the box closes and navigates automatically. No separate command system.");
-
-// ─ 6. Input Mode Indicator ─
-doc.addPage({ background: BG });
-rect(0, 0, doc.page.width, doc.page.height, BG, 0);
-
-sectionHeading("6.  Input Mode Indicator  ·  src/components/input-mode-indicator.tsx  [NEW FILE]");
-body("A compact sidebar widget showing the current input mode with an inline dropdown picker.");
-
-doc.moveDown(0.3);
-bullet("Displays current mode icon (Layers/Mic/Hand/Keyboard), short label, three mini input-channel badges");
-bullet("Clicking opens a dropdown listing all four modes with active dot indicators");
-bullet("Double-clicking cycles modes via cycleMode()");
-bullet("Fully mode-color-aware — reads INPUT_MODE_META tokens, no hardcoded colors");
-
-// ─ 7. Sidebar Layout ─
-sectionHeading("7.  Sidebar Layout  ·  src/components/layout.tsx  [REWRITTEN]");
-body("The bottom section of the sidebar was restructured to surface input controls at the OS level, always visible from every panel.");
-
-doc.moveDown(0.3);
-subHeading("New Input Hardware section:");
-bullet("Section label INPUT HARDWARE in muted monospace");
-bullet("Voice toggle — amber when active (Mic icon + glowing amber dot), muted with MicOff icon when disabled");
-bullet("Gesture toggle — purple when active (Hand icon + glowing purple dot), muted when disabled");
-bullet("Both buttons are side-by-side, half-width, with immediate visual state feedback");
-bullet("Keyboard only green badge auto-appears when both are off — one glance confirms privacy state");
-bullet("All toggle state persists immediately to localStorage via the InputMode context");
-
-doc.moveDown(0.3);
-subHeading("Wiring added to Layout:");
-bullet("gestureEngine.setCurrentPath(location) — synced on every route change via useEffect");
-bullet("gestureEngine.onGesture() → zaraRuntime.executeCommand() — gesture/runtime bridge, registered once");
-bullet("useInputMode() provides voiceActive, gestureActive, keyboardOnly, toggleVoice, toggleGesture");
-
-doc.moveDown(0.3);
-subHeading("Sidebar render order (bottom section, top to bottom):");
-["1.  Divider rule",
- "2.  Input Hardware — Voice and Gesture toggle buttons + Keyboard-only badge",
- "3.  Input Mode Indicator — mode profile selector dropdown",
- "4.  Command Box button — Ctrl+Space shortcut label shown",
- "5.  System Status — green pulse dot",
-].forEach(s => bullet(s));
-
-// ─ 8. Settings ─
-sectionHeading("8.  Settings Page  ·  src/pages/settings.tsx  [REWRITTEN]");
-body("Added a full Input Mode tab and rewrote the Gestures tab. The Settings page now mirrors all sidebar controls in a more detailed form.");
-
-doc.moveDown(0.3);
-subHeading("New Input Mode tab:");
-bullet("Mode selector — 4 cards in a 2×2 grid (Hybrid, Voice, Gesture, Text)");
-bullet("Each card shows the mode icon, label, description, and a checkmark when active");
-bullet("Hardware Input card — Voice, Gesture, and Keyboard rows with toggle Switches");
-bullet("Voice row — live description text changes based on state (active vs disabled)");
-bullet("Gesture row — same treatment for camera");
-bullet("Keyboard row — permanently shown as Always On with a locked switch");
-bullet("Keyboard-only mode active notice appears in green when both hardware inputs are off");
-bullet("Command Box shortcut card — displays Ctrl + Space key combination");
-bullet("Architecture note — explains all modes share the same Runtime pipeline");
-
-doc.moveDown(0.3);
-subHeading("Gestures tab (fully rewritten):");
-bullet("Camera tracking enable/disable switch wired to gestureEngine.startTracking() / stopTracking()");
-bullet("Live indicator showing the most recently tested gesture name");
-bullet("Full gesture map table — all 9 gestures with label, description, resolved command, Test button");
-bullet("Test buttons call gestureEngine.simulateGesture() and update the live indicator");
-bullet("Gesture Mode badge on gestures requiring gesture mode active");
-bullet("MediaPipe integration note pointing to the exact file and function name");
-
-// ─ 9. Command Router ─
-doc.addPage({ background: BG });
-rect(0, 0, doc.page.width, doc.page.height, BG, 0);
-
-sectionHeading("9.  Command Router  ·  src/lib/command-router.ts  [REWRITTEN]");
-body("Expanded the intent rule set to handle all gesture-generated commands, plus 30+ total natural language intent rules across all panels.");
-
-doc.moveDown(0.3);
-subHeading("New intent rules added:");
-bullet("Navigation rules — one exact-match rule per panel path at 99% confidence");
-bullet("go home / dismiss / close active window → navigation_action → target: /");
-bullet("scroll down / scroll up / enable precision scroll → scroll_action intent");
-bullet("select focused / begin drag → navigation_action (gesture meta-commands)");
-bullet("open assistant / wake zara → open_app → target: /assistant (OPEN_PALM gesture)");
-bullet("Heuristic: question-phrased input → ai_question intent at 85% confidence");
-
-doc.moveDown(0.3);
-subHeading("getResponseText() function:");
-body("Maps every CommandIntent to a readable response string. navigation_action and scroll_action have their own response generators. This keeps response logic out of the runtime.");
-
-// ─ 10. App Root ─
-sectionHeading("10.  App Root  ·  src/App.tsx  [UPDATED]");
-body("InputModeProvider added to the provider stack. Positioned inside RuntimeProvider (components using useInputMode may also call useRuntime) and outside PrivacyProvider.");
-doc.moveDown(0.4);
-const stack = [
-  "QueryClientProvider",
-  "  RuntimeProvider",
-  "    InputModeProvider     ← new",
-  "      PrivacyProvider",
-  "        TooltipProvider",
-  "          Router",
-];
-stack.forEach(line => {
-  doc.font("Courier").fontSize(8.5).fillColor(line.includes("← new") ? CYAN : DIM)
-    .text(line, 68, doc.y, { width: W - 12 });
+  doc.rect(56, y, W, 1).fill(BORDER);
+  doc.y = y + 5;
+  doc.fillColor(GREEN).fontSize(9).font("Helvetica-Bold")
+    .text(item.num + "  ", 56, doc.y, { continued: true });
+  doc.fillColor(WHITE).text(item.title + "  ", { continued: true });
+  doc.fillColor(GREEN).font("Helvetica").text("[" + item.status + "]");
+  item.details.forEach((d) => {
+    if (doc.y > 730) newPage();
+    const dy = doc.y;
+    doc.fillColor(CYAN).fontSize(7.5).font("Helvetica").text("·  ", 66, dy, { continued: true });
+    doc.fillColor(MUTED).text(d, { width: W - 20, lineGap: 1.5 });
+    doc.moveDown(0.15);
+  });
   doc.moveDown(0.3);
 });
 
-// ─ 11. File Manifest ─
-sectionHeading("11.  File Manifest");
-doc.moveDown(0.2);
-rect(56, doc.y, W, 22, CARD);
-doc.font("Helvetica-Bold").fontSize(8).fillColor(CYAN)
-  .text("STATUS", 64, doc.y + 6, { width: 80, lineBreak: false });
-doc.font("Helvetica-Bold").fontSize(8).fillColor(CYAN)
-  .text("FILE", 150, doc.y - 22 + 6, { width: W - 100, lineBreak: false });
-doc.y += 22;
+// ═══════════════════════════════════════════════════════════
+// SECTION 13 — ROADMAP
+// ═══════════════════════════════════════════════════════════
 
-const files = [
-  ["New",       "src/core/input-mode.tsx"],
-  ["New",       "src/lib/gesture-mapper.ts"],
-  ["New",       "src/components/global-command-box.tsx"],
-  ["New",       "src/components/input-mode-indicator.tsx"],
-  ["Rewritten", "src/lib/gesture-engine.ts"],
-  ["Rewritten", "src/components/layout.tsx"],
-  ["Rewritten", "src/lib/command-router.ts"],
-  ["Rewritten", "src/pages/settings.tsx"],
-  ["Rewritten", "src/App.tsx"],
-  ["Extended",  "src/core/types.ts"],
-];
-files.forEach(([status, file]) => {
-  const y = doc.y;
-  const col = status === "New" ? GREEN : status === "Rewritten" ? AMBER : PURPLE;
-  doc.rect(56, y, W, 20).fill(y % 40 < 20 ? "#0D1117" : "#101620");
-  doc.roundedRect(64, y + 4, 64, 13, 3).fill(col + "22");
-  doc.font("Helvetica-Bold").fontSize(7.5).fillColor(col).text(status, 68, y + 7, { width: 56, lineBreak: false });
-  doc.font("Courier").fontSize(8.5).fillColor(DIM).text(file, 150, y + 6, { width: W - 100, lineBreak: false });
-  doc.y = y + 20;
-});
-
-// ─ 12. What Remains Mocked ─
-doc.moveDown(0.8);
-sectionHeading("12.  What Remains Mocked");
-body("The following are architecture placeholders — integration points are clearly commented in source.");
-doc.moveDown(0.3);
+sectionHeader("13. Upcoming Roadmap (Next Items)");
 
 [
-  ["Voice",   "VoiceEngine still uses a stub. The toggle changes UI state but does not yet call getUserMedia()."],
-  ["Gesture", "GestureEngine uses simulateGesture(). All UI and routing works via simulation. No webcam access yet."],
-  ["AI",      "All Zara responses are mocked. AIEngine has integration points but calls no external APIs."],
-  ["Backend", "No backend calls. All state lives in localStorage. api-server artifact not yet used by ZaraOS."],
-].forEach(([label, desc]) => {
-  const y = doc.y;
-  const col = label === "Voice" ? AMBER : label === "Gesture" ? PURPLE : label === "AI" ? CYAN : DIM;
-  doc.roundedRect(56, y, W, 32, 6).fill(CARD);
-  doc.rect(56, y, 3, 32).fill(col);
-  doc.font("Helvetica-Bold").fontSize(9).fillColor(col).text(label, 68, y + 5, { width: 60, lineBreak: false });
-  doc.font("Helvetica").fontSize(8.5).fillColor(DIM).text(desc, 68, y + 18, { width: W - 20, lineBreak: false });
-  doc.y = y + 40;
-});
+  ["Item 8",  "Streaming in Console",        "Real-time token streaming in the Console panel (currently non-streaming)"],
+  ["Item 9",  "Skill execution with real AI", "Skill router passes context to AI; AI generates skill-specific responses"],
+  ["Item 10", "Memory panel UI",              "Expose conversation memory stats, pinned entries, and purge controls in the UI"],
+  ["Item 11", "Tauri packaging",              "Wrap Vite app in Tauri shell for native desktop distribution"],
+  ["Item 12", "Whisper.cpp offline voice",    "Replace Web Speech API with Whisper.cpp via Tauri subprocess"],
+  ["Item 13", "Ollama model selector",        "Live model list from /api/tags, model download progress UI, active model indicator"],
+  ["Item 14", "Encrypted key storage",        "Move API keys from localStorage to encrypted IndexedDB (Web Crypto AES-GCM)"],
+  ["Item 15", "Linux ISO build",              "Archiso / Debian live-build with ZaraOS as WM + Ollama as systemd service"],
+].forEach(([num, title, desc]) => bullet(`${num}: ${title}`, desc, AMBER));
 
-// ─ Footer ─
-const pageCount = doc.bufferedPageRange().count;
-for (let i = 0; i < pageCount; i++) {
+// ═══════════════════════════════════════════════════════════
+// SECTION 14 — FILE MAP
+// ═══════════════════════════════════════════════════════════
+
+newPage();
+sectionHeader("14. Key File Map (artifacts/zaraos/src/)");
+
+codeBlock(
+`core/
+  types.ts                          ← ALL shared TypeScript interfaces
+  zara-runtime.ts                   ← OS brain — single entry point for all commands
+  runtime-context.tsx               ← useRuntime() React hook + RuntimeProvider
+  permissions.ts                    ← Deny-by-default PermissionsManager singleton
+  input-mode.tsx                    ← InputModeContext — voice/gesture/mode state
+  ai/
+    ai-runtime.ts                   ← Central AI orchestrator (AIRuntime singleton)
+    prompts/
+      zara-system-prompt.ts         ← buildSystemPrompt(), ZARA_INTENT_ADDENDUMS, simulated responses
+    providers/
+      provider-adapter.ts           ← AIProviderAdapter interface + AIStreamCallback type
+      provider-registry.ts          ← All provider instances, localStorage persistence, cloud gate
+      local-provider.ts             ← Simulated fallback (always available, zero latency)
+      ollama-provider.ts            ← Ollama NDJSON streaming, /api/version health check
+      llamacpp-provider.ts          ← llama.cpp OpenAI-compat REST
+      openai-provider.ts            ← OpenAI SSE, /v1/models health check
+      anthropic-provider.ts         ← Anthropic SSE, dangerous-direct-browser-access
+      gemini-provider.ts            ← Gemini SSE alt=sse, key as query param
+    routing/
+      provider-router.ts            ← Routing strategy + health check cache (60s/20s TTL)
+      request-router.ts             ← Provider + model selection + dispatch
+      model-router.ts               ← Classifies request type → selects best model
+    memory/
+      conversation-memory.ts        ← Session, message, entry, skill usage manager
+      memory-storage.ts             ← localStorage persistence layer
+      memory-types.ts               ← ConversationMessage, MemoryEntry, MemoryStats, etc.
+    context/
+      context-injector.ts           ← buildContextBlock() — assembles live OS state string
+      system-context.ts             ← SystemContextSnapshot
+      privacy-context.ts            ← PrivacyContextSnapshot
+      skills-context.ts             ← SkillContextEntry[]
+    models/
+      ai-capabilities.ts            ← Provider capability constants (OPENAI_CAPABILITIES, etc.)
+      model-router.ts               ← Request classification → model selection
+  skills/
+    skill-runtime.ts                ← Skill execution engine
+    types.ts                        ← ZaraSkill, SkillExecutionResult interfaces
+
+lib/
+  voice-engine.ts                   ← Web Speech API voice input singleton
+  gesture-engine.ts                 ← MediaPipe Hands placeholder + simulation
+  gesture-mapper.ts                 ← GestureType → command string mapping
+  command-router.ts                 ← parseAndRoute() — NLP intent classification
+  ai-engine.ts                      ← Legacy shim (deprecated, use ai-runtime directly)
+  privacy-store.ts                  ← usePrivacy() hook
+
+components/
+  layout.tsx                        ← Desktop OS shell (sidebar + main panel frame)
+  global-command-box.tsx            ← Ctrl+Space overlay with voice + VoiceWaveform
+  voice-waveform.tsx                ← 7-bar framer-motion waveform component
+  ai-runtime-status.tsx             ← Provider/model/latency status badge
+  input-mode-indicator.tsx          ← Voice/Gesture/Keyboard mode display + switcher
+  confirmation-dialog.tsx           ← Destructive action confirm modal
+  error-boundary.tsx                ← React error boundary wrapper
+
+pages/
+  home.tsx           assistant.tsx   console.tsx      apps.tsx
+  files.tsx          media.tsx       settings.tsx     privacy.tsx
+  ai-providers.tsx   developers.tsx  skills.tsx       not-found.tsx`
+);
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 15 — GOTCHAS
+// ═══════════════════════════════════════════════════════════
+
+sectionHeader("15. Important Gotchas & Design Decisions");
+
+bullet("cloudAIEnabled bug (fixed)",
+  "ProviderRouter.cloudAIEnabled was always false at startup — wired setCloudAIAllowed() through " +
+  "ZaraRuntime.initialize() / requestPermission('cloud_ai') / revokePermission('cloud_ai').");
+
+bullet("Anthropic CORS header",
+  "'anthropic-dangerous-direct-browser-access: true' is required on every request. Official Anthropic opt-in for browsers.");
+
+bullet("Gemini key in URL",
+  "API key is a URL query param (?key=...). Only safe over HTTPS. Key appears in request logs.");
+
+bullet("Ollama healthCheck endpoint",
+  "/api/version (not /api/tags or /v1/models). Any 200 response = available.");
+
+bullet("API keys in localStorage",
+  "Intentional Alpha 0.4 prototype behavior, clearly labeled in the UI. Encrypted IndexedDB planned for Alpha 0.4.");
+
+bullet("No root pnpm dev",
+  "No root dev script by design. Artifacts start via their own workflows with PORT and BASE_PATH. " +
+  "Never run 'pnpm dev' at workspace root.");
+
+bullet("Typecheck command",
+  "Always run 'pnpm --filter @workspace/zaraos run typecheck' after making changes. Zero errors is the bar.");
+
+bullet("App self-import (fixed in Alpha 0.1)",
+  "Original scaffold had a circular self-import in App.tsx. Fixed: exports MainApp default wrapped in RuntimeProvider.");
+
+bullet("Anthropic messages array",
+  "Anthropic does not accept a 'system' role in the messages array. System prompt is a top-level 'system' field.");
+
+bullet("Gemini role convention",
+  "Gemini uses 'model' for assistant role (not 'assistant'). The adapter converts this transparently.");
+
+// ═══════════════════════════════════════════════════════════
+// FOOTER on all pages
+// ═══════════════════════════════════════════════════════════
+
+const total = doc.bufferedPageRange().count;
+for (let i = 0; i < total; i++) {
   doc.switchToPage(i);
-  rect(0, doc.page.height - 36, doc.page.width, 36, CARD, 0);
-  doc.moveTo(0, doc.page.height - 36).lineTo(doc.page.width, doc.page.height - 36)
-    .strokeColor(BORDER).lineWidth(0.5).stroke();
-  doc.font("Helvetica").fontSize(7.5).fillColor(DIM)
-    .text("ZaraOS  ·  Alpha 0.1  ·  Build Report: Input Mode System", 56, doc.page.height - 22, {
-      width: W / 2, lineBreak: false,
+  const fy = doc.page.height - 32;
+  doc.rect(0, fy, doc.page.width, 32).fill("#060d1a");
+  doc.moveTo(0, fy).lineTo(doc.page.width, fy).strokeColor(BORDER).lineWidth(0.5).stroke();
+  doc.fillColor(MUTED).fontSize(7.5).font("Helvetica")
+    .text("ZaraOS Alpha 0.4  ·  Full Implementation Report  ·  Generated for ChatGPT", 56, fy + 10, {
+      width: W * 0.65, lineBreak: false,
     });
-  doc.font("Helvetica").fontSize(7.5).fillColor(DIM)
-    .text(`Page ${i + 1} of ${pageCount}`, 56 + W / 2, doc.page.height - 22, {
-      width: W / 2, align: "right", lineBreak: false,
+  doc.fillColor(MUTED).fontSize(7.5).font("Helvetica")
+    .text(`Page ${i + 1} of ${total}`, 56 + W * 0.65, fy + 10, {
+      width: W * 0.35, align: "right", lineBreak: false,
     });
 }
 
 doc.end();
-console.log("PDF written to:", OUT);
+console.log("Report written to:", OUT);
