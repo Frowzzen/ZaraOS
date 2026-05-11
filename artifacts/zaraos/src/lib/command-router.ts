@@ -110,8 +110,28 @@ const INTENT_RULES: IntentRule[] = [
   { keywords: ["pause", "stop playing", "stop media", "pause music"], intent: "skill_action", skillId: "skill.pause_audio", baseConfidence: 0.93 },
   { keywords: ["next track", "next song", "skip song", "skip"], intent: "skill_action", skillId: "skill.next_track", baseConfidence: 0.92 },
   { keywords: ["previous track", "previous song", "go back track"], intent: "skill_action", skillId: "skill.previous_track", baseConfidence: 0.91 },
-  { keywords: ["volume up", "louder", "increase volume"], intent: "skill_action", skillId: "skill.volume_control", baseConfidence: 0.92 },
-  { keywords: ["volume down", "quieter", "decrease volume", "mute"], intent: "skill_action", skillId: "skill.volume_control", baseConfidence: 0.92 },
+
+  // ── System control — power ────────────────────────────
+  { keywords: ["shut down", "shutdown", "power off", "turn off", "power down"], intent: "system_control", target: "shutdown", destructive: true, requiresConfirmation: true, baseConfidence: 0.97 },
+  { keywords: ["restart", "reboot", "restart the computer", "reboot the system"], intent: "system_control", target: "reboot", destructive: true, requiresConfirmation: true, baseConfidence: 0.96 },
+  { keywords: ["suspend", "sleep", "put to sleep", "hibernate", "standby"], intent: "system_control", target: "suspend", baseConfidence: 0.95 },
+  { keywords: ["lock screen", "lock the screen", "lock computer", "lock session", "lock"], intent: "system_control", target: "lock", baseConfidence: 0.96 },
+
+  // ── System control — volume ───────────────────────────
+  { keywords: ["volume up", "louder", "increase volume", "turn it up", "raise volume"], intent: "system_control", target: "volume_up", baseConfidence: 0.94 },
+  { keywords: ["volume down", "quieter", "decrease volume", "turn it down", "lower volume", "turn down"], intent: "system_control", target: "volume_down", baseConfidence: 0.94 },
+  { keywords: ["mute", "silence", "mute audio", "mute the audio", "mute sound"], intent: "system_control", target: "mute", baseConfidence: 0.95 },
+  { keywords: ["unmute", "unmute audio", "restore audio", "turn on sound"], intent: "system_control", target: "unmute", baseConfidence: 0.95 },
+  { keywords: ["full volume", "max volume", "volume max", "maximum volume"], intent: "system_control", target: "volume_max", baseConfidence: 0.93 },
+
+  // ── System control — brightness ───────────────────────
+  { keywords: ["brighter", "increase brightness", "brightness up", "turn up brightness", "more brightness"], intent: "system_control", target: "brightness_up", baseConfidence: 0.93 },
+  { keywords: ["dimmer", "decrease brightness", "brightness down", "dim screen", "less brightness", "lower brightness"], intent: "system_control", target: "brightness_down", baseConfidence: 0.93 },
+  { keywords: ["full brightness", "max brightness", "brightness max", "brightest"], intent: "system_control", target: "brightness_max", baseConfidence: 0.91 },
+
+  // ── System control — wifi ─────────────────────────────
+  { keywords: ["scan wifi", "scan for wifi", "show wifi networks", "list wifi", "available networks", "what wifi"], intent: "system_control", target: "wifi_scan", baseConfidence: 0.93 },
+  { keywords: ["disconnect wifi", "disconnect from wifi", "turn off wifi", "disable wifi"], intent: "system_control", target: "wifi_disconnect", baseConfidence: 0.94 },
 
   // ── Developer skills ──────────────────────────────────
   { keywords: ["build me an app", "build an app", "create a new app", "scaffold app"], intent: "skill_action", skillId: "skill.build_app", requiresPermission: true, baseConfidence: 0.93 },
@@ -166,6 +186,25 @@ const INTENT_RESPONSES: Record<CommandIntent, (cmd: ParsedCommand) => string> = 
   settings_action:   () => `Opening system settings.`,
   developer_action:  () => `Developer mode activated. Access the Developer Portal for advanced tools.`,
   skill_action:      (c) => `Routing to skill: ${c.skillId ?? "unknown"}`,
+  system_control:    (c) => {
+    const labels: Record<string, string> = {
+      shutdown: "Shutting down...",
+      reboot: "Restarting...",
+      suspend: "Suspending system...",
+      lock: "Locking screen...",
+      volume_up: "Volume increased.",
+      volume_down: "Volume decreased.",
+      mute: "Audio muted.",
+      unmute: "Audio unmuted.",
+      volume_max: "Volume set to maximum.",
+      brightness_up: "Brightness increased.",
+      brightness_down: "Brightness decreased.",
+      brightness_max: "Brightness set to maximum.",
+      wifi_scan: "Scanning for Wi-Fi networks...",
+      wifi_disconnect: "Disconnecting from Wi-Fi...",
+    };
+    return labels[c.target ?? ""] ?? `System control: ${c.target ?? c.raw}`;
+  },
   unknown:           (c) => `Command not recognized: "${c.raw}". Try "open settings" or "show files".`,
 };
 

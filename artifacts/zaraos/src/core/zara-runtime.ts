@@ -25,6 +25,7 @@
 // ============================================================
 
 import { parseAndRoute } from "@/lib/command-router";
+import { isTauriRuntime } from "@/core/tauri/tauri-bridge";
 import { permissionsManager } from "./permissions";
 import { skillRuntime } from "./skills/skill-runtime";
 import { aiRuntime } from "./ai/ai-runtime";
@@ -139,6 +140,10 @@ class ZaraRuntime {
       return result;
     }
 
+    if (parsed.intent === "system_control") {
+      return this.systemControlDispatch(parsed, source);
+    }
+
     if (parsed.intent === "ai_question") {
       return this.sendAssistantMessage(parsed.raw, source);
     }
@@ -155,6 +160,155 @@ class ZaraRuntime {
 
     this.emit(result);
     return result;
+  }
+
+  // ── System Control Dispatch ────────────────────────────
+  // Handles power, volume, brightness, and WiFi voice/keyboard commands.
+  // In Tauri runtime: calls real IPC commands via tauri-system-controls.
+  // In browser: returns a friendly "native only" response without crashing.
+  private async systemControlDispatch(
+    parsed: ParsedCommand,
+    source: InputSource
+  ): Promise<CommandResult> {
+    const action = parsed.target ?? "";
+
+    const ok = (response: string): CommandResult => ({
+      success: true,
+      intent: "system_control",
+      response,
+      action: "noop",
+      source,
+      timestamp: Date.now(),
+    });
+
+    const fail = (response: string): CommandResult => ({
+      success: false,
+      intent: "system_control",
+      response,
+      action: "noop",
+      source,
+      timestamp: Date.now(),
+    });
+
+    if (!isTauriRuntime()) {
+      const browserLabels: Record<string, string> = {
+        shutdown: "Shut down is only available in the native desktop app.",
+        reboot:   "Restart is only available in the native desktop app.",
+        suspend:  "Suspend is only available in the native desktop app.",
+        lock:     "Screen lock is only available in the native desktop app.",
+        volume_up: "Volume control is only available in the native desktop app.",
+        volume_down: "Volume control is only available in the native desktop app.",
+        mute:     "Audio mute is only available in the native desktop app.",
+        unmute:   "Audio unmute is only available in the native desktop app.",
+        volume_max: "Volume control is only available in the native desktop app.",
+        brightness_up: "Brightness control is only available in the native desktop app.",
+        brightness_down: "Brightness control is only available in the native desktop app.",
+        brightness_max: "Brightness control is only available in the native desktop app.",
+        wifi_scan: "Wi-Fi scanning is only available in the native desktop app.",
+        wifi_disconnect: "Wi-Fi control is only available in the native desktop app.",
+      };
+      const result = ok(browserLabels[action] ?? "System control requires the native desktop app.");
+      this.emit(result);
+      return result;
+    }
+
+    try {
+      const {
+        systemPower,
+        setVolume, getVolume,
+        toggleMute,
+        setBrightness, getBrightness,
+        listWifiNetworks, disconnectWifi,
+      } = await import("@/core/tauri/tauri-system-controls");
+
+      let response = "";
+
+      switch (action) {
+        case "shutdown":
+          await systemPower("shutdown");
+          response = "Shutting down...";
+          break;
+        case "reboot":
+          await systemPower("reboot");
+          response = "Restarting...";
+          break;
+        case "suspend":
+          await systemPower("suspend");
+          response = "Suspending system...";
+          break;
+        case "lock":
+          await systemPower("lock");
+          response = "Screen locked.";
+          break;
+
+        case "volume_up": {
+          const cur = await getVolume();
+          const next = Math.min(100, cur + 10);
+          await setVolume(next);
+          response = `Volume set to ${next}%.`;
+          break;
+        }
+        case "volume_down": {
+          const cur = await getVolume();
+          const next = Math.max(0, cur - 10);
+          await setVolume(next);
+          response = `Volume set to ${next}%.`;
+          break;
+        }
+        case "volume_max":
+          await setVolume(100);
+          response = "Volume set to 100%.";
+          break;
+        case "mute":
+        case "unmute":
+          await toggleMute();
+          response = action === "mute" ? "Audio muted." : "Audio unmuted.";
+          break;
+
+        case "brightness_up": {
+          const cur = await getBrightness();
+          const next = Math.min(100, cur + 10);
+          await setBrightness(next);
+          response = `Brightness set to ${next}%.`;
+          break;
+        }
+        case "brightness_down": {
+          const cur = await getBrightness();
+          const next = Math.max(5, cur - 10);
+          await setBrightness(next);
+          response = `Brightness set to ${next}%.`;
+          break;
+        }
+        case "brightness_max":
+          await setBrightness(100);
+          response = "Brightness set to 100%.";
+          break;
+
+        case "wifi_scan": {
+          const networks = await listWifiNetworks();
+          const names = networks.slice(0, 5).map((n) => n.ssid).join(", ");
+          response = networks.length
+            ? `Found ${networks.length} network${networks.length === 1 ? "" : "s"}: ${names}.`
+            : "No Wi-Fi networks found.";
+          break;
+        }
+        case "wifi_disconnect":
+          await disconnectWifi();
+          response = "Disconnected from Wi-Fi.";
+          break;
+
+        default:
+          response = `Unknown system control: ${action}`;
+      }
+
+      const result = ok(response);
+      this.emit(result);
+      return result;
+    } catch (e) {
+      const result = fail(`System control failed: ${e instanceof Error ? e.message : String(e)}`);
+      this.emit(result);
+      return result;
+    }
   }
 
   // ── Assistant Message (non-streaming) ─────────────────

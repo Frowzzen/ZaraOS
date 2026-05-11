@@ -37,6 +37,7 @@ export type CommandIntent =
   | "settings_action"
   | "developer_action"
   | "skill_action"        // Routes to a specific skill via skillId
+  | "system_control"      // Direct hardware control: power, volume, brightness, wifi
   | "unknown";
 
 // ── Parsed Command ─────────────────────────────────────────
