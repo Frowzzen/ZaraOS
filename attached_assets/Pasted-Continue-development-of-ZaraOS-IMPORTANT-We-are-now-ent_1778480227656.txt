@@ -1,0 +1,537 @@
+Continue development of ZaraOS.
+
+IMPORTANT:
+We are now entering the first phase of REAL intelligence.
+
+Do NOT add random UI features.
+Do NOT add cloud dependency.
+Do NOT add SaaS infrastructure.
+Do NOT add paid services.
+Do NOT add Replit-only systems.
+Do NOT break GitHub portability.
+Do NOT break future Linux/Tauri portability.
+
+Current priority:
+Turn Zara from a mocked assistant into a real local-first AI runtime.
+
+PROJECT CONTEXT:
+ZaraOS is a local-first, privacy-focused, AI-native operating environment.
+
+Voice is default.
+Gestures are primary navigation.
+Text is always available as a quiet fallback.
+
+The company behind ZaraOS should avoid paying inference costs.
+Users may optionally bring their own API keys later.
+Local AI is the default.
+
+Current architecture already includes:
+- Zara Runtime
+- Skills Runtime
+- Command Router
+- Input Modes
+- Privacy Layer
+- AI Provider Layer
+- Skills Hub
+- Confirmation System
+- Developer Portal
+- Replit Independence Audit
+- Linux/Tauri preparation docs
+
+Now we must build the first REAL intelligence layer.
+
+GOAL:
+Prepare ZaraOS Alpha 0.3:
+Real Local AI Runtime Architecture.
+
+IMPORTANT:
+Do NOT require me to install Ollama locally yet.
+I am currently on mobile only.
+You may create clean integration points, interfaces, mock local provider adapters, service abstractions, and future-ready architecture.
+
+If Ollama can be safely mocked in-browser, do so.
+If not, create the runtime architecture and local provider abstraction first.
+
+TASK 1 — Refactor AI Layer Into Production Architecture
+
+Create a stronger AI architecture.
+
+Suggested structure:
+
+src/core/ai/
+  providers/
+  memory/
+  prompts/
+  routing/
+  models/
+  context/
+  adapters/
+  ai-runtime.ts
+
+Goals:
+- provider abstraction
+- local-first execution
+- future Ollama support
+- future llama.cpp support
+- future Whisper.cpp support
+- optional cloud provider support later
+- conversation memory
+- command-aware prompting
+- runtime context injection
+- skills-aware responses
+- privacy-aware responses
+
+UI components must NEVER directly call providers.
+
+Everything flows through:
+Zara Runtime → AI Runtime → Provider Adapter
+
+TASK 2 — Create AI Runtime
+
+Create:
+src/core/ai/ai-runtime.ts
+
+This becomes Zara’s intelligence orchestration layer.
+
+Public methods:
+
+initialize()
+sendMessage()
+streamMessage()
+selectProvider()
+getProviderStatus()
+listModels()
+setModel()
+injectContext()
+injectSkillContext()
+injectSystemState()
+injectPrivacyState()
+clearConversation()
+saveConversation()
+loadConversation()
+
+The AI Runtime should:
+- manage conversation state
+- manage context windows
+- manage provider selection
+- manage memory
+- manage system prompt construction
+- route local vs cloud execution
+- enforce privacy rules
+
+TASK 3 — Create Provider Adapter System
+
+Create:
+src/core/ai/providers/
+
+Include adapters:
+
+local-provider.ts
+ollama-provider.ts
+llamacpp-provider.ts
+openai-provider.ts
+anthropic-provider.ts
+gemini-provider.ts
+
+IMPORTANT:
+Only local-provider should be enabled by default.
+Cloud providers remain disabled placeholders.
+
+All providers must implement the same interface:
+
+AIProviderAdapter
+
+Methods:
+initialize()
+sendMessage()
+streamMessage()
+listModels()
+healthCheck()
+supportsStreaming()
+supportsVision()
+supportsTools()
+supportsOffline()
+
+Do NOT make real cloud API calls.
+
+For Ollama:
+create the future-ready REST architecture only.
+Do not assume Ollama exists yet.
+
+Add comments explaining:
+- localhost Ollama strategy
+- Linux deployment plan
+- future Tauri bridge usage
+
+TASK 4 — Create Zara Personality System
+
+Create:
+src/core/ai/prompts/zara-system-prompt.ts
+
+This defines Zara’s personality and operating behavior.
+
+Zara should feel:
+- intelligent
+- calm
+- capable
+- futuristic
+- privacy-aware
+- concise
+- trustworthy
+- system-native
+
+Zara is NOT:
+- childish
+- overly robotic
+- overly emotional
+- generic ChatGPT clone
+- generic Linux assistant
+
+Zara must understand:
+- system actions
+- skills
+- permissions
+- confirmations
+- privacy state
+- local-first philosophy
+
+Add:
+- base system prompt
+- privacy principles
+- local-first philosophy
+- confirmation behavior rules
+- skill execution philosophy
+- safety behavior
+- command parsing instructions
+
+TASK 5 — Create Conversation Memory Architecture
+
+Create:
+src/core/ai/memory/
+
+Include:
+conversation-memory.ts
+memory-types.ts
+memory-storage.ts
+
+Goals:
+- local-only memory for now
+- no cloud sync
+- no telemetry
+- no analytics
+- no user tracking
+
+Conversation memory should support:
+- session memory
+- persistent local memory
+- pinned memories
+- recent command history
+- recent skill usage
+- user preferences
+- preferred input mode
+- preferred AI provider
+- preferred gesture settings
+
+IMPORTANT:
+Do NOT store sensitive content insecurely.
+No passwords.
+No raw API keys.
+No personal secrets.
+
+Use localStorage only for Alpha 0.3 placeholders.
+Add comments explaining:
+future encrypted storage needed later.
+
+TASK 6 — Create Context Injection System
+
+Create:
+src/core/ai/context/
+
+Include:
+system-context.ts
+privacy-context.ts
+skills-context.ts
+runtime-context.ts
+
+The AI Runtime should inject context into prompts.
+
+Examples:
+- current input mode
+- privacy state
+- available skills
+- connected services
+- active app
+- local/cloud mode
+- confirmation requirements
+- runtime status
+
+This makes Zara feel aware of the OS.
+
+TASK 7 — Create AI Routing Layer
+
+Create:
+src/core/ai/routing/
+
+Include:
+provider-router.ts
+model-router.ts
+request-router.ts
+
+Routing goals:
+- local-first by default
+- fallback logic
+- provider availability checks
+- offline awareness
+- model selection
+- capability checks
+
+Examples:
+- lightweight local model for commands
+- larger model for summaries
+- cloud only if explicitly enabled
+- local fallback if cloud unavailable
+
+TASK 8 — Upgrade Zara Assistant UI
+
+Update the Zara Assistant panel.
+
+Goals:
+Make Zara feel like a real OS intelligence layer.
+
+Add:
+- streaming response simulation
+- thinking state
+- listening state
+- speaking state
+- provider status
+- model status
+- local/offline badge
+- privacy-safe indicators
+- command execution badges
+- skill execution badges
+- context-aware responses
+
+Add:
+“Running Local AI”
+indicator.
+
+If no real provider exists:
+show:
+“Local AI Runtime Simulated”
+
+IMPORTANT:
+Do NOT make the assistant feel like a web chatbot.
+It should feel integrated into the operating environment.
+
+TASK 9 — Add AI Settings Panel
+
+Expand AI Provider Manager.
+
+Add:
+- preferred provider
+- preferred model
+- local-first toggle
+- offline mode toggle
+- memory toggle
+- conversation retention toggle
+- future encrypted memory notice
+- future local model download section
+- future GPU acceleration notice
+
+Display:
+- provider capability badges
+- offline support
+- streaming support
+- tool support
+- vision support
+
+TASK 10 — Add AI Runtime Status Widget
+
+Add a reusable system widget showing:
+
+- Active provider
+- Current model
+- Local/cloud mode
+- Offline capability
+- Runtime health
+- Context size
+- Memory enabled/disabled
+
+Can appear:
+- Dashboard
+- Assistant
+- Settings
+
+TASK 11 — Create AI Capability Types
+
+Create:
+src/core/ai/models/ai-capabilities.ts
+
+Capabilities:
+- streaming
+- tools
+- vision
+- speech
+- gestures
+- offline
+- reasoning
+- summarization
+- command_execution
+- memory
+
+Models/providers should declare supported capabilities.
+
+TASK 12 — Create Future Tool Calling Architecture
+
+Prepare for future AI tool calling.
+
+Create:
+src/core/ai/tools/
+
+Include:
+tool-types.ts
+tool-registry.ts
+tool-executor.ts
+
+Tools should eventually include:
+- skills
+- file actions
+- app launching
+- timers
+- settings
+- media controls
+- developer actions
+
+DO NOT execute real tools yet.
+Create architecture only.
+
+TASK 13 — Create AI Security Rules
+
+Create:
+docs/AI_SECURITY_MODEL.md
+
+Explain:
+- local-first AI philosophy
+- cloud AI opt-in only
+- no hidden telemetry
+- no automatic uploads
+- no background recordings
+- confirmation-required actions
+- future encrypted memory
+- future sandboxing
+- AI execution boundaries
+- why Zara avoids acting without consent
+
+TASK 14 — Create Local AI Roadmap
+
+Create:
+docs/LOCAL_AI_ROADMAP.md
+
+Explain:
+Phase 1:
+Mock runtime
+
+Phase 2:
+Ollama integration
+
+Phase 3:
+Whisper.cpp voice
+
+Phase 4:
+MediaPipe gestures
+
+Phase 5:
+GPU acceleration
+
+Phase 6:
+On-device multimodal AI
+
+Phase 7:
+Agent workflows
+
+TASK 15 — Improve Runtime Integration
+
+Update Zara Runtime so:
+- commands can route to AI Runtime
+- AI Runtime can suggest skills
+- skill results can feed back into AI responses
+- confirmations can pause execution
+- runtime context can inject into AI prompts
+
+Create clean interfaces between:
+- Zara Runtime
+- Skill Runtime
+- AI Runtime
+
+TASK 16 — Improve Developer Portal
+
+Add AI runtime developer documentation.
+
+Explain:
+future Zara apps/plugins can:
+- register tools
+- register AI capabilities
+- register skills
+- expose commands
+- request permissions
+- integrate with local AI
+
+Add:
+Future Zara Studio references:
+AI-powered app generation architecture.
+
+TASK 17 — Performance Requirements
+
+Keep everything lightweight.
+
+Do:
+- lazy load heavy AI panels
+- avoid unnecessary polling
+- avoid background loops
+- no hidden cloud calls
+- no analytics SDKs
+- no telemetry SDKs
+- no large dependencies unless necessary
+
+This project must remain USB-friendly and portable.
+
+TASK 18 — Security Requirements
+
+Very important.
+
+Rules:
+- No cloud AI enabled by default
+- No automatic uploads
+- No background microphone access
+- No webcam access without permission
+- No hidden network requests
+- No storage of raw API keys in logs
+- No sensitive memory persistence
+- No real command execution yet
+- No real filesystem modification yet
+
+Everything remains safe and mocked where necessary.
+
+TASK 19 — Documentation
+
+Create or update:
+docs/AI_RUNTIME_ARCHITECTURE.md
+docs/ZARA_PERSONALITY.md
+docs/MEMORY_MODEL.md
+docs/TOOL_CALLING_ARCHITECTURE.md
+
+TASK 20 — Final Build Report
+
+When finished, provide:
+1. What files were created
+2. What files were modified
+3. How the AI Runtime works
+4. How providers are abstracted
+5. How memory works
+6. How context injection works
+7. What remains mocked
+8. What becomes possible later with Ollama/Tauri
+9. Whether the app still runs successfully
+10. Any portability concerns
+
+Begin ZaraOS Alpha 0.3 AI Runtime architecture now.

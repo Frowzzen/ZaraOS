@@ -8,12 +8,15 @@
 // Layer responsibilities:
 //   UI Layer     → calls runtime.executeCommand() or runtime.sendAssistantMessage()
 //   Runtime      → checks permissions, routes to correct engine, returns result
-//   AI Layer     → runtime.sendAssistantMessage() delegates here
+//   AI Layer     → runtime.sendAssistantMessage() / streamAssistantMessage() → aiRuntime
 //   Input Layer  → voice/gesture engines call runtime.handleInput()
-//   System Layer → runtime.launchApp() dispatches here (mocked in Alpha 0.1)
+//   System Layer → runtime.launchApp() dispatches here (mocked in Alpha 0.2)
 //   Plugin Layer → runtime.registerPlugin() / runtime.executeCommand from plugin
 //   Skill Layer  → runtime.executeSkill() → skillRuntime.executeSkill()
 //   Security     → runtime enforces permissions before every action
+//
+// Alpha 0.3 change: All AI calls now route through aiRuntime instead of aiEngine.
+// The old aiEngine (lib/ai-engine.ts) is retained for legacy compatibility only.
 //
 // Future Tauri integration:
 //   Replace the mocked systemDispatch() calls with Tauri invoke() calls.
@@ -21,9 +24,10 @@
 // ============================================================
 
 import { parseAndRoute } from "@/lib/command-router";
-import { aiEngine } from "@/lib/ai-engine";
 import { permissionsManager } from "./permissions";
 import { skillRuntime } from "./skills/skill-runtime";
+import { aiRuntime } from "./ai/ai-runtime";
+import type { AIStreamCallback } from "./ai/providers/provider-adapter";
 import type {
   InputSource,
   CommandResult,
@@ -50,7 +54,10 @@ class ZaraRuntime {
   // ── Lifecycle ─────────────────────────────────────────
   public initialize(): void {
     this.setZaraStatus("idle");
-    // Future: Start local AI health check, init voice engine, init gesture engine.
+    // Initialize AI Runtime (starts or resumes conversation session)
+    aiRuntime.initialize().catch(() => {
+      // Graceful degradation — AI Runtime failure is non-fatal
+    });
   }
 
   // ── Status Management ─────────────────────────────────
@@ -140,8 +147,8 @@ class ZaraRuntime {
     return result;
   }
 
-  // ── Assistant Message ──────────────────────────────────
-  // Sends a message to the AI layer and returns the response.
+  // ── Assistant Message (non-streaming) ─────────────────
+  // Routes through the AI Runtime for context-aware responses.
   public async sendAssistantMessage(
     message: string,
     source: InputSource = "keyboard"
@@ -149,14 +156,14 @@ class ZaraRuntime {
     this.setZaraStatus("thinking");
 
     try {
-      const aiResponse = await aiEngine.sendMessage(message);
+      const aiResult = await aiRuntime.sendMessage(message, source);
       this.setZaraStatus("speaking");
       setTimeout(() => this.setZaraStatus("idle"), 2000);
 
       const result: CommandResult = {
         success: true,
         intent: "ai_question",
-        response: aiResponse,
+        response: aiResult.response,
         action: "noop",
         source,
         timestamp: Date.now(),
@@ -168,7 +175,47 @@ class ZaraRuntime {
       const result: CommandResult = {
         success: false,
         intent: "ai_question",
-        response: "AI engine is unavailable. Ensure local AI is running.",
+        response: "AI runtime is unavailable. Ensure a local AI provider is running.",
+        action: "noop",
+        source,
+        timestamp: Date.now(),
+      };
+      this.emit(result);
+      return result;
+    }
+  }
+
+  // ── Streaming Assistant Message ────────────────────────
+  // Routes through the AI Runtime with streaming support.
+  // Alpha 0.3: simulated streaming (real streaming in Alpha 0.4+ via Ollama).
+  public async streamAssistantMessage(
+    message: string,
+    onChunk: AIStreamCallback,
+    source: InputSource = "keyboard"
+  ): Promise<CommandResult> {
+    this.setZaraStatus("thinking");
+
+    try {
+      const aiResult = await aiRuntime.streamMessage(message, onChunk, source);
+      this.setZaraStatus("speaking");
+      setTimeout(() => this.setZaraStatus("idle"), 800);
+
+      const result: CommandResult = {
+        success: true,
+        intent: "ai_question",
+        response: aiResult.response,
+        action: "noop",
+        source,
+        timestamp: Date.now(),
+      };
+      this.emit(result);
+      return result;
+    } catch {
+      this.setZaraStatus("offline");
+      const result: CommandResult = {
+        success: false,
+        intent: "ai_question",
+        response: "AI runtime is unavailable. Ensure a local AI provider is running.",
         action: "noop",
         source,
         timestamp: Date.now(),
@@ -180,7 +227,7 @@ class ZaraRuntime {
 
   // ── Permission Request ─────────────────────────────────
   public requestPermission(category: PermissionCategory): boolean {
-    // In Alpha 0.1, we grant immediately when the user requests.
+    // In Alpha 0.2, we grant immediately when the user requests.
     // Future: Show a native OS permission prompt (Tauri dialog or browser API).
     permissionsManager.grant(category);
     return true;
@@ -200,7 +247,7 @@ class ZaraRuntime {
 
   // ── System Status ──────────────────────────────────────
   public getSystemStatus(): SystemStatus {
-    // Mocked for Alpha 0.1.
+    // Mocked for Alpha 0.2.
     // Future: Replace with Tauri system-info plugin calls.
     return {
       cpuUsage: Math.floor(Math.random() * 30) + 5,
@@ -221,12 +268,31 @@ class ZaraRuntime {
         return;
       }
     }
-    aiEngine.selectProvider(provider);
+    // Alpha 0.3: Provider selection is managed by the AI Runtime's routing layer.
+    // The providerRouter automatically picks the best available provider.
+    // Direct selection will be exposed in Alpha 0.4 when Ollama is wired.
+  }
+
+  // ── AI Conversation Management ─────────────────────────
+  public clearAIConversation(): void {
+    aiRuntime.clearConversation();
+  }
+
+  public getAIMemoryStats() {
+    return aiRuntime.getMemoryStats();
+  }
+
+  public getAIRuntimeStatus() {
+    return aiRuntime.getStatus();
+  }
+
+  public onAIStatusChange(listener: Parameters<typeof aiRuntime.onStatusChange>[0]): () => void {
+    return aiRuntime.onStatusChange(listener);
   }
 
   // ── App Launching ──────────────────────────────────────
   public launchApp(appId: string): CommandResult {
-    // Mocked for Alpha 0.1.
+    // Mocked for Alpha 0.2.
     // Future: Replace with Tauri spawn() call or Linux exec with allowlist check.
     const appRoutes: Record<string, string> = {
       browser: "/apps",
