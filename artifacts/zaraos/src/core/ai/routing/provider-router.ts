@@ -5,10 +5,14 @@
 // Strategy: local-first, with graceful degradation.
 //
 // Priority order (default):
-//   1. Ollama (if running and reachable)
-//   2. llama.cpp (if running and reachable)
+//   1. Ollama (if user-enabled AND running/reachable)
+//   2. llama.cpp (if user-enabled AND running/reachable)
 //   3. Local simulated provider (always available)
-//   4. Cloud providers (only if user has enabled cloud AI)
+//   4. Cloud providers (only if user has enabled cloud AI + has API key)
+//
+// Enabled state is tracked in a mutable Set so user toggles in
+// the AI Provider settings take effect immediately without
+// needing to reconstruct provider instances.
 // ============================================================
 
 import type { AIProviderAdapter } from "../providers/provider-adapter";
@@ -24,13 +28,36 @@ export interface RoutingDecision {
 
 export class ProviderRouter {
   private providers: AIProviderAdapter[] = [];
+  private enabledSet: Set<string> = new Set();
   private strategy: RoutingStrategy = "local_first";
   private cloudAIEnabled = false;
   private preferredProviderId: string | null = null;
 
-  register(provider: AIProviderAdapter): void {
+  // ── Registration ─────────────────────────────────────────
+
+  register(provider: AIProviderAdapter, enabled?: boolean): void {
+    this.providers = this.providers.filter((p) => p.id !== provider.id);
     this.providers.push(provider);
+    const shouldEnable = enabled ?? provider.isEnabled;
+    if (shouldEnable) {
+      this.enabledSet.add(provider.id);
+    } else {
+      this.enabledSet.delete(provider.id);
+    }
   }
+
+  // ── Enabled State ─────────────────────────────────────────
+
+  setProviderEnabled(id: string, enabled: boolean): void {
+    if (enabled) this.enabledSet.add(id);
+    else this.enabledSet.delete(id);
+  }
+
+  isProviderEnabled(id: string): boolean {
+    return this.enabledSet.has(id);
+  }
+
+  // ── Routing Config ────────────────────────────────────────
 
   setStrategy(strategy: RoutingStrategy): void {
     this.strategy = strategy;
@@ -44,11 +71,17 @@ export class ProviderRouter {
     this.preferredProviderId = id;
   }
 
+  getPreferredProviderId(): string | null {
+    return this.preferredProviderId;
+  }
+
+  // ── Route Selection ───────────────────────────────────────
+
   async route(requiresOffline = false): Promise<RoutingDecision> {
     // Explicit provider override.
     if (this.preferredProviderId) {
       const explicit = this.providers.find(
-        (p) => p.id === this.preferredProviderId && p.isEnabled
+        (p) => p.id === this.preferredProviderId && this.enabledSet.has(p.id)
       );
       if (explicit) {
         const status = await explicit.healthCheck();
@@ -66,7 +99,7 @@ export class ProviderRouter {
     // Offline-only mode — skip cloud providers.
     if (requiresOffline) {
       const localProviders = this.providers.filter(
-        (p) => p.supportsOffline() && p.isEnabled
+        (p) => p.supportsOffline() && this.enabledSet.has(p.id)
       );
       for (const p of localProviders) {
         const status = await p.healthCheck();
@@ -82,10 +115,9 @@ export class ProviderRouter {
     }
 
     if (this.strategy === "local_first") {
-      // Try local providers in priority order.
       const localOrder = ["ollama", "llamacpp", "local"];
       for (const id of localOrder) {
-        const p = this.providers.find((p) => p.id === id && p.isEnabled);
+        const p = this.providers.find((p) => p.id === id && this.enabledSet.has(p.id));
         if (!p) continue;
         const status = await p.healthCheck();
         if (status.available) {
@@ -98,11 +130,10 @@ export class ProviderRouter {
         }
       }
 
-      // Fall through to cloud if enabled.
       if (this.cloudAIEnabled) {
         const cloudOrder = ["openai", "anthropic", "gemini"];
         for (const id of cloudOrder) {
-          const p = this.providers.find((p) => p.id === id && p.isEnabled);
+          const p = this.providers.find((p) => p.id === id && this.enabledSet.has(p.id));
           if (!p) continue;
           const status = await p.healthCheck();
           if (status.available) {
@@ -117,8 +148,11 @@ export class ProviderRouter {
       }
     }
 
-    // Guaranteed fallback: local simulated provider.
-    const fallback = this.providers.find((p) => p.id === "local")!;
+    // Guaranteed fallback: local simulated provider is always registered.
+    const fallback = this.providers.find((p) => p.id === "local");
+    if (!fallback) {
+      throw new Error("No providers registered. Call initializeProviders() first.");
+    }
     return {
       provider: fallback,
       reason: "Default fallback: local simulated runtime",
@@ -127,12 +161,18 @@ export class ProviderRouter {
     };
   }
 
+  // ── Inspection ────────────────────────────────────────────
+
   getRegisteredProviders(): AIProviderAdapter[] {
     return [...this.providers];
   }
 
   getEnabledProviders(): AIProviderAdapter[] {
-    return this.providers.filter((p) => p.isEnabled);
+    return this.providers.filter((p) => this.enabledSet.has(p.id));
+  }
+
+  getProvider(id: string): AIProviderAdapter | undefined {
+    return this.providers.find((p) => p.id === id);
   }
 }
 

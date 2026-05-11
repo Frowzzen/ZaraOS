@@ -7,8 +7,9 @@
 // Components must never import zaraRuntime or aiRuntime directly.
 // They should use useRuntime() instead.
 //
-// Alpha 0.3: Added aiRuntimeStatus, streamAssistantMessage,
-// clearAIConversation, and getAIMemoryStats.
+// Alpha 0.4: Added full AI provider management:
+//   enableAIProvider, setPreferredAIProvider, checkAIProviderHealth,
+//   setAIProviderApiKey, setAIProviderEndpoint, getAIProviderSummaries
 // ============================================================
 
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -17,7 +18,9 @@ import { aiRuntime } from "./ai/ai-runtime";
 import type { ZaraStatus } from "./types";
 import type { AIRuntimeStatus } from "./ai/ai-runtime";
 import type { AIStreamCallback } from "./ai/providers/provider-adapter";
+import type { AIProviderStatus } from "./ai/providers/provider-adapter";
 import type { MemoryStats } from "./ai/memory/memory-types";
+import type { ProviderSummary } from "./ai/providers/provider-registry";
 
 interface RuntimeContextType {
   // Zara OS status
@@ -41,13 +44,22 @@ interface RuntimeContextType {
   clearAIConversation: () => void;
   getAIMemoryStats: () => MemoryStats;
 
+  // AI provider management
+  selectAIProvider: typeof zaraRuntime.selectAIProvider;
+  enableAIProvider: (id: string, enabled: boolean) => void;
+  setPreferredAIProvider: (id: string | null) => void;
+  setAIProviderApiKey: (id: string, key: string) => void;
+  setAIProviderEndpoint: (id: string, url: string) => void;
+  checkAIProviderHealth: (id: string) => Promise<AIProviderStatus>;
+  getAIProviderSummaries: () => ProviderSummary[];
+  getPreferredAIProviderId: () => string | null;
+
   // Permissions
   requestPermission: typeof zaraRuntime.requestPermission;
   revokePermission: typeof zaraRuntime.revokePermission;
 
   // System
   getSystemStatus: typeof zaraRuntime.getSystemStatus;
-  selectAIProvider: typeof zaraRuntime.selectAIProvider;
   launchApp: typeof zaraRuntime.launchApp;
 
   // Plugins
@@ -94,10 +106,18 @@ export function RuntimeProvider({ children }: { children: React.ReactNode }) {
     clearAIConversation: zaraRuntime.clearAIConversation.bind(zaraRuntime),
     getAIMemoryStats: zaraRuntime.getAIMemoryStats.bind(zaraRuntime),
 
+    selectAIProvider: zaraRuntime.selectAIProvider.bind(zaraRuntime),
+    enableAIProvider: zaraRuntime.enableAIProvider.bind(zaraRuntime),
+    setPreferredAIProvider: (id) => zaraRuntime.selectAIProvider(id as Parameters<typeof zaraRuntime.selectAIProvider>[0]),
+    setAIProviderApiKey: zaraRuntime.setAIProviderApiKey.bind(zaraRuntime),
+    setAIProviderEndpoint: zaraRuntime.setAIProviderEndpoint.bind(zaraRuntime),
+    checkAIProviderHealth: zaraRuntime.checkAIProviderHealth.bind(zaraRuntime),
+    getAIProviderSummaries: zaraRuntime.getAIProviderSummaries.bind(zaraRuntime),
+    getPreferredAIProviderId: zaraRuntime.getPreferredAIProviderId.bind(zaraRuntime),
+
     requestPermission: zaraRuntime.requestPermission.bind(zaraRuntime),
     revokePermission: zaraRuntime.revokePermission.bind(zaraRuntime),
     getSystemStatus: zaraRuntime.getSystemStatus.bind(zaraRuntime),
-    selectAIProvider: zaraRuntime.selectAIProvider.bind(zaraRuntime),
     launchApp: zaraRuntime.launchApp.bind(zaraRuntime),
 
     registerPlugin: zaraRuntime.registerPlugin.bind(zaraRuntime),

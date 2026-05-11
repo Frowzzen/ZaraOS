@@ -16,7 +16,8 @@
 //   Security     → runtime enforces permissions before every action
 //
 // Alpha 0.3 change: All AI calls now route through aiRuntime instead of aiEngine.
-// The old aiEngine (lib/ai-engine.ts) is retained for legacy compatibility only.
+// Alpha 0.4 change: selectAIProvider, enableAIProvider, setProviderApiKey, and
+//   checkProviderHealth now delegate to provider-registry — the router is live.
 //
 // Future Tauri integration:
 //   Replace the mocked systemDispatch() calls with Tauri invoke() calls.
@@ -27,7 +28,18 @@ import { parseAndRoute } from "@/lib/command-router";
 import { permissionsManager } from "./permissions";
 import { skillRuntime } from "./skills/skill-runtime";
 import { aiRuntime } from "./ai/ai-runtime";
+import {
+  setProviderEnabled,
+  setPreferredProvider,
+  getPreferredProviderId,
+  checkProviderHealth,
+  setProviderApiKey,
+  setProviderEndpoint,
+  getProviderSummaries,
+} from "./ai/providers/provider-registry";
 import type { AIStreamCallback } from "./ai/providers/provider-adapter";
+import type { AIProviderStatus } from "./ai/providers/provider-adapter";
+import type { ProviderSummary } from "./ai/providers/provider-registry";
 import type {
   InputSource,
   CommandResult,
@@ -54,7 +66,7 @@ class ZaraRuntime {
   // ── Lifecycle ─────────────────────────────────────────
   public initialize(): void {
     this.setZaraStatus("idle");
-    // Initialize AI Runtime (starts or resumes conversation session)
+    // Initialize AI Runtime (registers providers + starts or resumes conversation session)
     aiRuntime.initialize().catch(() => {
       // Graceful degradation — AI Runtime failure is non-fatal
     });
@@ -81,20 +93,16 @@ class ZaraRuntime {
   }
 
   // ── Main Command Entry Point ───────────────────────────
-  // All input sources call this. The runtime checks permissions,
-  // routes the command, and returns a structured result.
   public async executeCommand(
     input: string,
     source: InputSource = "keyboard"
   ): Promise<CommandResult> {
     const parsed: ParsedCommand = parseAndRoute(input, source);
 
-    // Skill action — delegate to skill runtime
     if (parsed.intent === "skill_action" && parsed.skillId) {
       return this.executeSkill(parsed.skillId, input, source);
     }
 
-    // Permission gate
     if (parsed.requiresPermission) {
       const category = this.intentToPermission(parsed.intent);
       if (category && !permissionsManager.isGranted(category)) {
@@ -111,7 +119,6 @@ class ZaraRuntime {
       }
     }
 
-    // Destructive action gate
     if (parsed.destructive) {
       const result: CommandResult = {
         success: false,
@@ -127,12 +134,10 @@ class ZaraRuntime {
       return result;
     }
 
-    // Route to AI for questions
     if (parsed.intent === "ai_question") {
       return this.sendAssistantMessage(parsed.raw, source);
     }
 
-    // All other commands — return the routed result
     const result: CommandResult = {
       success: true,
       intent: parsed.intent,
@@ -148,7 +153,6 @@ class ZaraRuntime {
   }
 
   // ── Assistant Message (non-streaming) ─────────────────
-  // Routes through the AI Runtime for context-aware responses.
   public async sendAssistantMessage(
     message: string,
     source: InputSource = "keyboard"
@@ -186,8 +190,6 @@ class ZaraRuntime {
   }
 
   // ── Streaming Assistant Message ────────────────────────
-  // Routes through the AI Runtime with streaming support.
-  // Alpha 0.3: simulated streaming (real streaming in Alpha 0.4+ via Ollama).
   public async streamAssistantMessage(
     message: string,
     onChunk: AIStreamCallback,
@@ -227,28 +229,19 @@ class ZaraRuntime {
 
   // ── Permission Request ─────────────────────────────────
   public requestPermission(category: PermissionCategory): boolean {
-    // In Alpha 0.2, we grant immediately when the user requests.
-    // Future: Show a native OS permission prompt (Tauri dialog or browser API).
     permissionsManager.grant(category);
     return true;
   }
 
   public revokePermission(category: PermissionCategory): void {
     permissionsManager.revoke(category);
-
-    // Side effects — shut down engines that depend on the revoked permission.
     if (category === "microphone") {
       this.setZaraStatus("idle");
-    }
-    if (category === "camera") {
-      // Future: gestureEngine.stopTracking()
     }
   }
 
   // ── System Status ──────────────────────────────────────
   public getSystemStatus(): SystemStatus {
-    // Mocked for Alpha 0.2.
-    // Future: Replace with Tauri system-info plugin calls.
     return {
       cpuUsage: Math.floor(Math.random() * 30) + 5,
       ramUsed: 3.2,
@@ -260,17 +253,42 @@ class ZaraRuntime {
     };
   }
 
-  // ── AI Provider Selection ──────────────────────────────
+  // ── AI Provider Management ────────────────────────────
+  // These methods delegate to the provider registry, which manages
+  // provider instances, routing, and localStorage persistence.
+
   public selectAIProvider(provider: AIProvider): void {
-    // Cloud AI requires explicit permission.
     if (provider !== "local" && provider !== "ollama" && provider !== "llamacpp") {
-      if (!permissionsManager.isGranted("cloud_ai")) {
-        return;
-      }
+      if (!permissionsManager.isGranted("cloud_ai")) return;
     }
-    // Alpha 0.3: Provider selection is managed by the AI Runtime's routing layer.
-    // The providerRouter automatically picks the best available provider.
-    // Direct selection will be exposed in Alpha 0.4 when Ollama is wired.
+    setPreferredProvider(provider);
+  }
+
+  public enableAIProvider(id: string, enabled: boolean): void {
+    if (["openai", "anthropic", "gemini"].includes(id)) {
+      if (!permissionsManager.isGranted("cloud_ai")) return;
+    }
+    setProviderEnabled(id, enabled);
+  }
+
+  public setAIProviderApiKey(id: string, key: string): void {
+    setProviderApiKey(id, key);
+  }
+
+  public setAIProviderEndpoint(id: string, url: string): void {
+    setProviderEndpoint(id, url);
+  }
+
+  public async checkAIProviderHealth(id: string): Promise<AIProviderStatus> {
+    return checkProviderHealth(id);
+  }
+
+  public getAIProviderSummaries(): ProviderSummary[] {
+    return getProviderSummaries();
+  }
+
+  public getPreferredAIProviderId(): string | null {
+    return getPreferredProviderId();
   }
 
   // ── AI Conversation Management ─────────────────────────
@@ -292,8 +310,6 @@ class ZaraRuntime {
 
   // ── App Launching ──────────────────────────────────────
   public launchApp(appId: string): CommandResult {
-    // Mocked for Alpha 0.2.
-    // Future: Replace with Tauri spawn() call or Linux exec with allowlist check.
     const appRoutes: Record<string, string> = {
       browser: "/apps",
       files: "/files",
@@ -331,15 +347,8 @@ class ZaraRuntime {
 
   // ── Plugin Registry ────────────────────────────────────
   public registerPlugin(manifest: PluginManifest): boolean {
-    if (!permissionsManager.isGranted("plugins")) {
-      return false;
-    }
-
-    // Validate plugin permissions — all declared permissions must be granted.
-    if (!permissionsManager.pluginPermissionsGranted(manifest.permissions)) {
-      return false;
-    }
-
+    if (!permissionsManager.isGranted("plugins")) return false;
+    if (!permissionsManager.pluginPermissionsGranted(manifest.permissions)) return false;
     this.plugins.set(manifest.id, { ...manifest, installedAt: Date.now() });
     return true;
   }
@@ -349,8 +358,6 @@ class ZaraRuntime {
   }
 
   // ── Skill Layer ────────────────────────────────────────
-  // All skill operations flow through here — never called directly from UI.
-
   public listSkills(): ZaraSkill[] {
     return skillRuntime.listSkills();
   }
@@ -448,5 +455,4 @@ class ZaraRuntime {
   }
 }
 
-// Singleton runtime — one instance for the entire OS session.
 export const zaraRuntime = new ZaraRuntime();

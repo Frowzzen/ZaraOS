@@ -19,6 +19,7 @@
 
 import { conversationMemory } from "./memory/conversation-memory";
 import { requestRouter } from "./routing/request-router";
+import { initializeProviders } from "./providers/provider-registry";
 import { buildSystemPrompt } from "./prompts/zara-system-prompt";
 import { buildContextBlock } from "./context/context-injector";
 import type { InjectionInput } from "./context/context-injector";
@@ -82,6 +83,9 @@ class AIRuntime {
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
+    // Register all AI providers with the router and restore user preferences.
+    // This must happen before any routing call is made.
+    initializeProviders();
     conversationMemory.resumeOrStartSession();
     this.initialized = true;
     this.updateMemoryStats();
