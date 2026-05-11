@@ -1,0 +1,246 @@
+Continue ZaraOS development into Alpha 0.5.
+
+IMPORTANT:
+Do not add random features.
+Do not add marketplace features yet.
+Do not add real email/text/calling integrations yet.
+Do not add paid services.
+Do not break Replit independence.
+Do not break GitHub portability.
+Do not break future Tauri/Linux ISO path.
+
+Current goal:
+Harden the AI foundation and security model before expanding features.
+
+ZaraOS Alpha 0.4 now has:
+- real Web Speech API voice input
+- real Ollama provider routing
+- real cloud provider adapters
+- provider health-check caching
+- intent-aware system prompts
+- conversation memory
+- local-first AI architecture
+- command routing through Zara Runtime
+- Skills Hub
+- privacy/permission system
+
+Alpha 0.5 priority:
+Secure key storage, improve local AI UX, expose memory controls, and prepare for Tauri/native packaging.
+
+TASK 1 — Secure Storage Abstraction
+
+Create a secure storage abstraction layer.
+
+Suggested location:
+src/core/security/secure-storage.ts
+
+Goals:
+- Replace direct API key localStorage access with a storage interface.
+- For browser Alpha 0.5, use Web Crypto AES-GCM encryption where possible.
+- Store encrypted values in IndexedDB if practical.
+- If IndexedDB is too much for this pass, create the abstraction and keep a clearly labeled fallback.
+- Never log raw keys.
+- Never return raw keys to UI unless the user is actively editing.
+- Always mask keys in display state.
+
+Create docs:
+docs/SECURE_STORAGE_MODEL.md
+
+Explain:
+- Alpha browser limitations
+- why localStorage is not secure enough long-term
+- encrypted IndexedDB plan
+- future Tauri OS keychain plan
+- future Linux secret service / keyring plan
+
+TASK 2 — Migrate AI Provider Key Handling
+
+Update AI Provider Manager and provider registry so:
+- API keys use the new secure storage abstraction
+- UI only shows masked keys
+- keys are never logged
+- keys are never included in status reports
+- deleting a provider key securely removes it from storage
+- changing a key invalidates provider health cache
+
+Keep cloud providers disabled unless cloud_ai permission is granted.
+
+TASK 3 — Add Ollama Model Manager UI
+
+Improve the AI Provider Manager with a Local AI / Ollama section.
+
+Add:
+- Ollama connection status
+- endpoint setting, default http://localhost:11434
+- Test Ollama button
+- Fetch installed models button using /api/tags
+- installed model list
+- active model selector
+- model size/details if available
+- clear error messages if Ollama is not running
+- guidance text explaining how this will work in the future Tauri/Linux version
+
+Do not attempt to install Ollama from the browser.
+
+Add placeholder for future:
+- model download
+- model progress
+- recommended models
+- GPU acceleration status
+
+TASK 4 — Add Local AI Status To Dashboard
+
+Add a dashboard widget showing:
+- Active AI provider
+- Active model
+- Local AI available/unavailable
+- Ollama status
+- Cloud AI disabled/enabled
+- Memory enabled/disabled
+- Last response latency
+- Simulated vs real AI badge
+
+This should help users understand whether Zara is truly local or simulated.
+
+TASK 5 — Memory Panel UI
+
+Create a new page/panel:
+
+Route:
+/memory
+
+Sidebar label:
+Memory
+
+Purpose:
+Give users visibility and control over Zara’s local memory.
+
+The Memory page should show:
+- current session ID
+- message count
+- estimated token count
+- localStorage usage estimate
+- pinned memories
+- recent memory entries
+- recent skill usage
+- user preferences
+- clear conversation history button
+- clear unpinned memory button
+- purge all memory button with confirmation
+
+Security rules:
+- destructive memory actions require confirmation
+- explain that memory is local-only in Alpha
+- no cloud sync
+- no telemetry
+- no hidden uploads
+
+Add Memory to:
+- sidebar
+- app launcher
+- gesture panel order
+- command router navigation
+- Zara Runtime launchApp route map
+
+TASK 6 — Improve Conversation Memory Controls
+
+Update the conversation memory system so it supports:
+- enable/disable memory
+- clear current session
+- clear all sessions
+- pin/unpin memory entries
+- export memory as JSON
+- import memory from JSON, mocked if needed
+- estimate storage usage
+
+Add safety warnings around import/export.
+
+TASK 7 — Tauri Readiness Audit
+
+Create:
+docs/TAURI_READINESS_AUDIT_ALPHA_0_5.md
+
+Audit:
+- what code is browser-only
+- what code will move behind Tauri invoke()
+- what features need native permissions
+- what storage should move to OS keychain
+- what cloud provider code should NOT remain exposed in browser long-term
+- what Linux system integrations are needed later
+
+Identify:
+- browser-only voice engine
+- browser-only cloud API calls
+- browser-only localStorage
+- future filesystem access
+- future system command execution
+- future Ollama process management
+- future Whisper.cpp subprocess
+- future MediaPipe camera bridge
+
+TASK 8 — Cloud Provider Safety Warning
+
+Add clear UI warnings in AI Provider Manager:
+
+Cloud providers are optional.
+Users bring their own API keys.
+ZaraOS does not pay for inference.
+Browser-based direct cloud calls are prototype-only.
+Native/Tauri builds should use safer storage and local proxy handling.
+
+Cloud AI should remain off by default.
+
+TASK 9 — Command Router Updates
+
+Add commands:
+- open memory
+- show memory
+- clear memory
+- purge memory
+- show local ai status
+- test ollama
+- show models
+- switch model
+- disable memory
+- enable memory
+
+All destructive commands must require confirmation.
+
+TASK 10 — Documentation Updates
+
+Create/update:
+docs/LOCAL_AI_ROADMAP.md
+docs/MEMORY_MODEL.md
+docs/AI_SECURITY_MODEL.md
+docs/GITHUB_EXPORT_GUIDE.md
+docs/LINUX_ISO_PREP.md
+
+Make sure docs reflect Alpha 0.5.
+
+TASK 11 — Portability Check
+
+Run or verify:
+pnpm --filter @workspace/zaraos run typecheck
+pnpm --filter @workspace/zaraos run build
+
+If build cannot run outside Replit because of environment variables, fix it.
+ZaraOS must be GitHub-ready and buildable on a normal Linux machine.
+
+TASK 12 — Final Alpha 0.5 Report
+
+Provide a full report with:
+1. Files created
+2. Files modified
+3. Secure storage changes
+4. API key handling changes
+5. Ollama model manager status
+6. Memory panel details
+7. Tauri readiness findings
+8. Remaining browser limitations
+9. Remaining security concerns
+10. What remains mocked
+11. Whether typecheck passes
+12. Whether production build passes
+13. Recommended Alpha 0.6 next steps
+
+Begin Alpha 0.5 now.

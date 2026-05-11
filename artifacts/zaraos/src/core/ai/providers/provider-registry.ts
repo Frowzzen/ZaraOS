@@ -25,13 +25,16 @@ import { LlamaCppProvider } from "./llamacpp-provider";
 import { OpenAIProvider } from "./openai-provider";
 import { AnthropicProvider } from "./anthropic-provider";
 import { GeminiProvider } from "./gemini-provider";
+import { secureStorage } from "../../security/secure-storage";
 import type { AIProviderAdapter, AIProviderStatus } from "./provider-adapter";
 
 // ── Storage Keys ─────────────────────────────────────────────
 const SK_ENABLED   = "zaraos_providers_enabled_v1";
 const SK_PREFERRED = "zaraos_preferred_provider_v1";
 const SK_ENDPOINTS = "zaraos_provider_endpoints_v1";
-const SK_KEYS      = "zaraos_provider_keys_v1";
+// Legacy plain-text key storage — kept for migration read only.
+// Alpha 0.5+: keys are stored via SecureStorage (AES-GCM encrypted).
+const SK_KEYS_LEGACY = "zaraos_provider_keys_v1";
 
 // ── Default Enabled State ─────────────────────────────────────
 // Ollama is enabled by default — it activates automatically when
@@ -98,11 +101,11 @@ export function initializeProviders(): void {
 
   const enabledState = loadJson<Record<string, boolean>>(SK_ENABLED, DEFAULT_ENABLED);
   const endpoints    = loadJson<Record<string, string>>(SK_ENDPOINTS, {});
-  const keys         = loadJson<Record<string, string>>(SK_KEYS, {});
 
-  // Create provider instances
+  // Phase 1 (sync): create providers without API keys.
+  // Keys are injected asynchronously in loadAndMigrateSecureKeys() below.
   _ollama = new OllamaProvider({
-    enabled: true, // always constructed enabled; actual availability = healthCheck()
+    enabled: true,
     baseUrl: endpoints["ollama"],
   });
 
@@ -111,20 +114,9 @@ export function initializeProviders(): void {
     endpoint: endpoints["llamacpp"],
   });
 
-  _openai = new OpenAIProvider({
-    enabled: true,
-    apiKey: keys["openai"],
-  });
-
-  _anthropic = new AnthropicProvider({
-    enabled: true,
-    apiKey: keys["anthropic"],
-  });
-
-  _gemini = new GeminiProvider({
-    enabled: true,
-    apiKey: keys["gemini"],
-  });
+  _openai    = new OpenAIProvider({ enabled: true });
+  _anthropic = new AnthropicProvider({ enabled: true });
+  _gemini    = new GeminiProvider({ enabled: true });
 
   // Register all providers — user's enabled preference controls routing
   providerRouter.register(localProvider, enabledState["local"] ?? true);
@@ -137,6 +129,42 @@ export function initializeProviders(): void {
   // Restore preferred provider
   const preferred = localStorage.getItem(SK_PREFERRED);
   if (preferred) providerRouter.setPreferredProvider(preferred);
+}
+
+// ── Async Key Loading & Migration ─────────────────────────
+// Phase 2: Reads API keys from SecureStorage and injects them
+// into live provider instances. Also migrates any legacy plain
+// keys from SK_KEYS_LEGACY to SecureStorage on first run.
+//
+// Called from aiRuntime.initialize() after initializeProviders().
+
+export async function loadAndMigrateSecureKeys(): Promise<void> {
+  const cloudIds = ["openai", "anthropic", "gemini"];
+
+  // Migrate legacy plain-text keys if present
+  const legacyKeys = loadJson<Record<string, string>>(SK_KEYS_LEGACY, {});
+  const hasMigrated = legacyKeys && Object.keys(legacyKeys).length > 0;
+  if (hasMigrated) {
+    for (const id of cloudIds) {
+      const legacyKey = legacyKeys[id];
+      if (legacyKey && !secureStorage.has(id)) {
+        await secureStorage.set(id, legacyKey);
+      }
+    }
+    // Remove legacy plain-text storage after migration
+    localStorage.removeItem(SK_KEYS_LEGACY);
+  }
+
+  // Inject keys into live provider instances
+  for (const id of cloudIds) {
+    const key = await secureStorage.get(id);
+    if (key) {
+      const provider = providerRouter.getProvider(id);
+      if (provider && "setApiKey" in provider) {
+        (provider as { setApiKey: (k: string) => void }).setApiKey(key);
+      }
+    }
+  }
 }
 
 // ── Provider mutation helpers ─────────────────────────────────
@@ -162,23 +190,22 @@ export function getPreferredProviderId(): string | null {
 }
 
 export function setProviderApiKey(id: string, key: string): void {
+  // 1. Update the live provider instance immediately (sync).
   const provider = providerRouter.getProvider(id);
   if (provider && "setApiKey" in provider) {
     (provider as { setApiKey: (k: string) => void }).setApiKey(key);
   }
-  const keys = loadJson<Record<string, string>>(SK_KEYS, {});
-  if (key) {
-    keys[id] = key;
-  } else {
-    delete keys[id];
-  }
-  saveJson(SK_KEYS, keys);
-  // Having a key enables cloud providers automatically
+  // 2. Persist to SecureStorage (async — fire and forget).
+  //    The key takes effect in memory immediately above.
+  //    Never log the key value on error.
+  secureStorage.set(id, key).catch(() => {
+    console.error(`[SecureStorage] Failed to persist key for provider: ${id}`);
+  });
+  // 3. Having a key enables cloud providers automatically.
   if (key && ["openai", "anthropic", "gemini"].includes(id)) {
     setProviderEnabled(id, true);
   }
-  // Key change makes the cached health result stale — evict so
-  // the router re-validates on the next message dispatch.
+  // 4. Evict stale health cache so the router re-validates.
   providerRouter.invalidateHealthCache(id);
 }
 
@@ -238,7 +265,6 @@ export function invalidateProviderHealthCache(id?: string): void {
 export function getProviderSummaries(): ProviderSummary[] {
   const enabledState = loadJson<Record<string, boolean>>(SK_ENABLED, { ...DEFAULT_ENABLED });
   const endpoints    = loadJson<Record<string, string>>(SK_ENDPOINTS, {});
-  const keys         = loadJson<Record<string, string>>(SK_KEYS, {});
   const preferred    = providerRouter.getPreferredProviderId();
 
   const configs: Array<{
@@ -258,7 +284,8 @@ export function getProviderSummaries(): ProviderSummary[] {
     isEnabled:       enabledState[c.id] ?? DEFAULT_ENABLED[c.id] ?? false,
     isPreferred:     preferred === c.id,
     currentEndpoint: endpoints[c.id],
-    hasApiKey:       Boolean(keys[c.id]),
+    // Use SecureStorage.has() (sync) — never exposes the raw key value.
+    hasApiKey:       c.requiresKey ? secureStorage.has(c.id) : false,
   }));
 }
 

@@ -198,6 +198,11 @@ export class ConversationMemory {
       .slice(0, limit);
   }
 
+  // Alias used by ai-runtime.ts
+  getRecentSkillUsage(limit = 5): SkillUsageRecord[] {
+    return this.getRecentSkills(limit);
+  }
+
   getMostUsedSkills(limit = 5): SkillUsageRecord[] {
     return [...this.skillUsage]
       .sort((a, b) => b.useCount - a.useCount)
@@ -283,6 +288,56 @@ export class ConversationMemory {
 
   estimateStorageBytes(): number {
     return estimateStorageBytes();
+  }
+
+  // ── Export / Import ───────────────────────────────────
+
+  exportMemory(): string {
+    return JSON.stringify({
+      version: 1,
+      exportedAt: Date.now(),
+      session: this.currentSession,
+      entries: this.entries,
+      preferences: this.preferences,
+      skillUsage: this.skillUsage,
+    }, null, 2);
+  }
+
+  importMemory(json: string): void {
+    const data = JSON.parse(json) as {
+      version?: number;
+      session?: ConversationSession;
+      entries?: MemoryEntry[];
+      preferences?: UserPreferences;
+      skillUsage?: SkillUsageRecord[];
+    };
+    if (data.session) {
+      this.currentSession = data.session;
+      setCurrentSessionId(data.session.id);
+      if (this.enabled) saveSession(data.session);
+    }
+    if (Array.isArray(data.entries)) {
+      this.entries = data.entries;
+      if (this.enabled) saveEntries(this.entries);
+    }
+    if (data.preferences) {
+      this.preferences = { ...this.preferences, ...data.preferences };
+      savePreferences(this.preferences);
+    }
+    if (Array.isArray(data.skillUsage)) {
+      this.skillUsage = data.skillUsage;
+      if (this.enabled) saveSkillUsage(this.skillUsage);
+    }
+  }
+
+  getCurrentSessionId(): string | null {
+    return this.currentSession?.id ?? null;
+  }
+
+  getRecentEntries(limit = 8): MemoryEntry[] {
+    return [...this.entries]
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, limit);
   }
 }
 

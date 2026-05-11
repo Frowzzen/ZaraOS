@@ -1,10 +1,12 @@
 // ============================================================
-// AI Provider Manager — Alpha 0.4
+// AI Provider Manager — Alpha 0.5
 //
 // Fully functional provider management:
+//   - AES-GCM encrypted API key storage (secureStorage)
 //   - Live health checks for Ollama and llama.cpp
-//   - Switches that actually wire through to the routing layer
-//   - API key input that persists to localStorage
+//   - Ollama Model Manager — fetch/inspect installed models
+//   - Cloud safety warnings (explicit data-leaves-device notice)
+//   - Switches that wire through to the routing layer
 //   - Custom endpoint URLs for local providers
 //   - Real-time provider status badges
 //   - Preferred provider selection
@@ -23,10 +25,12 @@ import type { AIProviderStatus } from "@/core/ai/providers/provider-adapter";
 import {
   Cpu,
   ShieldCheck,
+  ShieldAlert,
   Trash2,
   Server,
   Cloud,
   Lock,
+  ShieldOff,
   AlertTriangle,
   Database,
   RefreshCw,
@@ -34,9 +38,19 @@ import {
   XCircle,
   Loader2,
   Star,
+  Brain,
+  Package,
+  HardDrive,
 } from "lucide-react";
 
 type HealthMap = Record<string, AIProviderStatus | "checking" | null>;
+
+interface OllamaModel {
+  name: string;
+  size: number;
+  modified_at?: string;
+  digest?: string;
+}
 
 function StatusBadge({ id, health }: { id: string; health: AIProviderStatus | "checking" | null }) {
   if (id === "local") {
@@ -56,7 +70,7 @@ function StatusBadge({ id, health }: { id: string; health: AIProviderStatus | "c
     );
   }
   if (health === null) return null;
-  if (health.available) {
+  if ((health as AIProviderStatus).available) {
     return (
       <span className="text-[9px] font-mono text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded border border-green-500/20 flex items-center gap-1">
         <CheckCircle2 className="w-2.5 h-2.5" />
@@ -70,6 +84,11 @@ function StatusBadge({ id, health }: { id: string; health: AIProviderStatus | "c
       NOT RUNNING
     </span>
   );
+}
+
+function formatModelSize(bytes: number): string {
+  if (bytes < 1_073_741_824) return `${(bytes / 1_048_576).toFixed(0)} MB`;
+  return `${(bytes / 1_073_741_824).toFixed(1)} GB`;
 }
 
 export default function AIProviders() {
@@ -95,7 +114,12 @@ export default function AIProviders() {
     try { return getAIMemoryStats(); } catch { return null; }
   });
 
-  // Run health checks for local providers on mount
+  // Ollama model manager state
+  const [ollamaModels, setOllamaModels] = useState<OllamaModel[]>([]);
+  const [ollamaModelsFetching, setOllamaModelsFetching] = useState(false);
+  const [ollamaModelsError, setOllamaModelsError] = useState<string | null>(null);
+  const [activeOllamaModel, setActiveOllamaModel] = useState<string | null>(null);
+
   const runHealthChecks = useCallback(async (ids: string[]) => {
     setHealth((prev) => {
       const next = { ...prev };
@@ -110,16 +134,38 @@ export default function AIProviders() {
       results.forEach(({ id, status }) => { next[id] = status; });
       return next;
     });
+    // After Ollama health check, update the active model display
+    const ollamaResult = results.find((r) => r.id === "ollama");
+    if (ollamaResult && (ollamaResult.status as AIProviderStatus).activeModel) {
+      setActiveOllamaModel((ollamaResult.status as AIProviderStatus).activeModel ?? null);
+    }
   }, [checkAIProviderHealth]);
+
+  const fetchOllamaModels = useCallback(async (baseUrl = "http://localhost:11434") => {
+    setOllamaModelsFetching(true);
+    setOllamaModelsError(null);
+    try {
+      const res = await fetch(`${baseUrl}/api/tags`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json() as { models?: OllamaModel[] };
+      setOllamaModels(data.models ?? []);
+    } catch (err) {
+      setOllamaModelsError("Cannot connect to Ollama. Make sure 'ollama serve' is running.");
+      setOllamaModels([]);
+    } finally {
+      setOllamaModelsFetching(false);
+    }
+  }, []);
 
   useEffect(() => {
     runHealthChecks(["ollama", "llamacpp"]);
-  }, [runHealthChecks]);
+    fetchOllamaModels();
+  }, [runHealthChecks, fetchOllamaModels]);
 
   const refreshSummaries = () => setSummaries(getAIProviderSummaries());
 
   const handleToggleEnabled = (id: string, enabled: boolean) => {
-    if (id === "local") return; // local is always on
+    if (id === "local") return;
     enableAIProvider(id, enabled);
     refreshSummaries();
   };
@@ -136,6 +182,7 @@ export default function AIProviders() {
     if (url) {
       setAIProviderEndpoint(id, url);
       runHealthChecks([id]);
+      if (id === "ollama") fetchOllamaModels(url);
     }
   };
 
@@ -144,7 +191,14 @@ export default function AIProviders() {
     if (key !== undefined) {
       setAIProviderApiKey(id, key);
       refreshSummaries();
+      // Clear the input — key is now encrypted in storage
+      setApiKeys((prev) => ({ ...prev, [id]: "" }));
     }
+  };
+
+  const handleDeleteApiKey = (id: string) => {
+    setAIProviderApiKey(id, "");
+    refreshSummaries();
   };
 
   const handleClearMemory = () => {
@@ -157,21 +211,29 @@ export default function AIProviders() {
       local:     "Built-in simulated intelligence. Always available. No install required.",
       ollama:    "Run open-source models (Llama 3, Mistral, Phi-3) locally. Install Ollama and run 'ollama serve' to enable real inference.",
       llamacpp:  "OpenAI-compatible local server. Maximum quantization control. Run: './llama-server -m model.gguf --port 8080'",
-      openai:    "GPT-4o and GPT-4o-mini. Cloud provider — data leaves your device. Your API key only.",
-      anthropic: "Claude 3.5 Sonnet and Haiku. Cloud provider — data leaves your device. Your API key only.",
-      gemini:    "Gemini 1.5 Pro and Flash. Cloud provider — data leaves your device. Your API key only.",
+      openai:    "GPT-4o and GPT-4o-mini. Cloud provider — inference happens on OpenAI servers. Your data leaves your device.",
+      anthropic: "Claude 3.5 Sonnet and Haiku. Cloud provider — inference happens on Anthropic servers. Your data leaves your device.",
+      gemini:    "Gemini 1.5 Pro and Flash. Cloud provider — inference happens on Google servers. Your data leaves your device.",
     };
     return map[id] ?? "";
   };
 
   const getKeyPlaceholder = (id: string) => {
     const map: Record<string, string> = {
-      openai: "sk-...",
+      openai:    "sk-...",
       anthropic: "sk-ant-...",
-      gemini: "AIza...",
+      gemini:    "AIza...",
     };
     return map[id] ?? "API key...";
   };
+
+  const ollamaHealth = health["ollama"] ?? null;
+  const ollamaIsRunning =
+    ollamaHealth !== null &&
+    ollamaHealth !== "checking" &&
+    (ollamaHealth as AIProviderStatus).available === true;
+
+  const ollamaEndpoint = endpoints["ollama"] ?? summaries.find((s) => s.id === "ollama")?.currentEndpoint ?? "http://localhost:11434";
 
   return (
     <Layout>
@@ -206,7 +268,7 @@ export default function AIProviders() {
         <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-green-500/5 border border-green-500/15">
           <ShieldCheck className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
           <p className="text-sm text-green-300/70 font-mono leading-relaxed">
-            Local-first by design. Cloud providers require your own API key — ZaraOS never pays for inference and never stores keys on any server. Keys are held in localStorage only and never transmitted to ZaraOS.
+            Local-first by design. Cloud providers require your own API key — ZaraOS never pays for inference. In Alpha 0.5, API keys are encrypted with AES-GCM (Web Crypto) before being stored locally. Keys are never transmitted to ZaraOS or any third party beyond the chosen AI provider.
           </p>
         </div>
 
@@ -292,17 +354,30 @@ export default function AIProviders() {
                     </div>
                   )}
 
-                  {/* API key for cloud providers */}
+                  {/* API key for cloud providers — AES-GCM encrypted */}
                   {p.requiresKey && (
                     <div className="flex flex-col gap-1.5">
+                      {/* Cloud data-leaves-device warning */}
+                      <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/15 mb-1">
+                        <ShieldOff className="w-3 h-3 text-amber-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-[10px] font-mono text-amber-300/70 leading-relaxed">
+                            Cloud provider — your prompts and conversation history will leave your device and be processed on {p.name} servers. Enable "Cloud AI" in Privacy settings first.
+                          </p>
+                          <p className="text-[9px] font-mono text-amber-300/40 mt-0.5">
+                            ZaraOS is a prototype. For sensitive conversations, use Ollama (local-only).
+                          </p>
+                        </div>
+                      </div>
+
                       <label className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest flex items-center gap-1">
                         <Lock className="w-2.5 h-2.5" />
-                        API Key — localStorage only, never transmitted
+                        API Key — AES-GCM encrypted, local only
                       </label>
                       <div className="flex gap-2">
                         <Input
                           type="password"
-                          placeholder={p.hasApiKey ? "••••••••••••••••" : getKeyPlaceholder(p.id)}
+                          placeholder={p.hasApiKey ? "Key saved — enter new key to replace" : getKeyPlaceholder(p.id)}
                           value={apiKeys[p.id] ?? ""}
                           onChange={(e) => setApiKeys((prev) => ({ ...prev, [p.id]: e.target.value }))}
                           className="bg-black/50 border-white/10 text-sm h-9 font-mono flex-1"
@@ -313,13 +388,26 @@ export default function AIProviders() {
                           variant="outline"
                           className="h-9 px-3 border-white/10 text-xs"
                           onClick={() => handleSaveApiKey(p.id)}
+                          disabled={!apiKeys[p.id]}
                         >
                           Save
                         </Button>
+                        {p.hasApiKey && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-9 px-2 text-red-400/60 hover:text-red-400 hover:bg-red-500/10"
+                            onClick={() => handleDeleteApiKey(p.id)}
+                            title="Remove saved key"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                       </div>
                       {p.hasApiKey && (
-                        <p className="text-[10px] text-green-400/60 font-mono">
-                          API key saved. Clear the field and save to remove it.
+                        <p className="text-[10px] text-green-400/60 font-mono flex items-center gap-1">
+                          <ShieldCheck className="w-2.5 h-2.5" />
+                          Key saved and encrypted with AES-GCM.
                         </p>
                       )}
                     </div>
@@ -341,17 +429,16 @@ export default function AIProviders() {
                   )}
 
                   {/* Cloud permission warning */}
-                  {isCloud && (
-                    <div className="flex items-start gap-1.5 text-[11px] font-mono text-amber-400/60">
+                  {isCloud && !p.hasApiKey && (
+                    <div className="flex items-start gap-1.5 text-[11px] font-mono text-muted-foreground/40">
                       <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                      <span>Requires cloud_ai permission in Privacy settings before data leaves your device.</span>
+                      <span>Add an API key above to enable this provider.</span>
                     </div>
                   )}
                 </CardContent>
 
                 <CardFooter className="pt-3 border-t border-white/5 flex justify-between items-center gap-3 flex-wrap">
                   <div className="flex items-center gap-2">
-                    {/* Test connection button for local providers */}
                     {p.requiresEndpoint && (
                       <Button
                         variant="ghost"
@@ -364,7 +451,6 @@ export default function AIProviders() {
                         Test
                       </Button>
                     )}
-                    {/* Set as preferred button */}
                     {p.id !== "local" && (
                       <Button
                         variant="ghost"
@@ -384,7 +470,6 @@ export default function AIProviders() {
                       </Button>
                     )}
                   </div>
-
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">
                       {p.id === "local"
@@ -405,6 +490,125 @@ export default function AIProviders() {
             );
           })}
         </div>
+
+        {/* ── Ollama Model Manager ── */}
+        <Card className="bg-card/40 border-white/5 backdrop-blur">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Brain className="w-4 h-4 text-primary" />
+                Ollama Model Manager
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                {ollamaIsRunning ? (
+                  <span className="text-[9px] font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20 flex items-center gap-1">
+                    <CheckCircle2 className="w-2.5 h-2.5" />
+                    OLLAMA RUNNING
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-mono text-red-400/70 bg-red-500/8 px-2 py-0.5 rounded border border-red-500/15 flex items-center gap-1">
+                    <XCircle className="w-2.5 h-2.5" />
+                    OLLAMA NOT RUNNING
+                  </span>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-muted-foreground hover:text-primary px-2 gap-1"
+                  onClick={() => {
+                    runHealthChecks(["ollama"]);
+                    fetchOllamaModels(ollamaEndpoint);
+                  }}
+                  data-testid="button-refresh-ollama"
+                >
+                  <RefreshCw className={`w-3 h-3 ${ollamaModelsFetching ? "animate-spin" : ""}`} />
+                  Refresh
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {/* Current active model */}
+            {activeOllamaModel && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/15">
+                <Brain className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                <span className="text-xs font-mono text-primary/70">Active model:</span>
+                <span className="text-xs font-mono text-primary font-semibold">{activeOllamaModel}</span>
+              </div>
+            )}
+
+            {/* Model list */}
+            {ollamaModelsError ? (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/5 border border-red-500/15">
+                <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs font-mono text-red-400/70">{ollamaModelsError}</p>
+              </div>
+            ) : ollamaModelsFetching ? (
+              <div className="flex items-center gap-2 py-4 justify-center text-muted-foreground/50">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-xs font-mono">Fetching installed models...</span>
+              </div>
+            ) : ollamaModels.length === 0 ? (
+              <p className="text-xs font-mono text-muted-foreground/50 py-4 text-center">
+                No models found. Pull a model first: <code className="text-green-400/70">ollama pull llama3.2</code>
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <Package className="w-3.5 h-3.5 text-muted-foreground/50" />
+                  <span className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-widest">
+                    {ollamaModels.length} model{ollamaModels.length !== 1 ? "s" : ""} installed
+                  </span>
+                </div>
+                {ollamaModels.map((model) => (
+                  <div
+                    key={model.name}
+                    className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-all ${
+                      model.name === activeOllamaModel || model.name === (ollamaHealth as AIProviderStatus | null)?.activeModel
+                        ? "bg-primary/5 border-primary/20"
+                        : "bg-black/30 border-white/5 hover:border-white/10"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Brain className={`w-3.5 h-3.5 flex-shrink-0 ${
+                        model.name === activeOllamaModel ? "text-primary" : "text-muted-foreground/40"
+                      }`} />
+                      <div className="min-w-0">
+                        <p className="text-sm text-white font-mono truncate">{model.name}</p>
+                        {model.modified_at && (
+                          <p className="text-[10px] text-muted-foreground/40 font-mono">
+                            Updated {new Date(model.modified_at).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground/40">
+                        <HardDrive className="w-3 h-3" />
+                        {formatModelSize(model.size)}
+                      </div>
+                      {(model.name === activeOllamaModel || model.name === (ollamaHealth as AIProviderStatus | null)?.activeModel) && (
+                        <span className="text-[9px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+                          IN USE
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Install guidance */}
+            <div className="pt-2 border-t border-white/5">
+              <p className="text-[10px] text-muted-foreground/40 font-mono leading-relaxed">
+                To add models: <code className="text-green-400/60">ollama pull llama3.2</code> or <code className="text-green-400/60">ollama pull mistral</code>. Zara will use the first available model unless you set a preferred one via <code className="text-primary/50">ollama run &lt;model&gt;</code>.
+              </p>
+              <p className="text-[10px] text-muted-foreground/30 font-mono mt-1">
+                Future (Tauri): ZaraOS will launch and manage the Ollama process automatically on startup.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* ── How to install Ollama ── */}
         <Card className="bg-card/40 border-white/5 backdrop-blur">
@@ -429,8 +633,37 @@ export default function AIProviders() {
               <span>curl http://localhost:11434/api/version</span>
             </div>
             <p className="text-[10px] text-muted-foreground/50 font-mono">
-              Once Ollama is running, click "Test" on the Ollama card above. Zara will route all inference to the local model automatically — no restart required.
+              Once Ollama is running, click "Refresh" in the Model Manager above. Zara will route all inference to the local model automatically — no restart required.
             </p>
+          </CardContent>
+        </Card>
+
+        {/* ── Security Notice ── */}
+        <Card className="bg-card/40 border-green-500/10 backdrop-blur">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2 text-green-400/80">
+              <ShieldAlert className="w-4 h-4" />
+              API Key Security — Alpha 0.5
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <p className="text-xs text-muted-foreground font-mono leading-relaxed">
+              In Alpha 0.5, API keys are encrypted with AES-GCM-256 (Web Crypto API, PBKDF2 key derivation) before being stored in localStorage. This is a significant improvement over plain text but is not equivalent to a hardware keychain.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[10px] font-mono">
+              <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/10">
+                <p className="text-green-400/80 font-semibold mb-1">What's protected</p>
+                <p className="text-muted-foreground/50 leading-relaxed">Keys are not readable as plain text in DevTools. Ciphertext only in localStorage.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
+                <p className="text-amber-400/80 font-semibold mb-1">Alpha limitation</p>
+                <p className="text-muted-foreground/50 leading-relaxed">Key material is also in localStorage. XSS or malicious extensions could still extract keys.</p>
+              </div>
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
+                <p className="text-primary/80 font-semibold mb-1">Future (Tauri)</p>
+                <p className="text-muted-foreground/50 leading-relaxed">OS keychain (Keychain Services / Credential Manager / Secret Service). Zero JS exposure.</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -450,7 +683,7 @@ export default function AIProviders() {
                 data-testid="button-clear-memory"
               >
                 <Trash2 className="w-3 h-3" />
-                Clear
+                Clear Session
               </Button>
             </div>
           </CardHeader>
@@ -458,10 +691,10 @@ export default function AIProviders() {
             {memoryStats ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
                 {[
-                  { label: "Turns",      value: memoryStats.conversationTurns },
+                  { label: "Turns",       value: memoryStats.conversationTurns },
                   { label: "Est. Tokens", value: memoryStats.estimatedTokens.toLocaleString() },
-                  { label: "Pinned",     value: memoryStats.pinnedEntries },
-                  { label: "Entries",    value: memoryStats.totalEntries },
+                  { label: "Pinned",      value: memoryStats.pinnedEntries },
+                  { label: "Entries",     value: memoryStats.totalEntries },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex flex-col gap-1">
                     <span className="text-muted-foreground/50 uppercase tracking-widest text-[9px]">{label}</span>
@@ -473,7 +706,7 @@ export default function AIProviders() {
               <p className="text-xs text-muted-foreground font-mono">Memory stats unavailable.</p>
             )}
             <p className="text-[10px] text-muted-foreground/40 font-mono mt-3">
-              Alpha 0.4: Stored in localStorage. Future: Encrypted IndexedDB (Alpha 0.5), SQLCipher on Linux ISO.
+              Alpha 0.5: Encrypted localStorage (AES-GCM). Future: SQLCipher on Linux ISO. Full memory controls in the Memory panel.
             </p>
           </CardContent>
         </Card>

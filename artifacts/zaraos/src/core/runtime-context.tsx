@@ -7,9 +7,12 @@
 // Components must never import zaraRuntime or aiRuntime directly.
 // They should use useRuntime() instead.
 //
-// Alpha 0.4: Added full AI provider management:
-//   enableAIProvider, setPreferredAIProvider, checkAIProviderHealth,
-//   setAIProviderApiKey, setAIProviderEndpoint, getAIProviderSummaries
+// Alpha 0.5: Added full memory management API:
+//   clearAIHistory, purgeAllAIMemory, getAIMemoryPinnedEntries,
+//   getAIMemoryRecentEntries, getAIMemorySkillUsage,
+//   isAIMemoryEnabled, setAIMemoryEnabled,
+//   exportAIMemory, importAIMemory,
+//   getAICurrentSessionId, estimateAIStorageBytes
 // ============================================================
 
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -42,7 +45,18 @@ interface RuntimeContextType {
 
   // AI conversation management
   clearAIConversation: () => void;
+  clearAIHistory: () => void;
+  purgeAllAIMemory: () => void;
   getAIMemoryStats: () => MemoryStats;
+  getAIMemoryPinnedEntries: () => ReturnType<typeof zaraRuntime.getAIMemoryPinnedEntries>;
+  getAIMemoryRecentEntries: (limit?: number) => ReturnType<typeof zaraRuntime.getAIMemoryRecentEntries>;
+  getAIMemorySkillUsage: (limit?: number) => ReturnType<typeof zaraRuntime.getAIMemorySkillUsage>;
+  isAIMemoryEnabled: () => boolean;
+  setAIMemoryEnabled: (enabled: boolean) => void;
+  exportAIMemory: () => string;
+  importAIMemory: (json: string) => void;
+  getAICurrentSessionId: () => string | null;
+  estimateAIStorageBytes: () => number;
 
   // AI provider management
   selectAIProvider: typeof zaraRuntime.selectAIProvider;
@@ -104,7 +118,18 @@ export function RuntimeProvider({ children }: { children: React.ReactNode }) {
       zaraRuntime.streamAssistantMessage(message, onChunk, source ?? "keyboard").then(() => undefined),
 
     clearAIConversation: zaraRuntime.clearAIConversation.bind(zaraRuntime),
+    clearAIHistory: zaraRuntime.clearAIHistory.bind(zaraRuntime),
+    purgeAllAIMemory: zaraRuntime.purgeAllAIMemory.bind(zaraRuntime),
     getAIMemoryStats: zaraRuntime.getAIMemoryStats.bind(zaraRuntime),
+    getAIMemoryPinnedEntries: zaraRuntime.getAIMemoryPinnedEntries.bind(zaraRuntime),
+    getAIMemoryRecentEntries: (limit) => zaraRuntime.getAIMemoryRecentEntries(limit),
+    getAIMemorySkillUsage: (limit) => zaraRuntime.getAIMemorySkillUsage(limit),
+    isAIMemoryEnabled: zaraRuntime.isAIMemoryEnabled.bind(zaraRuntime),
+    setAIMemoryEnabled: zaraRuntime.setAIMemoryEnabled.bind(zaraRuntime),
+    exportAIMemory: zaraRuntime.exportAIMemory.bind(zaraRuntime),
+    importAIMemory: zaraRuntime.importAIMemory.bind(zaraRuntime),
+    getAICurrentSessionId: zaraRuntime.getAICurrentSessionId.bind(zaraRuntime),
+    estimateAIStorageBytes: zaraRuntime.estimateAIStorageBytes.bind(zaraRuntime),
 
     selectAIProvider: zaraRuntime.selectAIProvider.bind(zaraRuntime),
     enableAIProvider: zaraRuntime.enableAIProvider.bind(zaraRuntime),

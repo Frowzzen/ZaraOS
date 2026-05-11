@@ -19,7 +19,7 @@
 
 import { conversationMemory } from "./memory/conversation-memory";
 import { requestRouter } from "./routing/request-router";
-import { initializeProviders } from "./providers/provider-registry";
+import { initializeProviders, loadAndMigrateSecureKeys } from "./providers/provider-registry";
 import { buildSystemPrompt } from "./prompts/zara-system-prompt";
 import { buildContextBlock } from "./context/context-injector";
 import type { InjectionInput } from "./context/context-injector";
@@ -83,13 +83,17 @@ class AIRuntime {
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
-    // Register all AI providers with the router and restore user preferences.
-    // This must happen before any routing call is made.
+    // Phase 1 (sync): register providers, restore session.
     initializeProviders();
     conversationMemory.resumeOrStartSession();
     this.initialized = true;
     this.updateMemoryStats();
     this.broadcastStatus({ phase: "idle" });
+    // Phase 2 (async): migrate legacy keys and inject into providers.
+    // Non-blocking — cloud providers will simply have no key until this resolves.
+    loadAndMigrateSecureKeys().catch((err: unknown) => {
+      console.error("[AIRuntime] Key migration failed:", err);
+    });
   }
 
   // ── Core: Send Message (non-streaming) ───────────────────
@@ -252,6 +256,55 @@ class AIRuntime {
     conversationMemory.clearCurrentSession();
     this.updateMemoryStats();
     this.broadcastStatus({ phase: "idle" });
+  }
+
+  clearHistory(): void {
+    conversationMemory.clearAllHistory();
+    this.updateMemoryStats();
+    this.broadcastStatus({ phase: "idle" });
+  }
+
+  purgeAll(): void {
+    conversationMemory.purgeAll();
+    this.updateMemoryStats();
+    this.broadcastStatus({ phase: "idle" });
+  }
+
+  getPinnedEntries(): ReturnType<typeof conversationMemory.getPinnedEntries> {
+    return conversationMemory.getPinnedEntries();
+  }
+
+  getRecentEntries(limit = 8): ReturnType<typeof conversationMemory.getRecentEntries> {
+    return conversationMemory.getRecentEntries(limit);
+  }
+
+  getRecentSkillUsage(limit = 5): ReturnType<typeof conversationMemory.getRecentSkillUsage> {
+    return conversationMemory.getRecentSkillUsage(limit);
+  }
+
+  isMemoryEnabled(): boolean {
+    return conversationMemory.isEnabled();
+  }
+
+  setMemoryEnabled(enabled: boolean): void {
+    conversationMemory.setEnabled(enabled);
+  }
+
+  exportMemory(): string {
+    return conversationMemory.exportMemory();
+  }
+
+  importMemory(json: string): void {
+    conversationMemory.importMemory(json);
+    this.updateMemoryStats();
+  }
+
+  getCurrentSessionId(): string | null {
+    return conversationMemory.getCurrentSessionId();
+  }
+
+  estimateStorageBytes(): number {
+    return conversationMemory.estimateStorageBytes();
   }
 
   isSimulated(): boolean {

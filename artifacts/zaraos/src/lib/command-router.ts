@@ -136,6 +136,19 @@ const INTENT_RULES: IntentRule[] = [
   { keywords: ["disable camera", "turn off camera"], intent: "privacy_action", target: "/privacy", baseConfidence: 0.96 },
   { keywords: ["enable cloud ai", "turn on cloud", "use cloud"], intent: "privacy_action", target: "/ai-providers", requiresPermission: true, baseConfidence: 0.94 },
 
+  // ── Memory ───────────────────────────────────────────────
+  { keywords: ["open memory", "show memory", "memory panel", "zara memory", "memory settings", "view memory"], intent: "open_app", target: "/memory", baseConfidence: 0.97 },
+  { keywords: ["clear memory", "clear conversation", "reset memory", "clear chat"], intent: "privacy_action", target: "/memory", requiresConfirmation: true, destructive: true, baseConfidence: 0.94 },
+  { keywords: ["purge memory", "purge all memory", "delete all memory", "wipe memory"], intent: "privacy_action", target: "/memory", requiresConfirmation: true, destructive: true, baseConfidence: 0.96 },
+  { keywords: ["disable memory", "turn off memory", "stop remembering"], intent: "privacy_action", target: "/memory", baseConfidence: 0.94 },
+  { keywords: ["enable memory", "turn on memory", "start remembering"], intent: "privacy_action", target: "/memory", baseConfidence: 0.94 },
+
+  // ── Local AI ─────────────────────────────────────────────
+  { keywords: ["show local ai", "local ai status", "ai status", "show ai status"], intent: "system_status", target: "/ai-providers", baseConfidence: 0.95 },
+  { keywords: ["test ollama", "check ollama", "ollama status", "is ollama running"], intent: "settings_action", target: "/ai-providers", baseConfidence: 0.96 },
+  { keywords: ["show models", "list models", "available models", "installed models", "what models"], intent: "settings_action", target: "/ai-providers", baseConfidence: 0.93 },
+  { keywords: ["switch model", "change model", "use model", "select model"], intent: "settings_action", target: "/ai-providers", baseConfidence: 0.92 },
+
   // ── Developer ────────────────────────────────────────────
   { keywords: ["enable developer mode", "dev mode on", "toggle developer"], intent: "developer_action", target: "/developers", requiresPermission: true, baseConfidence: 0.95 },
   { keywords: ["install plugin", "add plugin", "load plugin"], intent: "developer_action", requiresPermission: true, baseConfidence: 0.91 },

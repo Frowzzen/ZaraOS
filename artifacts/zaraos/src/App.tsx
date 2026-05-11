@@ -1,5 +1,5 @@
 // ============================================================
-// ZaraOS App — Alpha 0.4
+// ZaraOS App — Alpha 0.5
 //
 // Route-based code splitting via React.lazy() + Suspense.
 // Every page module is a separate chunk — the initial JS payload
@@ -38,6 +38,7 @@ const Privacy     = lazy(() => import("@/pages/privacy"));
 const AIProviders = lazy(() => import("@/pages/ai-providers"));
 const Developers  = lazy(() => import("@/pages/developers"));
 const Skills      = lazy(() => import("@/pages/skills"));
+const Memory      = lazy(() => import("@/pages/memory"));
 const NotFound    = lazy(() => import("@/pages/not-found"));
 
 // ── Page loading fallback ─────────────────────────────────
@@ -74,6 +75,7 @@ function Router() {
         <Route path="/ai-providers" component={AIProviders} />
         <Route path="/developers"  component={Developers} />
         <Route path="/skills"      component={Skills} />
+        <Route path="/memory"      component={Memory} />
         <Route                     component={NotFound} />
       </Switch>
     </Suspense>

@@ -32,6 +32,7 @@ export const PANEL_ORDER = [
   "/settings",
   "/privacy",
   "/ai-providers",
+  "/memory",
   "/developers",
   "/skills",
 ] as const;

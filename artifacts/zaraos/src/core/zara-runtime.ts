@@ -301,8 +301,52 @@ class ZaraRuntime {
     aiRuntime.clearConversation();
   }
 
+  public clearAIHistory(): void {
+    aiRuntime.clearHistory();
+  }
+
+  public purgeAllAIMemory(): void {
+    aiRuntime.purgeAll();
+  }
+
   public getAIMemoryStats() {
     return aiRuntime.getMemoryStats();
+  }
+
+  public getAIMemoryPinnedEntries() {
+    return aiRuntime.getPinnedEntries();
+  }
+
+  public getAIMemoryRecentEntries(limit = 8) {
+    return aiRuntime.getRecentEntries(limit);
+  }
+
+  public getAIMemorySkillUsage(limit = 5) {
+    return aiRuntime.getRecentSkillUsage(limit);
+  }
+
+  public isAIMemoryEnabled(): boolean {
+    return aiRuntime.isMemoryEnabled();
+  }
+
+  public setAIMemoryEnabled(enabled: boolean): void {
+    aiRuntime.setMemoryEnabled(enabled);
+  }
+
+  public exportAIMemory(): string {
+    return aiRuntime.exportMemory();
+  }
+
+  public importAIMemory(json: string): void {
+    aiRuntime.importMemory(json);
+  }
+
+  public getAICurrentSessionId(): string | null {
+    return aiRuntime.getCurrentSessionId();
+  }
+
+  public estimateAIStorageBytes(): number {
+    return aiRuntime.estimateStorageBytes();
   }
 
   public getAIRuntimeStatus() {
@@ -325,6 +369,7 @@ class ZaraRuntime {
       developers: "/developers",
       "ai-providers": "/ai-providers",
       skills: "/skills",
+      memory: "/memory",
     };
 
     const route = appRoutes[appId];

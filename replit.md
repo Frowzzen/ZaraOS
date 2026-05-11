@@ -72,7 +72,7 @@ UI (useRuntime) → Zara Runtime → parseAndRoute() → permission check → di
 
 ## Product
 
-ZaraOS Alpha 0.1 includes:
+ZaraOS Alpha 0.5 includes:
 - **Dashboard** — live clock, system stats, privacy fortress, activity feed
 - **Zara Assistant** — AI chat with ZaraStatus states (idle/listening/thinking/speaking/offline/privacy-lock), input source indicators, voice button, mocked responses
 - **Console** — natural language command console with structured intent routing
@@ -81,7 +81,8 @@ ZaraOS Alpha 0.1 includes:
 - **Media** — combined audio/video player placeholder
 - **Settings** — system configuration
 - **Privacy Panel** — mic/camera/AI/network status and toggles
-- **AI Provider Manager** — API key management for 8 providers (localStorage only, never logged)
+- **AI Provider Manager** — API key management with AES-GCM encrypted storage + Ollama Model Manager
+- **Memory Panel** — full visibility and control over Zara's local memory (stats, pinned, export/import, clear/purge)
 - **Developer Portal** — full plugin registry with manifest spec, 4 example plugins, Zara Store preview
 
 ## User preferences

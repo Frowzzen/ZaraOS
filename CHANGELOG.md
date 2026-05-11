@@ -11,6 +11,44 @@ Format per release:
 
 ---
 
+## [Alpha 0.5] — 2026-05-11
+
+### Added
+- **SecureStorage module** `src/core/security/secure-storage.ts` — AES-GCM-256 encrypted localStorage for all sensitive values. Uses `window.crypto.subtle` + PBKDF2 (100k iterations, SHA-256, random salt). Falls back to labeled base64 obfuscation (`PLAIN:` prefix) when SubtleCrypto is unavailable (non-HTTPS). Interface: `set(id, value)`, `get(id)`, `has(id)`, `delete(id)`, `mask(id)`, `listIds()`.
+- **Memory Panel** `src/pages/memory.tsx` — new full panel for Zara's local conversation memory. Shows: session stats (turns, tokens, pinned, storage bytes), pinned entries list, recent memory entries, recent skill usage, memory enable/disable toggle, export to JSON, import from JSON, clear session / clear all history / purge all (each with confirmation dialog). Wired into App.tsx, layout.tsx sidebar, zara-runtime.ts launchApp(), and gesture-mapper.ts PANEL_ORDER.
+- **Ollama Model Manager** `src/pages/ai-providers.tsx` — dedicated section that fetches installed models from `/api/tags`, displays model name, size, and last-updated date, highlights the currently-active model, and provides a Refresh button. Updates on endpoint change.
+- **Local AI Status Widget** `src/pages/home.tsx` — compact interactive card showing current provider, model, simulated/real indicator, streaming phase, memory turns/tokens, and last-latency. Links to AI Providers panel.
+- **Memory export/import** `src/core/ai/memory/conversation-memory.ts` — `exportMemory()` returns a versioned JSON blob (session, entries, preferences, skillUsage). `importMemory(json)` restores all four with localStorage write-back.
+- **Memory management methods** `src/core/ai/memory/conversation-memory.ts` — `getRecentSkillUsage(limit)`, `getRecentEntries(limit)`, `getCurrentSessionId()`.
+- **AI Runtime memory delegation** `src/core/ai/ai-runtime.ts` — `clearHistory()`, `purgeAll()`, `getPinnedEntries()`, `getRecentEntries()`, `getRecentSkillUsage()`, `isMemoryEnabled()`, `setMemoryEnabled()`, `exportMemory()`, `importMemory()`, `getCurrentSessionId()`, `estimateStorageBytes()`.
+- **ZaraRuntime memory methods** `src/core/zara-runtime.ts` — all above delegated from ZaraRuntime for UI access via `useRuntime()`.
+- **Tauri Readiness Audit** `docs/TAURI_READINESS_AUDIT_ALPHA_0_5.md` — full audit of all browser-only APIs, migration priorities (HIGH/MEDIUM/LOW), Tauri replacement plans per subsystem (voice, keychain, cloud proxy, file system, Ollama process management, SQLite persistence, auto-update).
+- **Secure Storage Model doc** `docs/SECURE_STORAGE_MODEL.md` — explains what AES-GCM protects, what it doesn't, the PLAIN: fallback mode, the upgrade path to Tauri OS keychain, and all security rules for key handling in ZaraOS code.
+- **Command routing — Memory** `src/lib/command-router.ts` — new rules for: open memory, clear memory, purge memory, disable memory, enable memory.
+- **Command routing — Local AI** `src/lib/command-router.ts` — new rules for: show ai status, test ollama, show models, switch model.
+- **Async key migration** `src/core/ai/providers/provider-registry.ts` — `loadAndMigrateSecureKeys()`: reads legacy `zaraos_provider_keys_v1` plain keys, migrates to SecureStorage, removes old storage. Called from `aiRuntime.initialize()` as a non-blocking Phase 2.
+
+### Changed
+- **Provider key storage** `src/core/ai/providers/provider-registry.ts` — `setProviderApiKey()` now stores via `secureStorage.set()` (fire-and-forget async) instead of plain localStorage JSON. `getProviderSummaries()` now uses `secureStorage.has(id)` (sync) instead of reading the plain keys object. Old `zaraos_provider_keys_v1` key is migrated and deleted on first run.
+- **Provider initialization** `src/core/ai/providers/provider-registry.ts` — cloud providers (`OpenAI`, `Anthropic`, `Gemini`) are now constructed without API keys in Phase 1 (sync) and have keys injected in Phase 2 (async `loadAndMigrateSecureKeys()`). This removes any synchronous access to decryptable key data.
+- **AI Providers page** `src/pages/ai-providers.tsx` — cloud provider API key label changed from "localStorage only, never transmitted" to "AES-GCM encrypted, local only". Added explicit data-leaves-device warning box per cloud provider. Added delete key button. Added API Key Security explainer section with three-column what's-protected / limitation / future breakdown.
+- **Sidebar version** `src/components/layout.tsx` — "Alpha 0.3" → "Alpha 0.5".
+- **App version comment** `src/App.tsx` — updated to Alpha 0.5.
+- **Memory panel in PANEL_ORDER** `src/lib/gesture-mapper.ts` — `/memory` added between `/ai-providers` and `/developers` for swipe navigation.
+- **Memory nav item** `src/components/layout.tsx` — Brain icon + Memory added to sidebar nav between AI Providers and Developers.
+- **launchApp routes** `src/core/zara-runtime.ts` — `memory: "/memory"` added to the app route map.
+- **RuntimeContext** `src/core/runtime-context.tsx` — exposes all new memory management methods from ZaraRuntime.
+- **ai-runtime.ts initialize()** `src/core/ai/ai-runtime.ts` — now calls `loadAndMigrateSecureKeys()` in Phase 2 (non-blocking) after sync Phase 1.
+- **home.tsx activity log** `src/pages/home.tsx` — added "API keys migrated to AES-GCM encrypted storage" event.
+
+### Architecture
+- **Two-phase provider initialization**: Phase 1 (sync) creates all provider instances without API keys and registers them with the router. Phase 2 (async) migrates legacy keys and injects them into live instances via `setApiKey()`. This ensures the app starts instantly without blocking on decryption.
+- **SecureStorage is the single gate** for all sensitive values. No code outside `secure-storage.ts` should write raw key values to any storage. `provider-registry.ts` is the only consumer.
+- **Memory panel is the single place** for all destructive memory operations. `clearAIConversation()` (clear session only) is still available globally (assistant page, AI providers page) but full history wipe and purge-all are gated behind the Memory panel's confirmation dialogs.
+- **Ollama model list is fetched from `/api/tags`** directly in the UI component (GET to localhost:11434). This is safe — it's read-only metadata with no authentication, and it only runs when the AI Providers panel is open.
+
+---
+
 ## [Alpha 0.4] — 2025-05-11
 
 ### Added

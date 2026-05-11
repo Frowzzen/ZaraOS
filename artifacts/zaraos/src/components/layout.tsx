@@ -12,6 +12,7 @@ import {
   Cpu,
   Code,
   Zap,
+  Brain,
   TerminalSquare,
   Mic,
   MicOff,
@@ -39,6 +40,7 @@ const navItems = [
   { href: "/settings",     icon: Settings,      label: "Settings"     },
   { href: "/privacy",      icon: ShieldAlert,   label: "Privacy"      },
   { href: "/ai-providers", icon: Cpu,           label: "AI Providers" },
+  { href: "/memory",       icon: Brain,         label: "Memory"       },
   { href: "/developers",   icon: Code,          label: "Developers"   },
   { href: "/skills",       icon: Zap,           label: "Skills"       },
 ];
@@ -86,7 +88,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
             <div className="hidden md:block">
               <h1 className="font-bold text-lg tracking-tight text-white leading-none">ZaraOS</h1>
-              <p className="text-[10px] text-primary/70 font-mono tracking-widest uppercase mt-0.5">Alpha 0.3</p>
+              <p className="text-[10px] text-primary/70 font-mono tracking-widest uppercase mt-0.5">Alpha 0.5</p>
             </div>
           </div>
 
