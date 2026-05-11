@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { PrivacyProvider } from "@/lib/privacy-store";
 import { RuntimeProvider } from "@/core/runtime-context";
 import { InputModeProvider } from "@/core/input-mode";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 import Home from "@/pages/home";
 import Assistant from "@/pages/assistant";
@@ -42,19 +43,23 @@ function Router() {
 
 export default function MainApp() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RuntimeProvider>
-        <InputModeProvider>
-          <PrivacyProvider>
-            <TooltipProvider>
-              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                <Router />
-              </WouterRouter>
-              <Toaster />
-            </TooltipProvider>
-          </PrivacyProvider>
-        </InputModeProvider>
-      </RuntimeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <RuntimeProvider>
+          <InputModeProvider>
+            <PrivacyProvider>
+              <TooltipProvider>
+                <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                  <ErrorBoundary>
+                    <Router />
+                  </ErrorBoundary>
+                </WouterRouter>
+                <Toaster />
+              </TooltipProvider>
+            </PrivacyProvider>
+          </InputModeProvider>
+        </RuntimeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

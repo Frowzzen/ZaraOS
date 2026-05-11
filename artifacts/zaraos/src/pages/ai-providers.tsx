@@ -115,7 +115,7 @@ export default function AIProviders() {
   const { clearAIConversation, getAIMemoryStats, aiRuntimeStatus } = useRuntime();
   const [activeProviderId, setActiveProviderId] = useState("local");
   const [endpoints, setEndpoints] = useState<Record<string, string>>({});
-  const [memoryStats] = useState(() => {
+  const [memoryStats, setMemoryStats] = useState(() => {
     try { return getAIMemoryStats(); } catch { return null; }
   });
 
@@ -128,6 +128,7 @@ export default function AIProviders() {
 
   const handleClearMemory = () => {
     clearAIConversation();
+    try { setMemoryStats(getAIMemoryStats()); } catch { setMemoryStats(null); }
   };
 
   return (

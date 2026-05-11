@@ -3,27 +3,26 @@ export class VoiceEngine {
   private onResultCallback?: (text: string) => void;
 
   public async requestPermission(): Promise<boolean> {
-    console.log("[VoiceEngine] Requesting microphone permission...");
     // TODO: Implement real navigator.mediaDevices.getUserMedia({ audio: true })
+    // Integration point: Whisper.cpp (WASM) or Tauri subprocess (Alpha 0.4+)
     return Promise.resolve(true);
   }
 
   public startListening() {
     this.isListening = true;
-    console.log("[VoiceEngine] Started listening...");
     // TODO: Initialize Web Speech API, Whisper.cpp, or Vosk
+    // Integration point: wire real audio capture here (Alpha 0.4+)
   }
 
   public stopListening() {
     this.isListening = false;
-    console.log("[VoiceEngine] Stopped listening.");
   }
 
   public onResult(callback: (text: string) => void) {
     this.onResultCallback = callback;
   }
 
-  // Mock function to simulate voice input
+  // Simulates voice input for demo purposes (Alpha 0.3)
   public simulateVoiceInput(text: string) {
     if (this.isListening && this.onResultCallback) {
       this.onResultCallback(text);

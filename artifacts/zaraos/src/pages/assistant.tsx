@@ -12,7 +12,6 @@
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRuntime } from "@/core/runtime-context";
 import { voiceEngine } from "@/lib/voice-engine";
 import { usePrivacy } from "@/lib/privacy-store";
