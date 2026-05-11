@@ -24,3 +24,9 @@ id = "VSYK0iCsvj2DV_cu0Kzv6"
 uri = "file://zaraos-chatgpt-report.pdf"
 type = "pdf"
 title = "ZaraOS Report — now with auto-pulled Changelog"
+
+[[outputs]]
+id = "4k3kd6T-oMBOyvYEzzLcI"
+uri = "file://artifacts/zaraos/docs/USB_BOOT_ROADMAP.md"
+type = "text"
+title = "ZaraOS — Live USB Boot Roadmap"
