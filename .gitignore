@@ -44,6 +44,20 @@ Thumbs.db
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
-# Replit
+# Replit (safe to commit artifact.toml and .replit for Replit users; ignore caches)
 .cache/
 .local/
+.upm/
+replit.nix
+
+# Environment secrets — never commit real values
+.env
+.env.local
+.env.*.local
+.env.production
+
+# pnpm store
+.pnpm-store/
+
+# Generated assets (not source code)
+zaraos-build-report.pdf

@@ -11,6 +11,7 @@ import {
   ShieldAlert,
   Cpu,
   Code,
+  Zap,
   TerminalSquare,
   Mic,
   MicOff,
@@ -38,6 +39,7 @@ const navItems = [
   { href: "/privacy",      icon: ShieldAlert,   label: "Privacy"      },
   { href: "/ai-providers", icon: Cpu,           label: "AI Providers" },
   { href: "/developers",   icon: Code,          label: "Developers"   },
+  { href: "/skills",       icon: Zap,           label: "Skills"       },
 ];
 
 export function Layout({ children }: LayoutProps) {
@@ -83,7 +85,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
             <div className="hidden md:block">
               <h1 className="font-bold text-lg tracking-tight text-white leading-none">ZaraOS</h1>
-              <p className="text-[10px] text-primary/70 font-mono tracking-widest uppercase mt-0.5">Alpha 0.1</p>
+              <p className="text-[10px] text-primary/70 font-mono tracking-widest uppercase mt-0.5">Alpha 0.2</p>
             </div>
           </div>
 

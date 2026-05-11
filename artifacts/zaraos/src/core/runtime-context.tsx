@@ -20,6 +20,14 @@ interface RuntimeContextType {
   launchApp: typeof zaraRuntime.launchApp;
   registerPlugin: typeof zaraRuntime.registerPlugin;
   getPlugins: typeof zaraRuntime.getPlugins;
+  // Skill layer
+  listSkills: typeof zaraRuntime.listSkills;
+  getSkill: typeof zaraRuntime.getSkill;
+  executeSkill: typeof zaraRuntime.executeSkill;
+  checkSkillPermissions: typeof zaraRuntime.checkSkillPermissions;
+  requestSkillConfirmation: typeof zaraRuntime.requestSkillConfirmation;
+  enableSkill: typeof zaraRuntime.enableSkill;
+  disableSkill: typeof zaraRuntime.disableSkill;
 }
 
 const RuntimeContext = createContext<RuntimeContextType | undefined>(undefined);
@@ -44,6 +52,14 @@ export function RuntimeProvider({ children }: { children: React.ReactNode }) {
     launchApp: zaraRuntime.launchApp.bind(zaraRuntime),
     registerPlugin: zaraRuntime.registerPlugin.bind(zaraRuntime),
     getPlugins: zaraRuntime.getPlugins.bind(zaraRuntime),
+    // Skill layer
+    listSkills: zaraRuntime.listSkills.bind(zaraRuntime),
+    getSkill: zaraRuntime.getSkill.bind(zaraRuntime),
+    executeSkill: zaraRuntime.executeSkill.bind(zaraRuntime),
+    checkSkillPermissions: zaraRuntime.checkSkillPermissions.bind(zaraRuntime),
+    requestSkillConfirmation: zaraRuntime.requestSkillConfirmation.bind(zaraRuntime),
+    enableSkill: zaraRuntime.enableSkill.bind(zaraRuntime),
+    disableSkill: zaraRuntime.disableSkill.bind(zaraRuntime),
   };
 
   return (

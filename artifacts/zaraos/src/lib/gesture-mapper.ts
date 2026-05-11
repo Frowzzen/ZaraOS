@@ -33,6 +33,7 @@ export const PANEL_ORDER = [
   "/privacy",
   "/ai-providers",
   "/developers",
+  "/skills",
 ] as const;
 
 export type PanelPath = typeof PANEL_ORDER[number];

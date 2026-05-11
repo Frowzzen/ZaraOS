@@ -12,6 +12,7 @@
 //   Input Layer  → voice/gesture engines call runtime.handleInput()
 //   System Layer → runtime.launchApp() dispatches here (mocked in Alpha 0.1)
 //   Plugin Layer → runtime.registerPlugin() / runtime.executeCommand from plugin
+//   Skill Layer  → runtime.executeSkill() → skillRuntime.executeSkill()
 //   Security     → runtime enforces permissions before every action
 //
 // Future Tauri integration:
@@ -22,6 +23,7 @@
 import { parseAndRoute } from "@/lib/command-router";
 import { aiEngine } from "@/lib/ai-engine";
 import { permissionsManager } from "./permissions";
+import { skillRuntime } from "./skills/skill-runtime";
 import type {
   InputSource,
   CommandResult,
@@ -32,6 +34,7 @@ import type {
   PluginManifest,
   PermissionCategory,
 } from "./types";
+import type { ZaraSkill, SkillExecutionResult } from "./skills/types";
 
 // ── Runtime Event Listeners ───────────────────────────────
 type StatusListener = (status: ZaraStatus) => void;
@@ -79,6 +82,11 @@ class ZaraRuntime {
   ): Promise<CommandResult> {
     const parsed: ParsedCommand = parseAndRoute(input, source);
 
+    // Skill action — delegate to skill runtime
+    if (parsed.intent === "skill_action" && parsed.skillId) {
+      return this.executeSkill(parsed.skillId, input, source);
+    }
+
     // Permission gate
     if (parsed.requiresPermission) {
       const category = this.intentToPermission(parsed.intent);
@@ -103,6 +111,8 @@ class ZaraRuntime {
         intent: parsed.intent,
         response: `This action requires confirmation. Destructive commands must be approved before execution.`,
         action: "confirm_required",
+        requiresConfirmation: true,
+        dangerous: true,
         source,
         timestamp: Date.now(),
       };
@@ -227,6 +237,7 @@ class ZaraRuntime {
       settings: "/settings",
       developers: "/developers",
       "ai-providers": "/ai-providers",
+      skills: "/skills",
     };
 
     const route = appRoutes[appId];
@@ -269,6 +280,85 @@ class ZaraRuntime {
 
   public getPlugins(): PluginManifest[] {
     return Array.from(this.plugins.values());
+  }
+
+  // ── Skill Layer ────────────────────────────────────────
+  // All skill operations flow through here — never called directly from UI.
+
+  public listSkills(): ZaraSkill[] {
+    return skillRuntime.listSkills();
+  }
+
+  public getSkill(skillId: string): ZaraSkill | undefined {
+    return skillRuntime.getSkill(skillId);
+  }
+
+  public async executeSkill(
+    skillId: string,
+    input: string,
+    source: InputSource = "keyboard",
+    confirmedByUser = false
+  ): Promise<CommandResult> {
+    const skill = skillRuntime.getSkill(skillId);
+
+    if (!skill) {
+      const result: CommandResult = {
+        success: false,
+        intent: "skill_action",
+        response: `Unknown skill: ${skillId}`,
+        action: "noop",
+        skillId,
+        source,
+        timestamp: Date.now(),
+      };
+      this.emit(result);
+      return result;
+    }
+
+    const execResult: SkillExecutionResult = await skillRuntime.executeSkill({
+      skillId,
+      rawInput: input,
+      source,
+      confirmedByUser,
+    });
+
+    const result: CommandResult = {
+      success: execResult.success,
+      intent: "skill_action",
+      response: execResult.response,
+      action: execResult.action as CommandResult["action"],
+      payload: execResult.payload,
+      skillId,
+      requiresConfirmation: execResult.action === "confirm_required",
+      dangerous: execResult.dangerous,
+      confirmationReason: skill.confirmationReason,
+      source,
+      timestamp: execResult.timestamp,
+    };
+
+    this.emit(result);
+    return result;
+  }
+
+  public checkSkillPermissions(skillId: string): { granted: boolean; missing: string[] } {
+    return skillRuntime.checkSkillPermissions(skillId);
+  }
+
+  public requestSkillConfirmation(skillId: string): { required: boolean; reason?: string } {
+    const skill = skillRuntime.getSkill(skillId);
+    if (!skill) return { required: false };
+    return {
+      required: skill.requiresConfirmation || skill.dangerous,
+      reason: skill.confirmationReason,
+    };
+  }
+
+  public enableSkill(skillId: string): boolean {
+    return skillRuntime.enableSkill(skillId);
+  }
+
+  public disableSkill(skillId: string): boolean {
+    return skillRuntime.disableSkill(skillId);
   }
 
   // ── Command History ────────────────────────────────────

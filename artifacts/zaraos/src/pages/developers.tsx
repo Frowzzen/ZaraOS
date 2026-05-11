@@ -152,6 +152,16 @@ const FULL_MANIFEST = `{
   "aiCapabilities": [
     "text-summarization"
   ],
+  "skillDeclarations": [
+    {
+      "skillId": "com.example.my-plugin.summarize",
+      "name": "Summarize Content",
+      "voiceCommands": ["summarize this", "make it shorter"],
+      "textCommands": ["summarize", "condense"],
+      "requiresConfirmation": false,
+      "dangerous": false
+    }
+  ],
   "systemAccess": false,
   "priceModel": "free",
   "verified": false,
@@ -174,8 +184,8 @@ export default function Developers() {
             </p>
           </div>
           <div className="text-right text-xs font-mono text-muted-foreground/60">
-            <div>Plugin Spec v1.0</div>
-            <div className="text-primary/60">Alpha 0.1</div>
+            <div>Plugin Spec v1.1</div>
+            <div className="text-primary/60">Alpha 0.2</div>
           </div>
         </div>
 
@@ -207,10 +217,10 @@ export default function Developers() {
                           <div className="flex items-center gap-2">
                             <CardTitle className="text-base leading-none">{p.name}</CardTitle>
                             {p.verified && (
-                              <ShieldCheck className="w-3.5 h-3.5 text-green-400" title="Verified by ZaraOS" />
+                              <ShieldCheck className="w-3.5 h-3.5 text-green-400" aria-label="Verified by ZaraOS" />
                             )}
                             {p.status === "installed" && (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-primary" title="Installed" />
+                              <CheckCircle2 className="w-3.5 h-3.5 text-primary" aria-label="Installed" />
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-1">
@@ -336,11 +346,65 @@ export default function Developers() {
               </CardContent>
             </Card>
 
+            {/* Skill declarations info */}
+            <div className="p-4 rounded-xl border border-cyan-500/15 bg-cyan-500/5 flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Brain className="w-4 h-4 text-cyan-400" />
+                <span className="text-xs font-bold text-cyan-400">Skill Declarations (v1.1)</span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Plugins can declare Skills in their manifest. Each declared skill becomes
+                available in the Zara Skills Hub and can be triggered by voice, text, or gesture.
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-1 font-mono">
+                {[
+                  "Declare voice + text commands",
+                  "Set requiresConfirmation flag",
+                  "Mark dangerous actions",
+                  "Integrated into command router",
+                  "Appears in Skills Hub",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-cyan-500/60" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Creator Assistant example skill */}
+            <div className="p-4 rounded-xl border border-purple-500/15 bg-purple-500/5 flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Workflow className="w-4 h-4 text-purple-400" />
+                <span className="text-xs font-bold text-purple-400">Example: Creator Assistant</span>
+                <span className="text-[10px] font-mono text-muted-foreground/50 ml-auto">Third-party</span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                A third-party skill package that adds creator workflow capabilities to Zara:
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-1 font-mono">
+                {[
+                  "Summarize video scripts",
+                  "Organize media files by project",
+                  "Generate post captions with local AI",
+                  "Schedule posts (requires social account)",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-purple-500/60" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[10px] font-mono text-muted-foreground/40">
+                All execution mocked in Alpha 0.2. Social account required for post scheduling.
+              </p>
+            </div>
+
             {/* Ecosystem preview */}
             <div className="p-4 rounded-xl border border-white/5 bg-card/20 backdrop-blur flex flex-col gap-3">
               <h3 className="font-bold text-white text-sm">Zara Store — Coming Soon</h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                ZaraOS will support a curated app store for:
+                ZaraOS will support a curated store for:
               </p>
               <ul className="text-xs text-muted-foreground space-y-1.5 font-mono">
                 {[

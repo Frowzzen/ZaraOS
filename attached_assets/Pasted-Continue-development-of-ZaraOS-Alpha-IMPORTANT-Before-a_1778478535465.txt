@@ -1,0 +1,521 @@
+Continue development of ZaraOS Alpha.
+
+IMPORTANT: Before adding new features, make sure this project is not locked into Replit.
+
+The code must be portable, GitHub-ready, Linux-ready, Tauri-ready, and eventually ready to be packaged into a custom Linux ISO for USB boot.
+
+Do not use Replit-only services, Replit databases, Replit secrets, Replit auth, Replit-specific deployment assumptions, or anything that will break when exported to GitHub and run on a normal Linux machine.
+
+PROJECT CONTEXT:
+ZaraOS is a local-first, privacy-focused, AI-native operating environment. It will eventually be packaged into a bootable Linux-based USB OS, but right now we are building the software layer as a portable React + TypeScript app that can later become a Tauri desktop app.
+
+ZaraOS must feel like a futuristic operating system, not a website.
+
+Current features already built:
+- Dashboard
+- Zara Assistant
+- Zara Console
+- App Launcher
+- Files
+- Media
+- Settings
+- Privacy Panel
+- AI Provider Manager
+- Developer Portal
+- Input Mode system
+- Hybrid / Voice / Gesture / Text modes
+- Global command box
+- Gesture mapping architecture
+- Command router
+- Privacy state
+- Mock AI provider layer
+- Mock voice engine
+- Mock gesture engine
+
+NEXT DEVELOPMENT GOAL:
+Add the Zara Skills Hub and prepare the project for GitHub export, Linux portability, and future ISO packaging.
+
+DO NOT:
+- Add paid services.
+- Add cloud dependencies.
+- Add Replit-specific features.
+- Add real email/text/calling integrations yet.
+- Add destructive system commands.
+- Add real Linux command execution yet.
+- Add real API calls unless they are cleanly mocked or optional.
+- Store secrets insecurely.
+- Hardcode API keys.
+- Use Replit database or Replit auth.
+- Assume the app only runs on Replit.
+
+TASK 1 — Replit Independence Audit
+
+Audit the project for Replit-specific dependencies or assumptions.
+
+Check for:
+- Replit database usage
+- Replit auth
+- Replit-specific environment variables
+- Replit deployment-only paths
+- hardcoded replit.app URLs
+- Replit secrets dependency
+- server assumptions that only work in Replit
+- hidden cloud dependencies
+- absolute paths that will break on Linux
+- anything that prevents GitHub portability
+
+If any are found:
+- remove them
+- replace them with portable alternatives
+- document the change
+
+Create this file:
+
+docs/REPLIT_INDEPENDENCE_AUDIT.md
+
+Include:
+- what was checked
+- what was found
+- what was removed
+- what remains Replit-compatible but not Replit-dependent
+- how to run the app outside Replit
+
+TASK 2 — GitHub Readiness
+
+Prepare the project so it can be pushed to GitHub and cloned on any normal development machine.
+
+Create or update:
+
+.gitignore
+README.md
+docs/GITHUB_EXPORT_GUIDE.md
+
+The GitHub guide should explain:
+- how to clone the repo
+- how to install dependencies
+- how to run the dev server
+- how to build production files
+- how to preview the build
+- what Node version is recommended
+- what environment variables are optional
+- what features remain mocked
+- what must be done later for Tauri/Linux
+
+Make sure package.json scripts are clean and standard.
+
+Expected scripts:
+- npm install
+- npm run dev
+- npm run build
+- npm run preview
+- npm run typecheck if supported
+- npm run lint if supported
+
+Do not create scripts that only work in Replit.
+
+TASK 3 — Linux / ISO Packaging Preparation
+
+Create documentation for the future Linux ISO process.
+
+Create:
+
+docs/LINUX_ISO_PREP.md
+
+Explain the future path:
+
+1. Export ZaraOS app to GitHub
+2. Clone on Ubuntu/KDE Linux machine or VM
+3. Build the app
+4. Convert to Tauri desktop app
+5. Package as a Linux app
+6. Install into a custom Ubuntu/KDE-based ISO
+7. Customize branding, boot splash, wallpaper, icons, startup behavior
+8. Use Cubic to create ISO
+9. Flash ISO to USB
+10. Test on multiple computers
+
+Be honest in the documentation:
+- The current React app is not a full OS.
+- The current app is the ZaraOS software layer.
+- Linux will provide hardware support underneath.
+- Tauri will provide native desktop access.
+- Cubic/ISO work happens later outside Replit.
+- USB booting will target x86_64 PCs first.
+
+TASK 4 — Add Zara Skills Hub
+
+Create a new main panel/page called:
+
+Zara Skills Hub
+
+Route:
+/skills
+
+Sidebar label:
+Skills
+
+Purpose:
+This is the Alexa-like service and capability center for ZaraOS.
+
+It should show built-in Zara capabilities grouped into categories.
+
+Categories:
+
+1. Communication
+- Email
+- Text Messages
+- Calls
+- Contacts
+
+2. Productivity
+- Timers
+- Alarms
+- Calendar
+- Scheduling
+- Reminders
+- Notes
+
+3. Web + Knowledge
+- Search Web
+- Fact Check
+- Summarize Page
+- Research Topic
+- Translate
+- Define Term
+
+4. Files + Documents
+- View Files
+- Edit Documents
+- Delete Files
+- Rename Files
+- Summarize Documents
+- Optimize Documents
+- Organize Folders
+
+5. System Control
+- Open App
+- Close Window
+- Switch Panel
+- Scroll
+- Search Device
+- Change Settings
+- Privacy Controls
+
+6. Media
+- Play Audio
+- Pause Audio
+- Watch Video
+- Volume Control
+- Next Track
+- Previous Track
+
+7. Developer
+- Build App
+- Create Plugin
+- Inspect Manifest
+- Run Test
+- Package App
+
+Each skill card should show:
+- skill name
+- category
+- status: built-in / mocked / future integration
+- required permissions
+- example voice commands
+- example text commands
+- gesture support if applicable
+- confirmation requirement
+- local/cloud status
+
+TASK 5 — Create Skill Type System
+
+Create a portable skill type system.
+
+Suggested file:
+
+src/core/skills/types.ts
+
+Define types like:
+
+SkillCategory
+SkillStatus
+SkillPermission
+SkillCommandExample
+SkillConfirmationRule
+ZaraSkill
+
+Each skill should support:
+- id
+- name
+- description
+- category
+- status
+- permissions
+- voiceCommands
+- textCommands
+- gestureCommands
+- requiresConfirmation
+- confirmationReason
+- localFirst
+- cloudOptional
+- providerRequired
+- dangerous
+- enabled
+
+TASK 6 — Create Built-In Skills Registry
+
+Create:
+
+src/core/skills/builtin-skills.ts
+
+Add a registry of built-in mock skills.
+
+Include at least:
+- email
+- text
+- calls
+- web search
+- fact check
+- timers
+- calendar
+- reminders
+- file viewer
+- document editor
+- file delete
+- document summarize
+- document optimize
+- app launcher
+- window close
+- scroll control
+- media playback
+- developer app builder
+
+Important:
+No real external integrations yet.
+These are capability declarations and mock handlers only.
+
+TASK 7 — Add Skill Runtime Layer
+
+Create:
+
+src/core/skills/skill-runtime.ts
+
+This should be the future execution layer for skills.
+
+For now:
+- register built-in skills
+- list available skills
+- filter by category
+- get skill by id
+- check required permissions
+- return mocked execution result
+- flag confirmation-required actions
+- refuse dangerous actions unless confirmed
+
+Do not execute real email/text/call/delete actions yet.
+
+TASK 8 — Connect Skills To Zara Runtime
+
+Update Zara Runtime so it understands skills.
+
+Add methods like:
+- listSkills()
+- getSkill(skillId)
+- executeSkill(skillId, input, source)
+- checkSkillPermissions(skillId)
+- requestSkillConfirmation(skillId)
+- enableSkill(skillId)
+- disableSkill(skillId)
+
+All skill execution should flow through Zara Runtime.
+
+Do not let UI components execute skills directly.
+
+TASK 9 — Update Command Router For Skills
+
+Expand command-router so natural language commands can resolve into skill intents.
+
+Examples:
+
+“email John”
+→ communication skill: email
+
+“text Mike”
+→ communication skill: text
+
+“call Sarah”
+→ communication skill: call
+
+“set a timer for 10 minutes”
+→ productivity skill: timer
+
+“schedule meeting tomorrow”
+→ productivity skill: calendar/scheduling
+
+“search the web for local AI models”
+→ web skill: search
+
+“fact check this”
+→ knowledge skill: fact_check
+
+“delete this file”
+→ file skill: delete_file, destructive: true, confirmation required
+
+“summarize this document”
+→ document skill: summarize_document
+
+“optimize this document”
+→ document skill: optimize_document
+
+“close this window”
+→ system skill: close_window
+
+“scroll down”
+→ system skill: scroll
+
+“build me an app”
+→ developer skill: app_builder
+
+Return structured command results with:
+- intent
+- skillId if applicable
+- target
+- source
+- confidence
+- requiresPermission
+- requiresConfirmation
+- destructive
+- response
+
+TASK 10 — Add Confirmation System Architecture
+
+Create a basic confirmation flow for sensitive commands.
+
+Sensitive actions:
+- send email
+- send text
+- place call
+- delete file
+- edit file
+- share file
+- install plugin
+- run system action
+- use cloud AI
+- access camera
+- access microphone
+
+For now:
+- show mocked confirmation UI
+- do not perform real action
+- log only safe metadata, never secrets or personal content
+
+Create reusable confirmation components if needed.
+
+TASK 11 — Update Privacy Panel
+
+Update the Privacy Panel to show skill-related privacy.
+
+Add:
+- Connected Services status
+- Skills requiring microphone
+- Skills requiring camera
+- Skills requiring files
+- Skills requiring network
+- Skills requiring cloud AI
+- Skills requiring confirmation
+
+Show that all external services are disconnected by default.
+
+TASK 12 — Update Developer Portal
+
+Update Developer Portal to reference Skills.
+
+Explain that third-party developers will eventually be able to create:
+- apps
+- plugins
+- skills
+- voice command packs
+- gesture command packs
+- automation workflows
+
+Update plugin manifest spec to include skill declarations.
+
+Add example:
+
+A third-party “Creator Assistant” skill that can:
+- summarize video scripts
+- organize media files
+- generate post captions
+- schedule posts
+
+But keep it mocked.
+
+TASK 13 — Improve App Launcher
+
+Add the new Skills Hub tile to the App Launcher.
+
+Make sure app launcher routes through Zara Runtime launchApp().
+
+TASK 14 — Add Navigation
+
+Add Skills Hub to:
+- sidebar
+- route list
+- app launcher
+- command router
+- panel order for gesture swipe navigation
+
+TASK 15 — Documentation Updates
+
+Create or update:
+
+docs/SKILLS_ARCHITECTURE.md
+docs/CONNECTED_SERVICES_ROADMAP.md
+docs/COMMAND_CONFIRMATION_MODEL.md
+
+Explain:
+- how Zara Skills work
+- why skills are local-first
+- how connected services will work later
+- why users bring their own accounts/API keys
+- why ZaraOS company avoids paying API/inference costs
+- how confirmations protect users
+- how skills become part of the future Zara Store
+
+TASK 16 — Security Requirements
+
+Very important.
+
+Rules:
+- No real emails sent.
+- No real texts sent.
+- No real calls placed.
+- No files deleted.
+- No files edited.
+- No cloud AI calls made.
+- No external service integrations yet.
+- No API keys transmitted.
+- No personal content logged.
+- No Replit-only storage.
+- No Replit-only services.
+- No destructive command execution.
+
+Everything must remain mocked, declared, and architected safely.
+
+TASK 17 — Final Report
+
+When finished, provide a detailed build report.
+
+Include:
+1. What was added
+2. What files were created
+3. What files were modified
+4. Any Replit-specific dependencies removed
+5. Whether the project is GitHub-ready
+6. Whether the project is Linux-ready at the app layer
+7. What remains mocked
+8. How Skills route through Zara Runtime
+9. What should be built next
+10. Whether the app still runs successfully
+
+Begin now.

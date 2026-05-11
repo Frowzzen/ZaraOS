@@ -2,7 +2,8 @@
 // ZaraOS Core Types
 // Shared TypeScript interfaces for all runtime layers.
 // These form the contract between the UI Layer, Zara Runtime,
-// AI Layer, Input Layer, System Layer, Plugin Layer, and Security Layer.
+// AI Layer, Input Layer, System Layer, Plugin Layer, Security Layer,
+// and Skills Layer.
 // ============================================================
 
 // ── Input Modes ────────────────────────────────────────────
@@ -35,6 +36,7 @@ export type CommandIntent =
   | "privacy_action"
   | "settings_action"
   | "developer_action"
+  | "skill_action"        // Routes to a specific skill via skillId
   | "unknown";
 
 // ── Parsed Command ─────────────────────────────────────────
@@ -45,8 +47,10 @@ export interface ParsedCommand {
   normalized: string;
   intent: CommandIntent;
   target?: string;
+  skillId?: string;         // Populated when intent === "skill_action"
   source: InputSource;
   requiresPermission: boolean;
+  requiresConfirmation?: boolean;
   destructive: boolean;
   confidence: number;
 }
@@ -57,8 +61,12 @@ export interface CommandResult {
   success: boolean;
   intent: CommandIntent;
   response: string;
-  action?: "navigate" | "toggle" | "launch" | "scroll" | "confirm_required" | "permission_denied" | "noop";
+  action?: "navigate" | "toggle" | "launch" | "scroll" | "confirm_required" | "permission_denied" | "noop" | "disabled";
   payload?: string;
+  skillId?: string;
+  requiresConfirmation?: boolean;
+  dangerous?: boolean;
+  confirmationReason?: string;
   source: InputSource;
   timestamp: number;
 }
@@ -141,12 +149,25 @@ export interface PluginManifest {
   voiceCommands: string[];
   gestureCommands: string[];
   aiCapabilities: string[];
+  // Skill declarations — a plugin can expose one or more skills
+  skillDeclarations?: PluginSkillDeclaration[];
   systemAccess: boolean;
   priceModel: "free" | "paid" | "freemium";
   verified: boolean;
   sandboxRequired: boolean;
   installedAt?: number;
   status: "installed" | "available" | "incompatible";
+}
+
+// ── Plugin Skill Declaration ───────────────────────────────
+// A skill a plugin declares so Zara Runtime can route to it.
+export interface PluginSkillDeclaration {
+  skillId: string;
+  name: string;
+  voiceCommands: string[];
+  textCommands: string[];
+  requiresConfirmation: boolean;
+  dangerous: boolean;
 }
 
 // ── Gesture Types ──────────────────────────────────────────

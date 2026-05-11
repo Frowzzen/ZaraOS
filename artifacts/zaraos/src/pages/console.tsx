@@ -41,7 +41,7 @@ export default function Console() {
       
       if (response.action === "navigate" && response.payload) {
         setTimeout(() => {
-          setLocation(response.payload);
+          setLocation(response.payload!);
         }, 1000);
       }
     }, 400);

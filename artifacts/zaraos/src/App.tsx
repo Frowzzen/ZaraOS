@@ -16,6 +16,7 @@ import Settings from "@/pages/settings";
 import Privacy from "@/pages/privacy";
 import AIProviders from "@/pages/ai-providers";
 import Developers from "@/pages/developers";
+import Skills from "@/pages/skills";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/privacy" component={Privacy} />
       <Route path="/ai-providers" component={AIProviders} />
       <Route path="/developers" component={Developers} />
+      <Route path="/skills" component={Skills} />
       <Route component={NotFound} />
     </Switch>
   );
