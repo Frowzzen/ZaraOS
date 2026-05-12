@@ -37,7 +37,7 @@ import { GESTURE_MAPPINGS } from "@/lib/gesture-mapper";
 import type { InputMode, GestureType } from "@/core/types";
 import {
   getVolume, setVolume, getBrightness, setBrightness,
-  systemPower, listWifiNetworks, connectWifi, disconnectWifi,
+  systemPower, exitApp, listWifiNetworks, connectWifi, disconnectWifi,
   signalLabel, signalBars,
 } from "@/core/tauri/tauri-system-controls";
 import type { WifiNetwork } from "@/core/tauri/tauri-system-controls";
@@ -719,7 +719,11 @@ export default function Settings() {
                         size="sm"
                         data-testid={`button-power-${action}`}
                         className={`gap-2 bg-transparent border ${cls} ${!isTauri ? "opacity-40 cursor-not-allowed" : ""}`}
-                        onClick={() => { if (isTauri) void systemPower(action); }}
+                        onClick={() => {
+                          if (!isTauri) return;
+                          if (action === "shutdown") void exitApp();
+                          else void systemPower(action);
+                        }}
                         title={isTauri ? undefined : "Native app only"}
                       >
                         <Icon className="w-3.5 h-3.5" />

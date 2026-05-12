@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { isTauriRuntime } from "@/core/tauri/tauri-bridge";
-import { systemPower } from "@/core/tauri/tauri-system-controls";
+import { systemPower, exitApp } from "@/core/tauri/tauri-system-controls";
 import { ZaraOSIcon } from "@/components/zaraos-logo";
 import { GlobalCommandBox } from "@/components/global-command-box";
 import { GestureOverlay } from "@/components/gesture-overlay";
@@ -417,7 +417,12 @@ export function DesktopShell() {
               ] as const).map(({ label, icon: Icon, action }) => (
                 <button
                   key={action}
-                  onClick={() => { setShowPowerMenu(false); if (isTauri) void systemPower(action); }}
+                  onClick={() => {
+                    setShowPowerMenu(false);
+                    if (!isTauri) return;
+                    if (action === "shutdown") void exitApp();
+                    else void systemPower(action);
+                  }}
                   className="w-full flex items-center gap-3 px-4 py-2.5 transition-colors"
                   style={{ color: "#334155" }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(99,102,241,0.07)")}

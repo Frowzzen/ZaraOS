@@ -16,6 +16,15 @@ import { isTauriRuntime, tauriInvoke } from "./tauri-bridge";
 
 export type PowerAction = "shutdown" | "reboot" | "suspend" | "lock";
 
+/** Quit the ZaraOS app process (dev-mode "Shut Down"). */
+export async function exitApp(): Promise<void> {
+  if (!isTauriRuntime()) {
+    console.warn("[SystemControls] exitApp requires the native desktop app.");
+    return;
+  }
+  await tauriInvoke<void>("exit_app");
+}
+
 export async function systemPower(action: PowerAction): Promise<void> {
   if (!isTauriRuntime()) {
     console.warn(`[SystemControls] "${action}" requires the native desktop app.`);
