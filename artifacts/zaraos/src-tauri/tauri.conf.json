@@ -9,7 +9,7 @@
     "beforeDevCommand": "pnpm --filter @workspace/zaraos run dev",
     "devUrl": "http://localhost:5173",
     "beforeBuildCommand": "pnpm --filter @workspace/zaraos run build",
-    "frontendDist": "../dist"
+    "frontendDist": "../dist/public"
   },
 
   "app": {
