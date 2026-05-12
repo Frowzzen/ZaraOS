@@ -7,6 +7,7 @@ import { GlobalCommandBox } from "@/components/global-command-box";
 import { GestureOverlay } from "@/components/gesture-overlay";
 import { useInputMode } from "@/core/input-mode";
 import { gestureEngine } from "@/lib/gesture-engine";
+import { voiceEngine } from "@/lib/voice-engine";
 import { zaraRuntime } from "@/core/zara-runtime";
 import {
   Mic,
@@ -113,10 +114,11 @@ export function DesktopShell() {
   const [command, setCommand] = useState("");
   const [clock, setClock] = useState(new Date());
   const [showPowerMenu, setShowPowerMenu] = useState(false);
-  const [wallpaper] = useState("/wallpaper.jpg");
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [interimText, setInterimText] = useState("");
 
   const isTauri = isTauriRuntime();
-  const { voiceActive, gestureActive, toggleVoice, toggleGesture } = useInputMode();
+  const { voiceActive, gestureActive, toggleVoice, toggleGesture, setVoice } = useInputMode();
   const inputRef = useRef<HTMLInputElement>(null);
   const windowsRef = useRef<WinState[]>([]);
 
@@ -134,6 +136,52 @@ export function DesktopShell() {
     });
     return unsub;
   }, []);
+
+  // ── Voice engine wiring ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!voiceActive) {
+      voiceEngine.abort();
+      setInterimText("");
+      return;
+    }
+
+    if (!voiceEngine.isSupported) {
+      setVoiceError("Voice input is not supported in this environment. Use the text bar below.");
+      setVoice(false);
+      setTimeout(() => setVoiceError(null), 4000);
+      return;
+    }
+
+    voiceEngine.startListening();
+
+    const unsubResult = voiceEngine.onResult((text, isFinal) => {
+      if (isFinal) {
+        setInterimText("");
+        handleCommand(text);
+        setVoice(false);
+      } else {
+        setInterimText(text);
+      }
+    });
+
+    const unsubState = voiceEngine.onStateChange((state, errorMsg) => {
+      if (state === "error" && errorMsg) {
+        setVoiceError(errorMsg);
+        setVoice(false);
+        setTimeout(() => setVoiceError(null), 4000);
+      }
+      if (state === "idle") {
+        setInterimText("");
+      }
+    });
+
+    return () => {
+      unsubResult();
+      unsubState();
+      voiceEngine.abort();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceActive]);
 
   // Ctrl+Space focuses the command bar
   useEffect(() => {
@@ -249,20 +297,30 @@ export function DesktopShell() {
   return (
     <div
       className="fixed inset-0 overflow-hidden"
-      style={{ backgroundImage: `url('${wallpaper}')`, backgroundSize: "cover", backgroundPosition: "center" }}
+      style={{ background: "linear-gradient(135deg, #0a0a1a 0%, #0f0c29 35%, #0d1a2e 70%, #060d1a 100%)" }}
     >
+      {/* ── Voice error toast ───────────────────────────────────────────────── */}
+      {voiceError && (
+        <div
+          className="absolute top-11 left-1/2 -translate-x-1/2 z-[9500] px-4 py-2 rounded-xl text-xs font-mono text-red-300"
+          style={{ background: "rgba(30,10,10,0.90)", border: "1px solid rgba(255,80,80,0.25)", backdropFilter: "blur(16px)" }}
+        >
+          {voiceError}
+        </div>
+      )}
+
       {/* ── Top bar ─────────────────────────────────────────────────────────── */}
       <div
         className="absolute top-0 left-0 right-0 h-9 z-[9000] flex items-center px-4 gap-3"
         style={{
-          background: "rgba(255,255,255,0.55)",
+          background: "rgba(10,10,26,0.75)",
           backdropFilter: "blur(24px) saturate(1.6)",
-          borderBottom: "1px solid rgba(0,0,0,0.07)",
+          borderBottom: "1px solid rgba(255,255,255,0.07)",
         }}
       >
         <div className="flex items-center gap-2 flex-shrink-0">
-          <ZaraOSIcon size={13} className="text-black/50" />
-          <span className="text-[10px] font-bold text-black/40 tracking-widest hidden sm:block">ZaraOS</span>
+          <ZaraOSIcon size={13} className="text-cyan-400/70" />
+          <span className="text-[10px] font-bold text-white/30 tracking-widest hidden sm:block">ZaraOS</span>
         </div>
 
         <div className="flex-1" />
@@ -272,7 +330,7 @@ export function DesktopShell() {
           onClick={toggleVoice}
           data-testid="button-toggle-voice"
           title={voiceActive ? "Voice on" : "Voice off"}
-          className={`transition-colors ${voiceActive ? "text-black/70" : "text-black/25 hover:text-black/45"}`}
+          className={`transition-colors ${voiceActive ? "text-cyan-400" : "text-white/25 hover:text-white/50"}`}
         >
           {voiceActive
             ? <Mic style={{ width: "0.75rem", height: "0.75rem" }} />
@@ -282,8 +340,8 @@ export function DesktopShell() {
 
         {/* Clock */}
         <div className="flex flex-col items-end leading-none gap-0.5 select-none">
-          <span className="text-[11px] font-mono text-black/55 tabular-nums">{timeStr}</span>
-          <span className="text-[9px] font-mono text-black/30">{dateStr}</span>
+          <span className="text-[11px] font-mono text-white/55 tabular-nums">{timeStr}</span>
+          <span className="text-[9px] font-mono text-white/28">{dateStr}</span>
         </div>
 
         {/* Power */}
@@ -291,7 +349,7 @@ export function DesktopShell() {
           <button
             onClick={() => setShowPowerMenu((v) => !v)}
             data-testid="button-power-menu"
-            className="text-black/22 hover:text-black/50 transition-colors"
+            className="text-white/25 hover:text-white/60 transition-colors"
             title="Power"
           >
             <Power style={{ width: "0.75rem", height: "0.75rem" }} />
@@ -424,21 +482,21 @@ export function DesktopShell() {
                 fontSize: "clamp(4.5rem, 11vw, 9rem)",
                 fontWeight: 200,
                 letterSpacing: "-0.025em",
-                color: "rgba(0,0,0,0.55)",
-                textShadow: "0 2px 24px rgba(255,255,255,0.8)",
+                color: "rgba(255,255,255,0.82)",
+                textShadow: "0 2px 40px rgba(0,240,255,0.18)",
               }}
             >
               {clock.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </div>
             <div
               className="font-mono tracking-widest uppercase mt-3"
-              style={{ fontSize: "0.75rem", color: "rgba(0,0,0,0.28)", textShadow: "0 1px 8px rgba(255,255,255,0.6)" }}
+              style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.30)" }}
             >
               {clock.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}
             </div>
             <div
               className="mt-10 text-xs font-mono tracking-widest"
-              style={{ color: "rgba(0,0,0,0.20)", textShadow: "0 1px 6px rgba(255,255,255,0.5)" }}
+              style={{ color: "rgba(255,255,255,0.18)" }}
             >
               Type a command or ask Zara anything
             </div>
@@ -487,14 +545,14 @@ export function DesktopShell() {
 
           <input
             ref={inputRef}
-            value={command}
-            onChange={(e) => setCommand(e.target.value)}
+            value={interimText || command}
+            onChange={(e) => { setInterimText(""); setCommand(e.target.value); }}
             onKeyDown={(e) => {
-              if (e.key === "Enter") handleCommand(command);
-              if (e.key === "Escape") setCommand("");
+              if (e.key === "Enter") { handleCommand(interimText || command); setInterimText(""); }
+              if (e.key === "Escape") { setCommand(""); setInterimText(""); }
             }}
             placeholder='Ask Zara or say "open files", "browser", "settings"...'
-            className="flex-1 bg-transparent text-sm text-black/70 outline-none placeholder:text-black/22 font-sans"
+            className={`flex-1 bg-transparent text-sm outline-none font-sans ${interimText ? "text-cyan-600/70 italic" : "text-black/80"} placeholder:text-black/30`}
             data-testid="input-command-bar"
             autoFocus
           />

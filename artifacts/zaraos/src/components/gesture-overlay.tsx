@@ -94,6 +94,23 @@ export function GestureOverlay({ onClose }: GestureOverlayProps) {
     });
   }, []);
 
+  // ── Start tracking on mount, stop on unmount ──────────────
+  useEffect(() => {
+    void gestureEngine.startTracking(window.location.pathname);
+    return () => { gestureEngine.stopTracking(); };
+  }, []);
+
+  // ── Auto-dismiss after 20 s if still stuck loading ────────
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (loading && !error) {
+        setError("MediaPipe could not load. Check your internet connection.");
+        setLoading(false);
+      }
+    }, 20_000);
+    return () => clearTimeout(t);
+  }, [loading, error]);
+
   // ── Handle engine errors (camera denied, WASM fail) ───────
   useEffect(() => {
     return gestureEngine.onError((msg) => {
