@@ -6,7 +6,7 @@
 #
 # Requirements (Ubuntu host):
 #   sudo apt-get install -y squashfs-tools genisoimage \
-#     xorriso syslinux-utils wget
+#     xorriso syslinux-utils isolinux wget
 #
 # Usage:
 #   sudo ./scripts/build-iso.sh [options]
@@ -186,10 +186,12 @@ chroot_run "DEBIAN_FRONTEND=noninteractive apt-get install -y \
 
 log "Installing ZaraOS system dependencies..."
 chroot_run "DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  libwebkit2gtk-4.1-0 \
-  libgtk-3-0 \
+  libwebkit2gtk-4.1-0t64 \
+  libgtk-3-0t64 \
   libayatana-appindicator3-1 \
   librsvg2-2 \
+  wmctrl \
+  xdotool \
   --no-install-recommends 2>&1 | tail -3"
 
 log "Installing Ollama..."

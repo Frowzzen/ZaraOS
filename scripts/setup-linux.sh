@@ -2,11 +2,11 @@
 # ============================================================
 # ZaraOS — Linux Development Environment Setup
 #
-# Run this on a fresh Ubuntu 24.04 install on the Dell laptop
+# Run this on a fresh Ubuntu 26.04 install on the Dell laptop
 # to install everything needed to build ZaraOS natively.
 #
 # Usage (one command after Ubuntu install):
-#   curl -fsSL https://raw.githubusercontent.com/your-org/zaraos/main/scripts/setup-linux.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Frowzzen/ZaraOS/main/scripts/setup-linux.sh | bash
 #
 # Or from a cloned repo:
 #   bash scripts/setup-linux.sh
@@ -21,7 +21,7 @@ ok()   { echo -e "\033[1;32m[OK]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[WARN]\033[0m $*"; }
 
 log "ZaraOS Linux Development Environment Setup"
-log "Target: Ubuntu 24.04 LTS on Dell i7-8850H"
+log "Target: Ubuntu 26.04 LTS on Dell Precision 7530 (i7-8850H)"
 echo ""
 
 # ── System packages ───────────────────────────────────────────
@@ -44,13 +44,15 @@ sudo apt-get install -y \
   libssl-dev \
   2>&1 | tail -3
 
-log "Installing system utilities (volume + brightness control)..."
+log "Installing system utilities (volume, brightness, window management)..."
 sudo apt-get install -y \
   brightnessctl \
   network-manager \
   pulseaudio \
   pipewire \
   pipewire-pulse \
+  wmctrl \
+  xdotool \
   2>&1 | tail -3
 ok "System packages installed."
 
@@ -64,9 +66,11 @@ fi
 
 # ── NVIDIA driver ─────────────────────────────────────────────
 if lspci 2>/dev/null | grep -qi nvidia; then
-  log "NVIDIA GPU detected — installing driver 535..."
-  sudo apt-get install -y nvidia-driver-535 2>&1 | tail -2
-  ok "NVIDIA driver installed. Reboot may be required."
+  log "NVIDIA GPU detected — installing recommended driver via ubuntu-drivers..."
+  sudo apt-get install -y ubuntu-drivers-common 2>&1 | tail -2
+  sudo ubuntu-drivers install 2>&1 | tail -3 || \
+    warn "ubuntu-drivers auto-install failed — install manually: sudo ubuntu-drivers install"
+  ok "NVIDIA driver installed. Reboot required before building."
 fi
 
 # ── Node.js 22 ────────────────────────────────────────────────
@@ -130,16 +134,16 @@ echo ""
 echo "  Next steps:"
 echo ""
 echo "  1. Clone or transfer the ZaraOS repo:"
-echo "     git clone https://github.com/your-org/zaraos.git"
+echo "     git clone https://github.com/Frowzzen/ZaraOS.git"
 echo ""
 echo "  2. Install JS dependencies:"
-echo "     cd zaraos && pnpm install"
+echo "     cd ZaraOS && pnpm install"
 echo ""
 echo "  3. Build the native binary:"
-echo "     cd artifacts/zaraos && cargo tauri build"
+echo "     cd artifacts/zaraos && cargo tauri build && cd ../.."
 echo ""
 echo "  4. Binary output:"
-echo "     artifacts/zaraos/src-tauri/target/release/zaraos"
+echo "     ZaraOS/artifacts/zaraos/src-tauri/target/release/zaraos"
 echo ""
 echo "  5. Build bootable ISO:"
 echo "     sudo bash scripts/build-iso.sh"
