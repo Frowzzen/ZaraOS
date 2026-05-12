@@ -123,7 +123,7 @@ export function DesktopShell() {
   useEffect(() => { windowsRef.current = windows; }, [windows]);
 
   useEffect(() => {
-    document.documentElement.classList.add("dark");
+    document.documentElement.classList.remove("dark");
     const t = setInterval(() => setClock(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
@@ -255,14 +255,14 @@ export function DesktopShell() {
       <div
         className="absolute top-0 left-0 right-0 h-9 z-[9000] flex items-center px-4 gap-3"
         style={{
-          background: "rgba(0,0,0,0.38)",
-          backdropFilter: "blur(20px) saturate(1.2)",
-          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          background: "rgba(255,255,255,0.55)",
+          backdropFilter: "blur(24px) saturate(1.6)",
+          borderBottom: "1px solid rgba(0,0,0,0.07)",
         }}
       >
         <div className="flex items-center gap-2 flex-shrink-0">
-          <ZaraOSIcon size={13} className="text-white/70" />
-          <span className="text-[10px] font-bold text-white/55 tracking-widest hidden sm:block">ZaraOS</span>
+          <ZaraOSIcon size={13} className="text-black/50" />
+          <span className="text-[10px] font-bold text-black/40 tracking-widest hidden sm:block">ZaraOS</span>
         </div>
 
         <div className="flex-1" />
@@ -272,7 +272,7 @@ export function DesktopShell() {
           onClick={toggleVoice}
           data-testid="button-toggle-voice"
           title={voiceActive ? "Voice on" : "Voice off"}
-          className={`transition-colors ${voiceActive ? "text-white/80" : "text-white/25 hover:text-white/50"}`}
+          className={`transition-colors ${voiceActive ? "text-black/70" : "text-black/25 hover:text-black/45"}`}
         >
           {voiceActive
             ? <Mic style={{ width: "0.75rem", height: "0.75rem" }} />
@@ -282,8 +282,8 @@ export function DesktopShell() {
 
         {/* Clock */}
         <div className="flex flex-col items-end leading-none gap-0.5 select-none">
-          <span className="text-[11px] font-mono text-white/70 tabular-nums">{timeStr}</span>
-          <span className="text-[9px] font-mono text-white/30">{dateStr}</span>
+          <span className="text-[11px] font-mono text-black/55 tabular-nums">{timeStr}</span>
+          <span className="text-[9px] font-mono text-black/30">{dateStr}</span>
         </div>
 
         {/* Power */}
@@ -291,7 +291,7 @@ export function DesktopShell() {
           <button
             onClick={() => setShowPowerMenu((v) => !v)}
             data-testid="button-power-menu"
-            className="text-white/22 hover:text-white/55 transition-colors"
+            className="text-black/22 hover:text-black/50 transition-colors"
             title="Power"
           >
             <Power style={{ width: "0.75rem", height: "0.75rem" }} />
@@ -299,12 +299,12 @@ export function DesktopShell() {
 
           {showPowerMenu && (
             <div
-              className="absolute top-full mt-1.5 right-0 rounded-xl overflow-hidden min-w-[160px] z-[9999]"
+              className="absolute top-full mt-1.5 right-0 rounded-2xl overflow-hidden min-w-[170px] z-[9999]"
               style={{
-                background: "rgba(8,8,10,0.96)",
-                backdropFilter: "blur(24px)",
-                border: "1px solid rgba(255,255,255,0.09)",
-                boxShadow: "0 16px 48px rgba(0,0,0,0.7)",
+                background: "rgba(255,255,255,0.92)",
+                backdropFilter: "blur(32px) saturate(1.8)",
+                border: "1px solid rgba(0,0,0,0.08)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)",
               }}
             >
               {([
@@ -316,11 +316,11 @@ export function DesktopShell() {
                 <button
                   key={action}
                   onClick={() => { setShowPowerMenu(false); if (isTauri) void systemPower(action); }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-white/50 hover:text-white hover:bg-white/5 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-black/50 hover:text-black/80 hover:bg-black/4 transition-colors"
                 >
                   <Icon style={{ width: "0.8125rem", height: "0.8125rem" }} className="flex-shrink-0" />
                   <span className="text-xs">{label}</span>
-                  {!isTauri && <span className="ml-auto text-[9px] text-white/18 font-mono">native</span>}
+                  {!isTauri && <span className="ml-auto text-[9px] text-black/20 font-mono">native</span>}
                 </button>
               ))}
             </div>
@@ -347,11 +347,11 @@ export function DesktopShell() {
                   width: win.width,
                   height: win.height,
                   zIndex: win.zIndex,
-                  borderRadius: 12,
-                  background: "rgba(10,10,12,0.91)",
-                  backdropFilter: "blur(32px) saturate(1.15)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  boxShadow: "0 40px 100px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.04)",
+                  borderRadius: 16,
+                  background: "rgba(255,255,255,0.82)",
+                  backdropFilter: "blur(40px) saturate(1.8)",
+                  border: "1px solid rgba(255,255,255,0.55)",
+                  boxShadow: "0 32px 72px rgba(0,0,0,0.12), 0 8px 20px rgba(0,0,0,0.07), 0 2px 6px rgba(0,0,0,0.04)",
                 }}
                 onClick={() => focusWindow(win.id)}
               >
@@ -359,9 +359,9 @@ export function DesktopShell() {
                 <div
                   className="flex items-center h-10 px-4 gap-3 flex-shrink-0 cursor-move"
                   style={{
-                    borderBottom: "1px solid rgba(255,255,255,0.065)",
-                    borderRadius: "12px 12px 0 0",
-                    background: "rgba(255,255,255,0.025)",
+                    borderBottom: "1px solid rgba(0,0,0,0.06)",
+                    borderRadius: "16px 16px 0 0",
+                    background: "rgba(255,255,255,0.40)",
                   }}
                   onMouseDown={(e) => startDrag(win.id, e)}
                 >
@@ -387,7 +387,7 @@ export function DesktopShell() {
 
                   {/* Title */}
                   <div className="flex-1 flex items-center justify-center pointer-events-none">
-                    <span className="text-[11px] font-medium text-white/38 tracking-wide select-none">
+                    <span className="text-[11px] font-medium text-black/38 tracking-wide select-none">
                       {appMeta[win.appId].title}
                     </span>
                   </div>
@@ -398,12 +398,12 @@ export function DesktopShell() {
                 {/* Content */}
                 <div
                   className="flex-1 overflow-hidden min-h-0"
-                  style={{ borderRadius: "0 0 12px 12px" }}
+                  style={{ borderRadius: "0 0 16px 16px" }}
                 >
                   <Suspense
                     fallback={
                       <div className="flex items-center justify-center h-full w-full">
-                        <div className="w-5 h-5 rounded-full border border-white/20 border-t-white/60 animate-spin" />
+                        <div className="w-5 h-5 rounded-full border border-black/10 border-t-black/40 animate-spin" />
                       </div>
                     }
                   >
@@ -419,23 +419,27 @@ export function DesktopShell() {
         {windows.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
             <div
-              className="font-mono text-white/80 tabular-nums leading-none"
+              className="font-mono tabular-nums leading-none"
               style={{
                 fontSize: "clamp(4.5rem, 11vw, 9rem)",
                 fontWeight: 200,
                 letterSpacing: "-0.025em",
-                textShadow: "0 2px 40px rgba(0,0,0,0.4)",
+                color: "rgba(0,0,0,0.55)",
+                textShadow: "0 2px 24px rgba(255,255,255,0.8)",
               }}
             >
               {clock.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </div>
             <div
-              className="font-mono text-white/30 tracking-widest uppercase mt-3"
-              style={{ fontSize: "0.75rem", textShadow: "0 1px 12px rgba(0,0,0,0.5)" }}
+              className="font-mono tracking-widest uppercase mt-3"
+              style={{ fontSize: "0.75rem", color: "rgba(0,0,0,0.28)", textShadow: "0 1px 8px rgba(255,255,255,0.6)" }}
             >
               {clock.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}
             </div>
-            <div className="mt-10 text-white/18 text-xs font-mono tracking-widest" style={{ textShadow: "0 1px 8px rgba(0,0,0,0.5)" }}>
+            <div
+              className="mt-10 text-xs font-mono tracking-widest"
+              style={{ color: "rgba(0,0,0,0.20)", textShadow: "0 1px 6px rgba(255,255,255,0.5)" }}
+            >
               Type a command or ask Zara anything
             </div>
           </div>
@@ -454,11 +458,13 @@ export function DesktopShell() {
               <button
                 key={win.id}
                 onClick={() => restoreWindow(win.id)}
-                className="px-3 py-1 rounded-lg text-[10px] font-medium text-white/45 hover:text-white/70 transition-all"
+                className="px-3 py-1 rounded-lg text-[10px] font-medium transition-all"
                 style={{
-                  background: "rgba(8,8,10,0.80)",
-                  backdropFilter: "blur(16px)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "rgba(0,0,0,0.45)",
+                  background: "rgba(255,255,255,0.72)",
+                  backdropFilter: "blur(20px)",
+                  border: "1px solid rgba(255,255,255,0.55)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
                 }}
               >
                 {appMeta[win.appId].title}
@@ -471,13 +477,13 @@ export function DesktopShell() {
         <div
           className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl"
           style={{
-            background: "rgba(6,6,8,0.84)",
-            backdropFilter: "blur(32px) saturate(1.3)",
-            border: "1px solid rgba(255,255,255,0.11)",
-            boxShadow: "0 8px 48px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.04)",
+            background: "rgba(255,255,255,0.78)",
+            backdropFilter: "blur(40px) saturate(1.8)",
+            border: "1px solid rgba(255,255,255,0.60)",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)",
           }}
         >
-          <Search style={{ width: "1rem", height: "1rem" }} className="text-white/28 flex-shrink-0" />
+          <Search style={{ width: "1rem", height: "1rem" }} className="text-black/25 flex-shrink-0" />
 
           <input
             ref={inputRef}
@@ -488,7 +494,7 @@ export function DesktopShell() {
               if (e.key === "Escape") setCommand("");
             }}
             placeholder='Ask Zara or say "open files", "browser", "settings"...'
-            className="flex-1 bg-transparent text-sm text-white/80 outline-none placeholder:text-white/20 font-sans"
+            className="flex-1 bg-transparent text-sm text-black/70 outline-none placeholder:text-black/22 font-sans"
             data-testid="input-command-bar"
             autoFocus
           />
@@ -496,7 +502,7 @@ export function DesktopShell() {
           {command && (
             <button
               onClick={() => setCommand("")}
-              className="text-white/22 hover:text-white/55 transition-colors flex-shrink-0"
+              className="text-black/22 hover:text-black/50 transition-colors flex-shrink-0"
             >
               <X style={{ width: "0.875rem", height: "0.875rem" }} />
             </button>
@@ -508,9 +514,10 @@ export function DesktopShell() {
             title={voiceActive ? "Voice on — click to disable" : "Voice off — click to enable"}
             className={`flex-shrink-0 p-1.5 rounded-lg transition-all ${
               voiceActive
-                ? "bg-white/12 text-white/80"
-                : "text-white/28 hover:text-white/60 hover:bg-white/6"
+                ? "text-black/70"
+                : "text-black/25 hover:text-black/50"
             }`}
+            style={voiceActive ? { background: "rgba(0,0,0,0.06)" } : undefined}
           >
             {voiceActive
               ? <Mic style={{ width: "0.875rem", height: "0.875rem" }} />
@@ -521,7 +528,11 @@ export function DesktopShell() {
           {command.trim() && (
             <button
               onClick={() => handleCommand(command)}
-              className="flex-shrink-0 px-3 py-1 rounded-lg text-xs font-medium text-white/55 hover:text-white hover:bg-white/10 transition-all border border-white/10"
+              className="flex-shrink-0 px-3 py-1 rounded-lg text-xs font-medium transition-all"
+              style={{
+                color: "rgba(0,0,0,0.55)",
+                border: "1px solid rgba(0,0,0,0.10)",
+              }}
             >
               Open
             </button>
