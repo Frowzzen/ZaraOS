@@ -95,12 +95,6 @@ export default function Settings() {
   }, [isTauri]);
 
   const refreshWifi = useCallback(async () => {
-    if (!isTauri) {
-      const { listWifiNetworks: lwn } = await import("@/core/tauri/tauri-system-controls");
-      const nets = await lwn();
-      setWifiNetworks(nets);
-      return;
-    }
     setWifiLoading(true);
     try {
       const nets = await listWifiNetworks();
