@@ -175,6 +175,80 @@ fn detect_boot_disk() -> Option<String> {
     Some(disk_name.to_string())
 }
 
+// ── Installer ─────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InstallConfig {
+    pub target_disk: String,
+    pub mode: String,           // "wipe" or "dualboot"
+    pub dualboot_split_gb: Option<u32>,
+    pub username: String,
+    pub hostname: String,
+}
+
+/// Launches the bundled install.sh script with pkexec (privilege escalation).
+/// Progress lines are written to stdout as JSON and forwarded via Tauri events.
+/// The UI listens for "install-progress" events to update the progress ring.
+#[command]
+pub fn start_install(
+    config: InstallConfig,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
+    use tauri::Manager;
+
+    // Resolve the bundled install.sh path
+    let resource_path = app
+        .path()
+        .resource_dir()
+        .map_err(|e| format!("Could not resolve resource dir: {e}"))?
+        .join("resources/install.sh");
+
+    if !resource_path.exists() {
+        return Err(format!("install.sh not found at {:?}", resource_path));
+    }
+
+    // Make executable
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut perms = std::fs::metadata(&resource_path)
+            .map_err(|e| e.to_string())?
+            .permissions();
+        perms.set_mode(0o755);
+        std::fs::set_permissions(&resource_path, perms).map_err(|e| e.to_string())?;
+    }
+
+    let script = resource_path.to_string_lossy().to_string();
+    let app_clone = app.clone();
+
+    // Spawn in a background thread — install takes 10-20 minutes
+    std::thread::spawn(move || {
+        let mut child = std::process::Command::new("pkexec")
+            .arg(&script)
+            .env("ZARAOS_TARGET_DISK",  &config.target_disk)
+            .env("ZARAOS_INSTALL_MODE", &config.mode)
+            .env("ZARAOS_SPLIT_GB",     config.dualboot_split_gb.unwrap_or(100).to_string())
+            .env("ZARAOS_HOSTNAME",     &config.hostname)
+            .env("ZARAOS_USERNAME",     &config.username)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .expect("Failed to launch install.sh via pkexec");
+
+        if let Some(stdout) = child.stdout.take() {
+            use std::io::{BufRead, BufReader};
+            for line in BufReader::new(stdout).lines().flatten() {
+                // Each line is a JSON progress event from install.sh
+                let _ = app_clone.emit("install-progress", &line);
+            }
+        }
+
+        let _ = child.wait();
+    });
+
+    Ok(())
+}
+
 fn strip_partition_suffix(dev: &str) -> &str {
     // NVMe: nvme0n1p3 → nvme0n1 (strip trailing p + digits)
     if dev.contains("nvme") {

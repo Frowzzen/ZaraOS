@@ -51,7 +51,8 @@
       "resources/zaraos-openbox.desktop": "resources/zaraos-openbox.desktop",
       "resources/lightdm.conf": "resources/lightdm.conf",
       "resources/zaraos-plymouth/zaraos.plymouth": "resources/zaraos-plymouth/zaraos.plymouth",
-      "resources/zaraos-plymouth/zaraos.script": "resources/zaraos-plymouth/zaraos.script"
+      "resources/zaraos-plymouth/zaraos.script": "resources/zaraos-plymouth/zaraos.script",
+      "resources/install.sh": "resources/install.sh"
     },
     "linux": {
       "deb": {
