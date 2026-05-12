@@ -15,12 +15,12 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { HardDrive, Layers, Trash2, ChevronRight, ChevronLeft, AlertTriangle, CheckCircle2, Loader2, RotateCcw, Shield, Cpu, Monitor } from "lucide-react";
+import { HardDrive, Layers, Trash2, ChevronRight, ChevronLeft, AlertTriangle, CheckCircle2, Loader2, RotateCcw, Shield, Cpu, Monitor, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { listDisks, transportLabel, isSafeTarget } from "@/core/tauri/tauri-installer";
-import type { DiskInfo, InstallMode } from "@/core/tauri/tauri-installer";
-import { isTauriRuntime } from "@/core/tauri/tauri-bridge";
+import { listDisks, startInstall, transportLabel, isSafeTarget } from "@/core/tauri/tauri-installer";
+import type { DiskInfo, InstallMode, InstallConfig } from "@/core/tauri/tauri-installer";
+import { isTauriRuntime, tauriListen } from "@/core/tauri/tauri-bridge";
 
 // ── Step Types ────────────────────────────────────────────────
 
@@ -141,6 +141,7 @@ export default function Install() {
   const [loadingDisks, setLoadingDisks] = useState(false);
   const [installPhase, setInstallPhase] = useState(0);
   const [installProgress, setInstallProgress] = useState(0);
+  const [installError, setInstallError] = useState<string | null>(null);
   const [state, setState] = useState<InstallState>({
     mode: null,
     targetDisk: null,
@@ -171,12 +172,47 @@ export default function Install() {
     }
   }, [state.targetDisk]);
 
-  // Simulate install progress (real progress will come via Tauri events)
+  // Drive install progress from real Tauri events (native) or simulation (browser)
   useEffect(() => {
     if (step !== "installing") return;
+
+    if (isTauri) {
+      // ── Native: listen to real install-progress events ────────
+      let unlisten: (() => void) | null = null;
+
+      tauriListen<string>("install-progress", (payload) => {
+        try {
+          const data = JSON.parse(payload);
+          if (data.error) {
+            setInstallError(data.error as string);
+            setStep("done");
+            return;
+          }
+          if (data.done) {
+            setInstallProgress(100);
+            setTimeout(() => setStep("done"), 800);
+            return;
+          }
+          if (typeof data.percent === "number" && data.percent >= 0) {
+            setInstallProgress(data.percent as number);
+            if (data.phase) {
+              const idx = INSTALL_PHASES.findIndex((p) =>
+                (data.phase as string).toLowerCase().includes(p.toLowerCase().slice(0, 10))
+              );
+              if (idx >= 0) setInstallPhase(idx);
+            }
+          }
+        } catch {
+          // ignore non-JSON log lines
+        }
+      }).then((fn) => { unlisten = fn; });
+
+      return () => { unlisten?.(); };
+    }
+
+    // ── Browser: simulation so the UI is reviewable ───────────
     let phase = 0;
     let progress = 0;
-
     const interval = setInterval(() => {
       progress += Math.random() * 8 + 2;
       if (progress >= 100) {
@@ -188,15 +224,11 @@ export default function Install() {
         Math.floor((progress / 100) * INSTALL_PHASES.length),
         INSTALL_PHASES.length - 1
       );
-      if (newPhase !== phase) {
-        phase = newPhase;
-        setInstallPhase(newPhase);
-      }
+      if (newPhase !== phase) { phase = newPhase; setInstallPhase(newPhase); }
       setInstallProgress(Math.round(progress));
     }, 400);
-
     return () => clearInterval(interval);
-  }, [step]);
+  }, [step, isTauri]);
 
   const go = (s: Step) => setStep(s);
 
@@ -453,7 +485,25 @@ export default function Install() {
               <Button
                 size="sm"
                 className={`ml-auto ${state.mode === "wipe" ? "bg-red-600 hover:bg-red-700 text-white" : ""}`}
-                onClick={() => go("installing")}
+                onClick={() => {
+                  if (!state.targetDisk || !state.mode) return;
+                  setInstallError(null);
+                  setInstallProgress(0);
+                  setInstallPhase(0);
+                  const config: InstallConfig = {
+                    target_disk: state.targetDisk.path,
+                    mode: state.mode,
+                    dualboot_split_gb: state.mode === "dualboot" ? state.dualbootSplitGb : undefined,
+                    hostname: state.hostname || "zaraos",
+                    username: state.username || "zaraos",
+                  };
+                  // Fire off the install (non-blocking — progress comes via events)
+                  startInstall(config).catch((err: unknown) => {
+                    setInstallError(String(err));
+                    setStep("done");
+                  });
+                  go("installing");
+                }}
               >
                 {state.mode === "wipe" ? "Erase and Install" : "Install ZaraOS"}
               </Button>
@@ -511,42 +561,74 @@ export default function Install() {
           </motion.div>
         )}
 
-        {/* ── Step 6: Done ─────────────────────────────────── */}
+        {/* ── Step 6: Done (success or error) ──────────────── */}
         {step === "done" && (
           <motion.div key="done" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-12 gap-5 text-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <div className="text-xl font-bold">ZaraOS Installed</div>
-              <div className="text-sm text-muted-foreground mt-1">
-                {state.mode === "dualboot"
-                  ? `ZaraOS and ${osLabel} are both installed. Select your OS at startup using the GRUB menu.`
-                  : "ZaraOS is ready. Remove the USB drive and restart to boot into ZaraOS."}
-              </div>
-            </div>
 
-            <div className="flex gap-3 mt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setStep("mode");
-                  setState({ mode: null, targetDisk: null, dualbootSplitGb: 100, hostname: "zaraos", username: "zaraos", detectedOS: null });
-                  setInstallProgress(0);
-                  setInstallPhase(0);
-                }}
-              >
-                <RotateCcw className="w-4 h-4 mr-1" /> Start over
-              </Button>
-              <Button size="sm" onClick={() => {
-                if (isTauri) {
-                  import("@/core/tauri/tauri-system-controls").then(({ systemPower }) => systemPower("reboot"));
-                }
-              }}>
-                Restart now
-              </Button>
-            </div>
+            {installError ? (
+              <>
+                <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+                  <XCircle className="w-8 h-8 text-red-400" />
+                </div>
+                <div>
+                  <div className="text-xl font-bold text-red-400">Installation Failed</div>
+                  <div className="text-xs text-muted-foreground mt-2 font-mono max-w-sm leading-relaxed">
+                    {installError}
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setStep("confirm");
+                      setInstallError(null);
+                      setInstallProgress(0);
+                      setInstallPhase(0);
+                    }}
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <div className="text-xl font-bold">ZaraOS Installed</div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    {state.mode === "dualboot"
+                      ? `ZaraOS and ${osLabel} are both installed. Select your OS at startup using the GRUB menu.`
+                      : "ZaraOS is ready. Remove the USB drive and restart to boot into ZaraOS."}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setStep("mode");
+                      setState({ mode: null, targetDisk: null, dualbootSplitGb: 100, hostname: "zaraos", username: "zaraos", detectedOS: null });
+                      setInstallProgress(0);
+                      setInstallPhase(0);
+                    }}
+                  >
+                    <RotateCcw className="w-4 h-4 mr-1" /> Start over
+                  </Button>
+                  <Button size="sm" onClick={() => {
+                    if (isTauri) {
+                      import("@/core/tauri/tauri-system-controls").then(({ systemPower }) => systemPower("reboot"));
+                    }
+                  }}>
+                    Restart now
+                  </Button>
+                </div>
+              </>
+            )}
+
           </motion.div>
         )}
 

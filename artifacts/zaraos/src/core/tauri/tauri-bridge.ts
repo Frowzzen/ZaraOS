@@ -27,6 +27,13 @@ declare global {
           args?: Record<string, unknown>
         ) => Promise<T>;
       };
+      event: {
+        listen: <T>(
+          event: string,
+          handler: (event: { payload: T }) => void
+        ) => Promise<() => void>;
+        emit: (event: string, payload?: unknown) => Promise<void>;
+      };
     };
   }
 }
@@ -39,6 +46,20 @@ export function isTauriRuntime(): boolean {
   return (
     typeof window !== "undefined" && window.__TAURI__ !== undefined
   );
+}
+
+/**
+ * Subscribe to a Tauri backend event. Returns a cleanup function (unlisten).
+ * No-op when called from a browser environment — returns a no-op cleanup.
+ */
+export async function tauriListen<T = unknown>(
+  event: string,
+  handler: (payload: T) => void
+): Promise<() => void> {
+  if (!isTauriRuntime() || !window.__TAURI__?.event) {
+    return () => {};
+  }
+  return window.__TAURI__.event.listen<T>(event, (e) => handler(e.payload));
 }
 
 /**
