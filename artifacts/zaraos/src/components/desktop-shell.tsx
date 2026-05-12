@@ -78,18 +78,20 @@ const appComponents: Record<AppId, React.LazyExoticComponent<React.ComponentType
 
 function parseCommand(input: string): AppId {
   const q = input.toLowerCase().trim();
-  if (/\b(file|folder|document|explorer|finder|director)\b/.test(q)) return "files";
-  if (/\b(setting|preference|config|system pref)\b/.test(q))          return "settings";
-  if (/\b(browser|internet|web|surf|http|www\.)\b/.test(q))           return "browser";
-  if (/\b(console|terminal|shell|command line|cmd)\b/.test(q))        return "console";
-  if (/\b(privacy|security|permission|mic|camera)\b/.test(q))         return "privacy";
-  if (/\b(memory|remember|history)\b/.test(q))                        return "memory";
-  if (/\b(ai|model|provider|ollama|llm|api key)\b/.test(q))           return "ai-providers";
-  if (/\b(skill|plugin|extension|capabilit)\b/.test(q))               return "skills";
-  if (/\b(install|usb|partition|disk|grub)\b/.test(q))                return "install";
-  if (/\b(app|application|launcher|program|software)\b/.test(q))      return "apps";
-  if (/\b(media|music|video|audio|player|movie)\b/.test(q))           return "media";
-  if (/\b(developer|dev portal|plugin api)\b/.test(q))                return "developers";
+  // Note: use `settings?` (not `setting`) so the regex matches the plural "settings"
+  // and `\b` anchors work correctly on both singular and plural forms.
+  if (/\b(files?|folder|document|explorer|finder|director)\b/.test(q))  return "files";
+  if (/\bsettings?\b|\bpreferences?\b|\bconfig\b/.test(q))               return "settings";
+  if (/\b(browser|internet|web|surf|http|www\.)\b/.test(q))              return "browser";
+  if (/\b(console|terminal|shell|command.?line|cmd)\b/.test(q))          return "console";
+  if (/\b(privacy|security|permissions?)\b/.test(q))                     return "privacy";
+  if (/\b(memory|remember|history)\b/.test(q))                           return "memory";
+  if (/\b(ai\b|models?|provider|ollama|llm|api.?key)\b/.test(q))        return "ai-providers";
+  if (/\b(skills?|plugin|extension|capabilit)\b/.test(q))               return "skills";
+  if (/\b(install|usb|partition|disk|grub)\b/.test(q))                  return "install";
+  if (/\b(apps?|application|launcher|program|software)\b/.test(q))      return "apps";
+  if (/\b(media|music|video|audio|player|movie)\b/.test(q))             return "media";
+  if (/\b(developer|dev.?portal|plugin.?api)\b/.test(q))                return "developers";
   return "assistant";
 }
 
@@ -284,6 +286,11 @@ export function DesktopShell() {
       const q = input.trim();
       if (!q) return;
       const appId = parseCommand(q);
+      // When the command falls through to the assistant, carry the original
+      // text so the assistant window can auto-send it instead of starting blank.
+      if (appId === "assistant") {
+        sessionStorage.setItem("zaraos:pendingQuery", q);
+      }
       openWindow(appId);
       setCommand("");
     },

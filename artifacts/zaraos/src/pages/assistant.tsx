@@ -265,6 +265,21 @@ export default function Assistant() {
     handleSendRef.current = handleSend;
   }, [handleSend]);
 
+  // Auto-send a pending query forwarded from the desktop command bar.
+  // When the user types e.g. "what is the weather?" in the main command bar
+  // and it routes here, we pick up the message and send it automatically
+  // so the conversation starts with their actual question — not a blank slate.
+  useEffect(() => {
+    const pending = sessionStorage.getItem("zaraos:pendingQuery");
+    if (!pending) return;
+    sessionStorage.removeItem("zaraos:pendingQuery");
+    // Short delay: let the component mount and boot greeting fire first.
+    const t = setTimeout(() => {
+      handleSendRef.current?.(pending, "keyboard");
+    }, 600);
+    return () => clearTimeout(t);
+  }, []); // Only on mount — intentionally empty deps
+
   // ── Wire voice engine ──────────────────────────────────
   // Subscribe once on mount. Callbacks call handleSend via the ref
   // to avoid stale closures.

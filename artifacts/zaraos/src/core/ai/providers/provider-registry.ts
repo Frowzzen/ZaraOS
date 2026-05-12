@@ -352,6 +352,9 @@ export async function autoConnectLocalProviders(): Promise<{ id: string; name: s
     // setProviderEndpoint() patches the running instance's baseUrl so this session
     // immediately uses 127.0.0.1 rather than waiting for the next app restart.
     setProviderEndpoint("ollama", ollamaUrl);
+    // Critical: set the detected model on the live instance so it isn't
+    // overridden by the hardcoded OLLAMA_DEFAULT_MODEL = "llama3" default.
+    if (_ollama) _ollama.setModel(model);
 
     return { id: "ollama", name: "Ollama (Local)", model };
   } catch {
