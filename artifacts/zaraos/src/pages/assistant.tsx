@@ -14,7 +14,7 @@ import { ConnectAIPanel } from "@/components/connect-ai-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VoiceWaveform } from "@/components/voice-waveform";
-import { useRuntime } from "@/core/runtime-context";
+import { useRuntime } from "@/core/runtime-hook";
 import { voiceEngine } from "@/lib/voice-engine";
 import { usePrivacy } from "@/lib/privacy-store";
 import { parseAndRoute } from "@/lib/command-router";

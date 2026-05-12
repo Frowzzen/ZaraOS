@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
-import { useRuntime } from "@/core/runtime-context";
+import { useRuntime } from "@/core/runtime-hook";
 import { skillRuntime } from "@/core/skills/skill-runtime";
 import {
   SKILL_CATEGORY_META,

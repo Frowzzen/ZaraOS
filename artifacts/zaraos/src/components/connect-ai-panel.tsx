@@ -15,7 +15,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useRuntime } from "@/core/runtime-context";
+import { useRuntime } from "@/core/runtime-hook";
 import {
   Cpu,
   Cloud,

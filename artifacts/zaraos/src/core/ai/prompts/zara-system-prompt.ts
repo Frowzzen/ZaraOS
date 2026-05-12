@@ -264,7 +264,12 @@ export function buildSystemPrompt(context?: ZaraContextData, intent?: string): s
   ];
 
   if (context) {
-    const ctx: string[] = ["CURRENT SYSTEM STATE:"];
+    const now = new Date();
+    const ctx: string[] = [
+      "CURRENT SYSTEM STATE:",
+      `- Date: ${now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`,
+      `- Time: ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}`,
+    ];
 
     if (context.simulatedMode) {
       ctx.push(

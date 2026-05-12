@@ -617,12 +617,14 @@ export function DesktopShell() {
                       <span className="inline-block w-0.5 h-3.5 ml-0.5 bg-cyan-500/70 animate-pulse align-middle" />
                     )}
                   </p>
-                ) : (
+                ) : zaraInline.streaming ? (
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce" style={{ animationDelay: "0ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce" style={{ animationDelay: "150ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce" style={{ animationDelay: "300ms" }} />
                   </div>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No response. Check that Ollama is running.</p>
                 )}
               </div>
 

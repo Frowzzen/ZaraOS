@@ -129,6 +129,9 @@ export function initializeProviders(): void {
   // Restore preferred provider
   const preferred = localStorage.getItem(SK_PREFERRED);
   if (preferred) providerRouter.setPreferredProvider(preferred);
+
+  // Asynchronously warm up Ollama so isAvailable is set before the first message.
+  _ollama.initialize().catch(() => { /* Ollama offline — stays in simulated mode */ });
 }
 
 // ── Async Key Loading & Migration ─────────────────────────

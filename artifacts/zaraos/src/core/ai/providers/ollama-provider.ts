@@ -133,20 +133,13 @@ export class OllamaProvider implements AIProviderAdapter {
     onChunk: AIStreamCallback,
     options?: AISendOptions
   ): Promise<void> {
-    if (!this.isAvailable) {
-      // Simulate streaming for degraded mode.
-      const text = this.simulatedFallback(messages);
-      const chunkSize = 3;
-      for (let i = 0; i < text.length; i += chunkSize) {
-        await new Promise((r) => setTimeout(r, 30));
-        const done = i + chunkSize >= text.length;
-        onChunk({ delta: text.slice(i, i + chunkSize), done });
-      }
-      return;
-    }
-
+    // Always attempt real Ollama first (no isAvailable gate — provider router
+    // already confirmed reachability via healthCheck before calling us).
+    // Fall back to simulation only if the fetch itself fails.
     try {
-      // REAL OLLAMA STREAMING:
+      const { signal: fetchSignal, cancel } = makeFetchSignal(60000);
+      const abortSignal = options?.signal ?? fetchSignal;
+
       const response = await fetch(`${this.baseUrl}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -159,11 +152,13 @@ export class OllamaProvider implements AIProviderAdapter {
             num_predict: options?.maxTokens ?? 512,
           },
         }),
-        signal: options?.signal,
+        signal: abortSignal,
       });
+      cancel();
 
-      if (!response.ok || !response.body) throw new Error("Stream failed");
+      if (!response.ok || !response.body) throw new Error(`Ollama returned ${response.status}`);
 
+      this.isAvailable = true;
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
 
@@ -171,20 +166,31 @@ export class OllamaProvider implements AIProviderAdapter {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const lines = decoder.decode(value).split("\n").filter(Boolean);
+        const lines = decoder.decode(value, { stream: true }).split("\n").filter(Boolean);
         for (const line of lines) {
           try {
             const parsed = JSON.parse(line) as { message?: { content?: string }; done?: boolean };
             const delta = parsed.message?.content ?? "";
             const isDone = parsed.done ?? false;
-            if (delta) onChunk({ delta, done: isDone });
+            // Always forward the chunk — even empty-delta done signals matter.
+            onChunk({ delta, done: isDone });
             if (isDone) return;
-          } catch { /* skip malformed chunk */ }
+          } catch { /* skip malformed NDJSON line */ }
         }
       }
+      // Stream closed by server without an explicit done:true — signal completion.
+      onChunk({ delta: "", done: true });
     } catch {
       this.isAvailable = false;
-      onChunk({ delta: " [Ollama disconnected — fell back to local simulation]", done: true });
+      // Degrade gracefully: stream a simulated response.
+      const text = this.simulatedFallback(messages);
+      const chunkSize = 3;
+      for (let i = 0; i < text.length; i += chunkSize) {
+        await new Promise((r) => setTimeout(r, 30));
+        const isLast = i + chunkSize >= text.length;
+        onChunk({ delta: text.slice(i, i + chunkSize), done: isLast });
+      }
+      if (!text.length) onChunk({ delta: "", done: true });
     }
   }
 

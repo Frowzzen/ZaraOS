@@ -195,10 +195,8 @@ export function RuntimeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useRuntime(): RuntimeContextType {
-  const ctx = useContext(RuntimeContext);
-  if (!ctx) {
-    throw new Error("useRuntime must be used within a RuntimeProvider");
-  }
-  return ctx;
-}
+// useRuntime hook lives in runtime-hook.ts — import from there.
+// Exporting it here would mix a component (RuntimeProvider) and a hook
+// in the same module, which breaks Vite Fast Refresh.
+export { RuntimeContext };
+export type { RuntimeContextType };

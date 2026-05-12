@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
-import { useRuntime } from "@/core/runtime-context";
+import { useRuntime } from "@/core/runtime-hook";
 import { useLocation } from "wouter";
 import { useState, useRef, useEffect } from "react";
 import { Terminal as TerminalIcon } from "lucide-react";

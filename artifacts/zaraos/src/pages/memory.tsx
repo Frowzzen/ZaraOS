@@ -16,7 +16,7 @@ import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { useRuntime } from "@/core/runtime-context";
+import { useRuntime } from "@/core/runtime-hook";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Brain,

@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { AIRuntimeStatus } from "@/components/ai-runtime-status";
-import { useRuntime } from "@/core/runtime-context";
+import { useRuntime } from "@/core/runtime-hook";
 import { useState, useEffect, useCallback } from "react";
 import type { ProviderSummary } from "@/core/ai/providers/provider-registry";
 import type { AIProviderStatus } from "@/core/ai/providers/provider-adapter";

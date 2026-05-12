@@ -13,7 +13,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
-import { useRuntime } from "@/core/runtime-context";
+import { useRuntime } from "@/core/runtime-hook";
 import { useInputMode, INPUT_MODE_META } from "@/core/input-mode";
 import { voiceEngine } from "@/lib/voice-engine";
 import { VoiceWaveform } from "@/components/voice-waveform";

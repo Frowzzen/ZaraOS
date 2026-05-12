@@ -7,7 +7,7 @@
 // Usage: <AIRuntimeStatus /> — embeds anywhere in the OS shell.
 // ============================================================
 
-import { useRuntime } from "@/core/runtime-context";
+import { useRuntime } from "@/core/runtime-hook";
 import { Cpu, Brain, Zap, Database, Clock } from "lucide-react";
 
 interface AIRuntimeStatusProps {

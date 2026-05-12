@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout";
 import { usePrivacy } from "@/lib/privacy-store";
-import { useRuntime } from "@/core/runtime-context";
+import { useRuntime } from "@/core/runtime-hook";
 import { Link } from "wouter";
 import {
   MessageSquare,
