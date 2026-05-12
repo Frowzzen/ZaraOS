@@ -47,7 +47,12 @@ pub fn get_system_stats() -> SystemStats {
     std::thread::sleep(Duration::from_millis(120));
     sys.refresh_all();
 
-    let cpu_usage = sys.global_cpu_usage();
+    // Average per-core usage — works across all sysinfo 0.30.x versions
+    let cpu_usage = {
+        let cpus = sys.cpus();
+        if cpus.is_empty() { 0.0_f32 }
+        else { cpus.iter().map(|c| c.cpu_usage()).sum::<f32>() / cpus.len() as f32 }
+    };
 
     let ram_used  = sys.used_memory()  as f64 / 1_073_741_824.0;
     let ram_total = sys.total_memory() as f64 / 1_073_741_824.0;
@@ -114,7 +119,7 @@ pub fn get_top_processes() -> Vec<ProcessInfo> {
         .iter()
         .map(|(pid, p)| ProcessInfo {
             pid: pid.as_u32(),
-            name: p.name().to_string_lossy().to_string(),
+            name: p.name().to_string(),
             cpu_percent: (p.cpu_usage() * 10.0).round() / 10.0,
             ram_mb: (p.memory() as f64 / 1_048_576.0 * 10.0).round() / 10.0,
         })

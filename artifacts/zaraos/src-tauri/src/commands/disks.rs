@@ -12,6 +12,7 @@
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 use tauri::command;
+use tauri::{Emitter, Manager};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DiskInfo {
@@ -194,8 +195,6 @@ pub fn start_install(
     config: InstallConfig,
     app: tauri::AppHandle,
 ) -> Result<(), String> {
-    use tauri::Manager;
-
     // Resolve the bundled install.sh path
     let resource_path = app
         .path()

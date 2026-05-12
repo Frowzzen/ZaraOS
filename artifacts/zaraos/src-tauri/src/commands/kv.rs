@@ -17,11 +17,11 @@
 // Replace with tauri-plugin-stronghold before Beta 0.1 release.
 // ============================================================
 
-use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use tauri::command;
+use tauri::Manager;
 
 fn kv_path(app: tauri::AppHandle) -> PathBuf {
     app.path()
