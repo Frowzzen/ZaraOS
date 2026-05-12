@@ -66,17 +66,7 @@
       "open": true
     },
     "fs": {
-      "scope": {
-        "allow": [
-          "$HOME/**",
-          "$APPDATA/**",
-          "$APPCONFIG/**"
-        ],
-        "deny": [
-          "$HOME/.ssh/**",
-          "$HOME/.gnupg/**"
-        ]
-      }
+      "all": true
     }
   }
 }
