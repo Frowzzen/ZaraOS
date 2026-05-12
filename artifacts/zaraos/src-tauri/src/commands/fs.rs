@@ -10,7 +10,7 @@
 //   rejected by the plugin before reaching these handlers.
 // ============================================================
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::fs;
 use std::time::UNIX_EPOCH;
 use tauri::command;
