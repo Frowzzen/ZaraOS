@@ -9,6 +9,7 @@ import { useInputMode } from "@/core/input-mode";
 import { gestureEngine } from "@/lib/gesture-engine";
 import { voiceEngine } from "@/lib/voice-engine";
 import { zaraRuntime } from "@/core/zara-runtime";
+import { parseAndRoute } from "@/lib/command-router";
 import {
   Mic,
   MicOff,
@@ -156,7 +157,7 @@ export function DesktopShell() {
 
     if (!voiceEngine.isSupported) {
       setVoiceError(
-        voiceEngine.isTauriMode
+        isTauri
           ? "Mic input coming in Alpha 0.7 — use the keyboard or command bar to talk to Zara."
           : "Voice input requires Chrome or Edge. Use the keyboard in this browser."
       );
@@ -296,6 +297,24 @@ export function DesktopShell() {
       const q = input.trim();
       if (!q) return;
       setCommand("");
+
+      // ── System control commands (power / volume / brightness / wifi) ──────
+      // parseAndRoute() catches these before the local panel router so that
+      // typing "shut down", "volume up", etc. invokes real Tauri IPC and does
+      // not fall through to the AI engine.
+      if (isTauri) {
+        const parsed = parseAndRoute(q, "keyboard");
+        if (parsed.intent === "system_control") {
+          if (parsed.target === "shutdown") { void exitApp(); return; }
+          if (parsed.target && (["reboot", "suspend", "lock"] as const).includes(parsed.target as "reboot" | "suspend" | "lock")) {
+            void systemPower(parsed.target as "reboot" | "suspend" | "lock");
+            return;
+          }
+          // Volume / brightness / wifi — let the runtime handle it
+          zaraRuntime.executeCommand(q, "keyboard");
+          return;
+        }
+      }
 
       const appId = parseCommand(q);
 

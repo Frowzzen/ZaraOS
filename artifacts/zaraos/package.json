@@ -7,7 +7,9 @@
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
     "build": "vite build --config vite.config.ts",
     "preview": "vite preview --config vite.config.ts --host 0.0.0.0",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "copy-mediapipe": "node -e \"const fs=require('fs'),path=require('path'),r=(p)=>require.resolve(p);let src;try{src=path.dirname(r('@mediapipe/tasks-vision/package.json'))+'/wasm'}catch(e){src=path.resolve('node_modules/@mediapipe/tasks-vision/wasm')};const dest=path.resolve('public/mediapipe');fs.mkdirSync(dest,{recursive:true});fs.readdirSync(src).forEach(f=>fs.cpSync(path.join(src,f),path.join(dest,f)));console.log('MediaPipe WASM copied to public/mediapipe/')\"",
+    "postinstall": "pnpm run copy-mediapipe"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",

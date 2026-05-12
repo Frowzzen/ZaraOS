@@ -32,13 +32,12 @@ type GestureStatusCallback = (isTracking: boolean) => void;
 type LandmarksCallback   = (landmarks: Landmark[][] | null) => void;
 type CameraErrorCallback = (error: string) => void;
 
-// ── MediaPipe CDN URLs ────────────────────────────────────────
-// WASM bundle is loaded from jsDelivr CDN — not bundled by Vite
-// so it doesn't inflate the production bundle size.
-const WASM_BUNDLE_URL =
-  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm";
-const HAND_MODEL_URL =
-  "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+// ── MediaPipe local URLs ──────────────────────────────────────
+// WASM bundle and model are bundled in public/mediapipe/ so gesture
+// tracking works completely offline (no CDN dependency).
+// import.meta.env.BASE_URL includes the trailing slash (e.g. "/" or "/zaraos/").
+const WASM_BUNDLE_URL  = `${import.meta.env.BASE_URL}mediapipe`;
+const HAND_MODEL_URL   = `${import.meta.env.BASE_URL}mediapipe/hand_landmarker.task`;
 
 class GestureEngine {
   // ── State ─────────────────────────────────────────────────
