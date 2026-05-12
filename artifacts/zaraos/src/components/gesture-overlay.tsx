@@ -31,11 +31,9 @@ interface GestureOverlayProps {
 export function GestureOverlay({ onClose }: GestureOverlayProps) {
   // feedCanvasRef — displays camera frames (drawn via RAF, works in WebKitGTK)
   // skeletonCanvasRef — hand skeleton drawn on top
-  const feedCanvasRef   = useRef<HTMLCanvasElement>(null);
-  const canvasRef       = useRef<HTMLCanvasElement>(null);
-  // Off-screen video element used only as a source for drawImage()
-  const videoRef        = useRef<HTMLVideoElement | null>(null);
-  const feedRafRef      = useRef<number | null>(null);
+  const feedCanvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef     = useRef<HTMLCanvasElement>(null);
+  const feedRafRef    = useRef<number | null>(null);
 
   const [cameraReady, setCameraReady] = useState(false);
   const [gesture, setGesture]         = useState<string | null>(null);
@@ -43,66 +41,41 @@ export function GestureOverlay({ onClose }: GestureOverlayProps) {
   const [loading, setLoading]         = useState(true);
 
   // ── Canvas-based camera feed ───────────────────────────────
-  // WebKitGTK on Linux won't render MediaStream in a <video> element
-  // reliably. Instead we pull frames manually via requestAnimationFrame
-  // and paint them onto a canvas — this path always works.
+  // We draw from the engine's own video element (already decoding frames
+  // for MediaPipe) into a canvas via RAF. This avoids creating a second
+  // decoder — WebKitGTK handles one MediaStream decode at a time reliably.
   useEffect(() => {
     let running = true;
 
-    function startFeedLoop(stream: MediaStream) {
-      // Create an off-screen video element as the decode source
-      const vid = document.createElement("video");
-      vid.srcObject = stream;
-      vid.playsInline = true;
-      vid.muted = true;
-      videoRef.current = vid;
+    function drawFrame() {
+      if (!running) return;
+      const vid    = gestureEngine.getVideoElement();
+      const canvas = feedCanvasRef.current;
 
-      vid.play().catch(() => {});
-
-      function drawFrame() {
-        if (!running) return;
-        const canvas = feedCanvasRef.current;
-        if (canvas && vid.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            // Mirror horizontally to match user's natural perspective
-            ctx.save();
-            ctx.scale(-1, 1);
-            ctx.drawImage(vid, -canvas.width, 0, canvas.width, canvas.height);
-            ctx.restore();
-          }
+      if (canvas && vid && vid.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.save();
+          ctx.scale(-1, 1);
+          ctx.drawImage(vid, -canvas.width, 0, canvas.width, canvas.height);
+          ctx.restore();
         }
-        feedRafRef.current = requestAnimationFrame(drawFrame);
+        if (!cameraReady) {
+          setCameraReady(true);
+          setLoading(false);
+        }
       }
 
       feedRafRef.current = requestAnimationFrame(drawFrame);
-      setCameraReady(true);
-      setLoading(false);
     }
 
-    function pollStream() {
-      const stream = gestureEngine.getMediaStream();
-      if (stream && !videoRef.current) {
-        startFeedLoop(stream);
-      } else if (!stream && videoRef.current) {
-        videoRef.current.srcObject = null;
-        videoRef.current = null;
-        setCameraReady(false);
-      }
-    }
-
-    pollStream();
-    const id = setInterval(pollStream, 400);
+    feedRafRef.current = requestAnimationFrame(drawFrame);
 
     return () => {
       running = false;
-      clearInterval(id);
       if (feedRafRef.current !== null) cancelAnimationFrame(feedRafRef.current);
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-        videoRef.current = null;
-      }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Draw skeleton when landmarks arrive ───────────────────

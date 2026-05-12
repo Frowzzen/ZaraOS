@@ -13,27 +13,6 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
-        .setup(|app| {
-            // ── Grant camera + microphone permissions automatically ──
-            // On Linux, WebKitGTK denies media requests by default unless a
-            // portal is running. We intercept the permission-request signal
-            // and allow it so gesture detection and voice input work in dev mode.
-            #[cfg(target_os = "linux")]
-            {
-                use tauri::Manager;
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.with_webview(|wv| {
-                        use webkit2gtk::WebViewExt;
-                        wv.inner().connect_permission_request(|_view, request| {
-                            use webkit2gtk::PermissionRequestExt;
-                            request.allow();
-                            true
-                        });
-                    });
-                }
-            }
-            Ok(())
-        })
         .invoke_handler(tauri::generate_handler![
             // ── File system ──────────────────────────────────
             commands::fs::fs_read_text,

@@ -235,6 +235,14 @@ class GestureEngine {
     return this.mediaStream;
   }
 
+  /**
+   * Returns the off-screen video element already decoding frames for MediaPipe.
+   * GestureOverlay uses this as the drawImage source so no second decode is needed.
+   */
+  public getVideoElement(): HTMLVideoElement | null {
+    return this.videoEl;
+  }
+
   // ── Path awareness ────────────────────────────────────────
   public setCurrentPath(path: string): void {
     this.currentPath = path;

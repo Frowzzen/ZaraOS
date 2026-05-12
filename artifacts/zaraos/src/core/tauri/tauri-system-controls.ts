@@ -22,7 +22,11 @@ export async function exitApp(): Promise<void> {
     console.warn("[SystemControls] exitApp requires the native desktop app.");
     return;
   }
-  await tauriInvoke<void>("exit_app");
+  try {
+    await tauriInvoke<void>("exit_app");
+  } catch (err) {
+    console.error("[SystemControls] exit_app IPC failed:", err);
+  }
 }
 
 export async function systemPower(action: PowerAction): Promise<void> {
