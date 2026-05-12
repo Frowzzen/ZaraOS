@@ -146,9 +146,13 @@ export function DesktopShell() {
     }
 
     if (!voiceEngine.isSupported) {
-      setVoiceError("Voice input is not supported in this environment. Use the text bar below.");
+      setVoiceError(
+        voiceEngine.isTauriMode
+          ? "Mic input coming in Alpha 0.7 — use the keyboard or command bar to talk to Zara."
+          : "Voice input requires Chrome or Edge. Use the keyboard in this browser."
+      );
       setVoice(false);
-      setTimeout(() => setVoiceError(null), 4000);
+      setTimeout(() => setVoiceError(null), 6000);
       return;
     }
 
