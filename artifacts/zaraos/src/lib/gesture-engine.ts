@@ -100,7 +100,7 @@ class GestureEngine {
       this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath: HAND_MODEL_URL,
-          delegate: "GPU",
+          delegate: "CPU",
         },
         runningMode: "VIDEO",
         numHands: 1,
