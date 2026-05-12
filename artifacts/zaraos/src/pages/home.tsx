@@ -1,314 +1,255 @@
 import { Layout } from "@/components/layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePrivacy } from "@/lib/privacy-store";
 import { useRuntime } from "@/core/runtime-context";
 import { Link } from "wouter";
 import {
-  Activity,
+  MessageSquare,
+  Terminal,
+  LayoutGrid,
+  FolderOpen,
+  Settings,
+  ShieldAlert,
   Cpu,
-  HardDrive,
-  Network,
-  ShieldCheck,
-  Zap,
   Brain,
+  Zap,
+  HardDriveDownload,
   Server,
   Cloud,
-  CheckCircle2,
-  Loader2,
   Radio,
-  ArrowRight,
+  Loader2,
+  Mic,
+  MicOff,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Wifi,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { getSystemStats, formatUptime } from "@/core/tauri/tauri-system";
 import type { SystemStats } from "@/core/tauri/tauri-system";
+
+const quickApps = [
+  { href: "/assistant",    icon: MessageSquare, label: "Assistant"    },
+  { href: "/console",      icon: Terminal,      label: "Console"      },
+  { href: "/apps",         icon: LayoutGrid,    label: "Apps"         },
+  { href: "/files",        icon: FolderOpen,    label: "Files"        },
+  { href: "/ai-providers", icon: Cpu,           label: "AI"           },
+  { href: "/memory",       icon: Brain,         label: "Memory"       },
+  { href: "/privacy",      icon: ShieldAlert,   label: "Privacy"      },
+  { href: "/settings",     icon: Settings,      label: "Settings"     },
+  { href: "/skills",       icon: Zap,           label: "Skills"       },
+  { href: "/install",      icon: HardDriveDownload, label: "Install"  },
+];
 
 export default function Home() {
   const privacy = usePrivacy();
   const { aiRuntimeStatus, getAIMemoryStats } = useRuntime();
   const [time, setTime] = useState(new Date());
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
-  const [memStats, setMemStats] = useState(() => {
-    try { return getAIMemoryStats(); } catch { return null; }
-  });
-
-  // Stable ref to getAIMemoryStats — avoids resetting the 10 s interval on every clock tick.
   const getAIMemoryStatsRef = useRef(getAIMemoryStats);
+
   useEffect(() => { getAIMemoryStatsRef.current = getAIMemoryStats; }, [getAIMemoryStats]);
 
   useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(t);
   }, []);
 
-  // Poll real hardware stats every 2 s (Tauri) or once (browser mock)
   useEffect(() => {
-    const refresh = () => {
-      getSystemStats().then(setSystemStats).catch(() => {});
-    };
+    const refresh = () => { getSystemStats().then(setSystemStats).catch(() => {}); };
     refresh();
     const id = setInterval(refresh, 2000);
     return () => clearInterval(id);
-  }, []);
-
-  // Refresh memory stats every 10 seconds. Depends on a stable ref, never resets.
-  useEffect(() => {
-    const refresh = () => {
-      try { setMemStats(getAIMemoryStatsRef.current()); } catch { /* ignore */ }
-    };
-    refresh();
-    const t = setInterval(refresh, 10_000);
-    return () => clearInterval(t);
   }, []);
 
   const isRealInference = !aiRuntimeStatus.isSimulated;
   const isCloud = aiRuntimeStatus.isCloud;
   const phase = aiRuntimeStatus.phase;
 
-  const aiPhaseIcon =
+  const aiIcon =
     phase === "thinking" || phase === "streaming"
-      ? <Loader2 className="w-3 h-3 animate-spin text-primary" />
+      ? <Loader2 className="w-3 h-3 animate-spin" />
       : isRealInference
-        ? (isCloud ? <Cloud className="w-3 h-3 text-amber-400" /> : <Server className="w-3 h-3 text-green-400" />)
-        : <Radio className="w-3 h-3 text-muted-foreground/50" />;
+        ? (isCloud ? <Cloud className="w-3 h-3" /> : <Server className="w-3 h-3" />)
+        : <Radio className="w-3 h-3" />;
 
-  const aiStatusText =
+  const aiText =
     phase === "thinking" ? "Thinking..." :
     phase === "streaming" ? "Streaming..." :
-    phase === "error" ? "Error — check AI providers" :
-    isRealInference ? (isCloud ? "Real inference (cloud)" : "Real inference (local)") :
-    "Simulated (offline mode)";
+    phase === "error" ? "Error" :
+    isRealInference ? (isCloud ? "Cloud inference" : "Local inference") :
+    "Simulated mode";
+
+  const timeStr = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const dateStr = time.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
 
   return (
     <Layout>
-      <div className="flex flex-col gap-8 h-full max-w-6xl mx-auto">
+      <div className="h-full flex flex-col min-h-0" style={{ padding: "0" }}>
 
-        {/* ── Header ── */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-5">
-            {/* Wordmark — cropped from official logo sheet */}
-            <img
-              src="/zaraos-wordmark.png"
-              alt="ZaraOS"
-              className="h-10 w-auto object-contain object-left select-none hidden sm:block"
-              draggable={false}
-            />
-            <div>
-              <p className="text-sm text-primary font-mono bg-primary/10 px-3 py-1 rounded-md border border-primary/20 inline-block shadow-[0_0_12px_rgba(0,240,255,0.08)]">
-                Welcome back. I am Zara, running locally.
-              </p>
+        {/* ── Center section: clock + Zara greeting + app grid ── */}
+        <div className="flex-1 flex flex-col items-center justify-center gap-8 px-8 py-10 min-h-0">
+
+          {/* Clock */}
+          <div className="flex flex-col items-center gap-1 select-none">
+            <div
+              className="font-mono text-white tabular-nums leading-none"
+              style={{ fontSize: "clamp(3.5rem, 8vw, 7rem)", fontWeight: 200, letterSpacing: "-0.02em" }}
+            >
+              {timeStr}
+            </div>
+            <div className="text-sm font-medium text-white/35 tracking-widest uppercase font-mono">
+              {dateStr}
             </div>
           </div>
-          <div className="text-right font-mono flex-shrink-0 hidden md:block">
-            <div className="text-3xl text-white font-light">{time.toLocaleTimeString()}</div>
-            <div className="text-sm text-muted-foreground">{time.toLocaleDateString()}</div>
+
+          {/* Zara status pill */}
+          <Link href="/assistant">
+            <div
+              className="flex items-center gap-3 px-5 py-2.5 rounded-full cursor-pointer transition-all duration-200 hover:scale-105 group"
+              style={{
+                background: "rgba(0,240,255,0.06)",
+                border: "1px solid rgba(0,240,255,0.14)",
+                backdropFilter: "blur(12px)",
+                boxShadow: "0 0 24px rgba(0,240,255,0.06)",
+              }}
+            >
+              <div className="flex items-center gap-1.5">
+                {aiIcon && (
+                  <span className={`${isRealInference ? "text-green-400" : "text-primary/50"}`}>
+                    {aiIcon}
+                  </span>
+                )}
+                <div
+                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{
+                    background: isRealInference ? "#4ade80" : "hsl(184 100% 50%)",
+                    boxShadow: isRealInference
+                      ? "0 0 8px rgba(74,222,128,0.8)"
+                      : "0 0 8px rgba(0,240,255,0.6)",
+                  }}
+                />
+              </div>
+              <span className="text-xs font-mono text-white/55 tracking-wide">
+                Zara — {aiText}
+              </span>
+              <span className="text-xs text-primary/30 group-hover:text-primary/60 transition-colors font-mono ml-1">→</span>
+            </div>
+          </Link>
+
+          {/* Quick-launch app grid */}
+          <div className="grid grid-cols-5 gap-3 w-full max-w-xl">
+            {quickApps.map((app) => {
+              const Icon = app.icon;
+              return (
+                <Link key={app.href} href={app.href}>
+                  <div className="flex flex-col items-center gap-2 p-3 rounded-xl cursor-pointer group transition-all duration-200 hover:scale-105">
+                    <div
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200"
+                      style={{
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                        boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+                      }}
+                    >
+                      <Icon
+                        style={{ width: "1.25rem", height: "1.25rem" }}
+                        className="text-white/40 group-hover:text-primary transition-colors duration-200 group-hover:drop-shadow-[0_0_8px_rgba(0,240,255,0.6)]"
+                      />
+                    </div>
+                    <span className="text-[10px] font-medium text-white/30 group-hover:text-white/60 transition-colors tracking-wide">
+                      {app.label}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
 
-        {/* ── System Stats ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* ── Bottom status bar ── */}
+        <div
+          className="flex-shrink-0 flex items-center justify-center gap-6 px-8 py-3 flex-wrap"
+          style={{
+            borderTop: "1px solid rgba(255,255,255,0.04)",
+            background: "rgba(0,0,0,0.2)",
+          }}
+        >
+          {/* System stats */}
           {[
             {
-              label: "CPU Usage",
-              value: systemStats ? `${systemStats.cpu_usage_percent.toFixed(1)}%` : "—",
-              sub: systemStats ? `${systemStats.cpu_cores} cores` : "",
-              icon: Cpu, color: "text-primary",
+              label: "CPU",
+              value: systemStats ? `${systemStats.cpu_usage_percent.toFixed(0)}%` : "—",
+              sub: systemStats ? `${systemStats.cpu_cores}c` : "",
+              color: "#00f0ff",
             },
             {
-              label: "RAM Usage",
-              value: systemStats ? `${systemStats.ram_used_gb} / ${systemStats.ram_total_gb} GB` : "—",
-              sub: systemStats ? `${systemStats.ram_used_percent.toFixed(0)}% used` : "",
-              icon: HardDrive, color: "text-secondary",
+              label: "RAM",
+              value: systemStats ? `${systemStats.ram_used_gb}` : "—",
+              sub: systemStats ? `/ ${systemStats.ram_total_gb} GB` : "",
+              color: "#a855f7",
             },
             {
-              label: "Disk Free",
+              label: "DISK",
               value: systemStats ? `${systemStats.disk_free_gb} GB` : "—",
-              sub: systemStats ? `of ${systemStats.disk_total_gb} GB` : "",
-              icon: Zap, color: "text-purple-400",
+              sub: "free",
+              color: "#22c55e",
             },
             {
-              label: "Network RX",
-              value: systemStats ? `${(systemStats.network_rx_kbps / 1024).toFixed(1)} MB/s` : "—",
-              sub: systemStats ? `up ${formatUptime(systemStats.uptime_seconds)}` : "",
-              icon: Network, color: "text-green-400",
+              label: "NET",
+              value: systemStats ? `${(systemStats.network_rx_kbps / 1024).toFixed(1)}` : "—",
+              sub: "MB/s",
+              color: "#f59e0b",
             },
-          ].map((stat) => (
-            <Card key={stat.label} className="bg-card/50 border-white/5 backdrop-blur-sm hover:border-primary/30 transition-colors duration-300">
-              <CardContent className="p-6 flex items-center gap-4">
-                <div className={`p-3 rounded-lg bg-background ${stat.color} shadow-[0_0_15px_currentColor] opacity-80`}>
-                  <stat.icon className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground font-mono">{stat.label}</div>
-                  <div className="text-2xl font-bold text-white">{stat.value}</div>
-                  {stat.sub && <div className="text-xs text-muted-foreground/50 font-mono mt-0.5">{stat.sub}</div>}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* ── AI Engine Widget ── */}
-        <Link href="/ai-providers">
-          <Card className="bg-card/40 border-white/5 backdrop-blur hover:border-primary/25 transition-all duration-200 cursor-pointer group">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-lg bg-black/40 border ${
-                    phase === "thinking" || phase === "streaming"
-                      ? "border-primary/30"
-                      : isRealInference
-                      ? isCloud ? "border-amber-500/20" : "border-green-500/20"
-                      : "border-white/5"
-                  }`}>
-                    <Brain className={`w-5 h-5 ${
-                      phase === "thinking" || phase === "streaming"
-                        ? "text-primary"
-                        : isRealInference
-                        ? isCloud ? "text-amber-400" : "text-green-400"
-                        : "text-muted-foreground/40"
-                    }`} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">AI Engine</span>
-                      {aiPhaseIcon}
-                    </div>
-                    <p className="text-white font-semibold text-sm">
-                      {aiRuntimeStatus.providerName}
-                    </p>
-                    <p className="text-[11px] font-mono text-muted-foreground/50 mt-0.5">
-                      {aiRuntimeStatus.modelId}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Status row */}
-                <div className="flex items-center gap-4 flex-wrap">
-                  <div className="flex flex-col items-end gap-1">
-                    <div className={`text-[9px] font-mono px-2 py-0.5 rounded border ${
-                      isRealInference
-                        ? isCloud
-                          ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
-                          : "text-green-400 bg-green-500/10 border-green-500/20"
-                        : "text-muted-foreground/40 bg-white/5 border-white/10"
-                    }`}>
-                      {aiStatusText}
-                    </div>
-                    {memStats && (
-                      <p className="text-[10px] font-mono text-muted-foreground/40">
-                        {memStats.conversationTurns} turns · {memStats.estimatedTokens.toLocaleString()} tokens
-                      </p>
-                    )}
-                  </div>
-                  {aiRuntimeStatus.latencyMs && isRealInference && (
-                    <div className="flex flex-col items-end">
-                      <span className="text-[9px] font-mono text-muted-foreground/40 uppercase tracking-widest">Last Latency</span>
-                      <span className="text-xs font-mono text-primary/60">{aiRuntimeStatus.latencyMs}ms</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1 text-muted-foreground/30 group-hover:text-primary/40 transition-colors">
-                    <span className="text-[10px] font-mono">Manage</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Simulated mode notice */}
-              {!isRealInference && phase !== "thinking" && phase !== "streaming" && (
-                <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
-                  <p className="text-[10px] text-muted-foreground/40 font-mono">
-                    Running in simulated mode. Install Ollama or add an API key to enable real AI inference.
-                  </p>
-                  <div className="flex items-center gap-1 text-[10px] font-mono text-primary/50">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Local-first
-                  </div>
-                </div>
+            ...(systemStats
+              ? [{ label: "UP", value: formatUptime(systemStats.uptime_seconds), sub: "", color: "rgba(255,255,255,0.3)" }]
+              : []),
+          ].map((s) => (
+            <div key={s.label} className="flex items-baseline gap-1.5">
+              <span className="text-[9px] font-mono tracking-widest" style={{ color: "rgba(255,255,255,0.25)" }}>
+                {s.label}
+              </span>
+              <span className="text-[12px] font-mono tabular-nums font-medium" style={{ color: s.color }}>
+                {s.value}
+              </span>
+              {s.sub && (
+                <span className="text-[9px] font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>
+                  {s.sub}
+                </span>
               )}
-            </CardContent>
-          </Card>
-        </Link>
+            </div>
+          ))}
 
-        {/* ── Main Content: Privacy + Activity ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[400px]">
+          {/* Divider */}
+          <div className="w-px h-4" style={{ background: "rgba(255,255,255,0.06)" }} />
 
-          {/* Privacy Status */}
-          <Card className="col-span-1 bg-card/40 border-white/5 backdrop-blur flex flex-col">
-            <CardHeader className="border-b border-white/5 pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <ShieldCheck className="w-5 h-5 text-green-400" />
-                Privacy Fortress
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 flex-1 flex flex-col gap-4">
-              <div className="flex items-center justify-between p-3 rounded bg-black/40 border border-white/5">
-                <span className="text-sm font-medium">Local AI</span>
-                {privacy.localAIRunning ? (
-                  <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400 border border-green-500/30">Active</span>
-                ) : (
-                  <span className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30">Inactive</span>
-                )}
-              </div>
-              <div className="flex items-center justify-between p-3 rounded bg-black/40 border border-white/5">
-                <span className="text-sm font-medium">Cloud AI</span>
-                {privacy.cloudAIRunning ? (
-                  <span className="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">Active</span>
-                ) : (
-                  <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400 border border-green-500/30">Blocked</span>
-                )}
-              </div>
-              <div className="flex items-center justify-between p-3 rounded bg-black/40 border border-white/5">
-                <span className="text-sm font-medium">Microphone</span>
-                {privacy.micActive ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.8)]"></div>
-                    <span className="text-xs text-amber-400">Listening</span>
-                  </div>
-                ) : (
-                  <span className="text-xs text-muted-foreground">Inactive</span>
-                )}
-              </div>
-              <div className="flex items-center justify-between p-3 rounded bg-black/40 border border-white/5">
-                <span className="text-sm font-medium">Camera</span>
-                {privacy.cameraActive ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.8)]"></div>
-                    <span className="text-xs text-amber-400">Tracking</span>
-                  </div>
-                ) : (
-                  <span className="text-xs text-muted-foreground">Inactive</span>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Activity Feed */}
-          <Card className="col-span-1 lg:col-span-2 bg-card/40 border-white/5 backdrop-blur flex flex-col">
-            <CardHeader className="border-b border-white/5 pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Activity className="w-5 h-5 text-primary" />
-                System Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 flex-1 overflow-y-auto">
-              <div className="flex flex-col divide-y divide-white/5">
-                {[
-                  { time: "10:42 AM", msg: "Zara initialized successfully", type: "system" },
-                  { time: "10:45 AM", msg: "Scanned 1,204 files in /Documents", type: "info" },
-                  { time: "11:02 AM", msg: "User authenticated via biometrics", type: "auth" },
-                  { time: "11:15 AM", msg: "Blocked tracking request from background process", type: "security" },
-                  { time: "11:30 AM", msg: "Started local LLM inference context", type: "ai" },
-                  { time: "11:44 AM", msg: "API keys migrated to AES-GCM encrypted storage", type: "security" },
-                ].map((log, i) => (
-                  <div key={i} className="flex gap-4 p-4 hover:bg-white/5 transition-colors group">
-                    <span className="text-xs text-muted-foreground font-mono w-20 shrink-0 mt-0.5">{log.time}</span>
-                    <span className={`text-sm ${log.type === "security" ? "text-green-400" : "text-gray-300"} font-mono`}>{log.msg}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Privacy indicators */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5" title="Microphone">
+              {privacy.micActive
+                ? <Mic style={{ width: "0.625rem", height: "0.625rem" }} className="text-amber-400" />
+                : <MicOff style={{ width: "0.625rem", height: "0.625rem" }} className="text-white/15" />
+              }
+            </div>
+            <div className="flex items-center gap-1.5" title="Camera">
+              {privacy.cameraActive
+                ? <Eye style={{ width: "0.625rem", height: "0.625rem" }} className="text-amber-400" />
+                : <EyeOff style={{ width: "0.625rem", height: "0.625rem" }} className="text-white/15" />
+              }
+            </div>
+            <div className="flex items-center gap-1.5" title={`Cloud AI ${privacy.cloudAIRunning ? "active" : "blocked"}`}>
+              <Wifi
+                style={{ width: "0.625rem", height: "0.625rem" }}
+                className={privacy.cloudAIRunning ? "text-amber-400" : "text-white/15"}
+              />
+            </div>
+            <div className="flex items-center gap-1.5" title="Local AI">
+              <ShieldCheck
+                style={{ width: "0.625rem", height: "0.625rem" }}
+                className={privacy.localAIRunning ? "text-green-400" : "text-white/15"}
+              />
+            </div>
+          </div>
         </div>
 
       </div>

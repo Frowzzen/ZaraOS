@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/zaraos-web/"
+title = "ZaraOS — Coming Soon"
+version = "1.0.0"
+id = "artifacts/zaraos-web"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/zaraos-web/" ]
+localPort = 26046
+
+[services.development]
+run = "pnpm --filter @workspace/zaraos-web run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/zaraos-web", "run", "build" ]
+publicDir = "artifacts/zaraos-web/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26046"
+BASE_PATH = "/zaraos-web/"
