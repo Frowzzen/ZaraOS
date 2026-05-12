@@ -36,8 +36,14 @@ export type CommandIntent =
   | "privacy_action"
   | "settings_action"
   | "developer_action"
-  | "skill_action"        // Routes to a specific skill via skillId
-  | "system_control"      // Direct hardware control: power, volume, brightness, wifi
+  | "skill_action"          // Routes to a specific skill via skillId
+  | "system_control"        // Direct hardware control: power, volume, brightness, wifi
+  | "launch_native_app"     // Open any installed Linux app by name
+  | "close_native_app"      // Close a running app window by name
+  | "focus_native_app"      // Bring a running app window to the front
+  | "minimize_native_app"   // Minimize a running app window
+  | "cycle_apps"            // Cycle focus through all open windows
+  | "file_navigate"         // Navigate to a folder/file in the Files panel
   | "unknown";
 
 // ── Parsed Command ─────────────────────────────────────────

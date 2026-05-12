@@ -49,9 +49,14 @@ fn main() {
             commands::network::connect_wifi,
             commands::network::disconnect_wifi,
             commands::network::get_network_status,
-            // ── App launcher ──────────────────────────────────
+            // ── App launcher + window manager ────────────────
             commands::apps::list_installed_apps,
             commands::apps::launch_app,
+            commands::apps::list_open_windows,
+            commands::apps::focus_window,
+            commands::apps::close_window,
+            commands::apps::minimize_window,
+            commands::apps::focus_window_by_index,
             // ── Installer ────────────────────────────────────
             commands::disks::list_disks,
             commands::disks::start_install,

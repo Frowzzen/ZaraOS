@@ -65,6 +65,13 @@ class ZaraRuntime {
   private commandListeners: Set<CommandListener> = new Set();
   private commandHistory: CommandResult[] = [];
 
+  // ── Native App State ──────────────────────────────────
+  // Cache installed apps to avoid re-scanning .desktop files on every command.
+  // Refreshed on first use and when the user explicitly calls refreshInstalledApps().
+  private installedAppsCache: import("@/core/tauri/tauri-apps").InstalledApp[] | null = null;
+  // Index used for cycling through open windows (cycle_apps intent).
+  private windowCycleIndex = 0;
+
   // ── Lifecycle ─────────────────────────────────────────
   public initialize(): void {
     this.setZaraStatus("idle");
@@ -142,6 +149,20 @@ class ZaraRuntime {
 
     if (parsed.intent === "system_control") {
       return this.systemControlDispatch(parsed, source);
+    }
+
+    if (
+      parsed.intent === "launch_native_app" ||
+      parsed.intent === "close_native_app"  ||
+      parsed.intent === "focus_native_app"  ||
+      parsed.intent === "minimize_native_app" ||
+      parsed.intent === "cycle_apps"
+    ) {
+      return this.nativeAppDispatch(parsed, source);
+    }
+
+    if (parsed.intent === "file_navigate") {
+      return this.fileNavigateDispatch(parsed, source);
     }
 
     if (parsed.intent === "ai_question") {
@@ -309,6 +330,163 @@ class ZaraRuntime {
       this.emit(result);
       return result;
     }
+  }
+
+  // ── Native App Dispatch ────────────────────────────────
+  // Handles launch/close/focus/minimize/cycle for installed Linux apps.
+  // Uses wmctrl + xdotool under the hood (native only).
+  private async nativeAppDispatch(
+    parsed: ParsedCommand,
+    source: InputSource
+  ): Promise<CommandResult> {
+    const ok = (response: string, extra?: Partial<CommandResult>): CommandResult => ({
+      success: true, intent: parsed.intent, response, action: "noop", source,
+      timestamp: Date.now(), ...extra,
+    });
+    const fail = (response: string): CommandResult => ({
+      success: false, intent: parsed.intent, response, action: "noop", source,
+      timestamp: Date.now(),
+    });
+
+    if (!isTauriRuntime()) {
+      const msg =
+        parsed.intent === "cycle_apps"
+          ? "Window cycling is only available in the native desktop app."
+          : `Launching native apps is only available in the native desktop app. In the browser you can use ZaraOS panels instead.`;
+      const result = ok(msg);
+      this.emit(result);
+      return result;
+    }
+
+    try {
+      const {
+        listInstalledApps, launchApp,
+        listOpenWindows, focusWindow, closeWindow, minimizeWindow, focusWindowByIndex,
+        fuzzyMatchApp,
+      } = await import("@/core/tauri/tauri-apps");
+
+      const appName = parsed.target ?? "";
+
+      // ── cycle_apps ─────────────────────────────────────
+      if (parsed.intent === "cycle_apps") {
+        const title = await focusWindowByIndex(this.windowCycleIndex);
+        if (title) {
+          this.windowCycleIndex++;
+          const result = ok(`Switched to: ${title}`);
+          this.emit(result);
+          return result;
+        }
+        const result = fail("No open windows found to cycle through.");
+        this.emit(result);
+        return result;
+      }
+
+      // ── focus_native_app ───────────────────────────────
+      if (parsed.intent === "focus_native_app") {
+        // First try window title match (app is already running)
+        const windows = await listOpenWindows();
+        const win = windows.find((w) =>
+          w.title.toLowerCase().includes(appName.toLowerCase())
+        );
+        if (win) {
+          await focusWindow(win.title);
+          const result = ok(`Switched to ${win.title}.`);
+          this.emit(result);
+          return result;
+        }
+        // Not running — offer to launch
+        const result = fail(`No open window matching "${appName}" found. Say "open ${appName}" to launch it.`);
+        this.emit(result);
+        return result;
+      }
+
+      // ── close_native_app ───────────────────────────────
+      if (parsed.intent === "close_native_app") {
+        await closeWindow(appName);
+        const result = ok(`Closed ${appName}.`);
+        this.emit(result);
+        return result;
+      }
+
+      // ── minimize_native_app ────────────────────────────
+      if (parsed.intent === "minimize_native_app") {
+        await minimizeWindow(appName);
+        const result = ok(`Minimized ${appName}.`);
+        this.emit(result);
+        return result;
+      }
+
+      // ── launch_native_app ──────────────────────────────
+      // Load and cache the installed apps list
+      if (!this.installedAppsCache) {
+        this.installedAppsCache = await listInstalledApps();
+      }
+      const match = fuzzyMatchApp(appName, this.installedAppsCache);
+      if (match) {
+        await launchApp(match.exec);
+        const result = ok(`Launching ${match.name}...`);
+        this.emit(result);
+        return result;
+      }
+
+      // No match — give a helpful response
+      const result = fail(
+        `I couldn't find an app matching "${appName}" on this system. ` +
+        `Check the App Launcher to see what's installed, or install it first.`
+      );
+      this.emit(result);
+      return result;
+
+    } catch (e) {
+      const result = fail(`App command failed: ${e instanceof Error ? e.message : String(e)}`);
+      this.emit(result);
+      return result;
+    }
+  }
+
+  // ── File Navigate Dispatch ─────────────────────────────
+  // Handles "open Downloads", "show Pictures", etc.
+  // Navigates to the Files panel with the path encoded in the payload.
+  private fileNavigateDispatch(
+    parsed: ParsedCommand,
+    source: InputSource
+  ): CommandResult {
+    const KNOWN_DIRS: Record<string, string> = {
+      home:      "~",
+      desktop:   "~/Desktop",
+      downloads: "~/Downloads",
+      documents: "~/Documents",
+      pictures:  "~/Pictures",
+      photos:    "~/Pictures",
+      music:     "~/Music",
+      videos:    "~/Videos",
+      movies:    "~/Videos",
+      trash:     "~/.local/share/Trash/files",
+    };
+
+    const key = (parsed.target ?? "").toLowerCase().trim();
+    const dirPath = KNOWN_DIRS[key] ?? `~/${key.charAt(0).toUpperCase() + key.slice(1)}`;
+    const label   = key.charAt(0).toUpperCase() + key.slice(1);
+
+    // Navigate to /files and pass the path via hash so the Files page can read it
+    const result: CommandResult = {
+      success: true,
+      intent: "file_navigate",
+      response: `Opening ${label} folder...`,
+      action: "navigate",
+      payload: `/files?path=${encodeURIComponent(dirPath)}`,
+      source,
+      timestamp: Date.now(),
+    };
+    this.emit(result);
+    return result;
+  }
+
+  // ── Refresh installed apps cache ───────────────────────
+  public async refreshInstalledApps(): Promise<void> {
+    if (!isTauriRuntime()) return;
+    const { listInstalledApps } = await import("@/core/tauri/tauri-apps");
+    this.installedAppsCache = await listInstalledApps();
   }
 
   // ── Assistant Message (non-streaming) ─────────────────
