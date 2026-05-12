@@ -246,6 +246,24 @@ class AIRuntime {
     return () => this.statusListeners.delete(listener);
   }
 
+  // Called immediately after a local provider is auto-detected so the UI
+  // updates to show the real provider without waiting for the first message.
+  notifyProviderConnected(
+    providerId: string,
+    providerName: string,
+    modelId: string,
+    isCloud = false
+  ): void {
+    this.broadcastStatus({
+      phase: "idle",
+      providerId,
+      providerName,
+      modelId,
+      isSimulated: false,
+      isCloud,
+    });
+  }
+
   // ── Memory ───────────────────────────────────────────────
 
   getMemoryStats(): MemoryStats {
