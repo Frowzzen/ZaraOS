@@ -29,37 +29,80 @@ interface GestureOverlayProps {
 }
 
 export function GestureOverlay({ onClose }: GestureOverlayProps) {
-  const videoRef  = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // feedCanvasRef — displays camera frames (drawn via RAF, works in WebKitGTK)
+  // skeletonCanvasRef — hand skeleton drawn on top
+  const feedCanvasRef   = useRef<HTMLCanvasElement>(null);
+  const canvasRef       = useRef<HTMLCanvasElement>(null);
+  // Off-screen video element used only as a source for drawImage()
+  const videoRef        = useRef<HTMLVideoElement | null>(null);
+  const feedRafRef      = useRef<number | null>(null);
 
   const [cameraReady, setCameraReady] = useState(false);
   const [gesture, setGesture]         = useState<string | null>(null);
   const [error, setError]             = useState<string | null>(null);
   const [loading, setLoading]         = useState(true);
 
-  // ── Sync the display video to the engine's MediaStream ────
-  // The engine holds the stream for detection; we grab it here
-  // to render the feed in the overlay <video> element.
+  // ── Canvas-based camera feed ───────────────────────────────
+  // WebKitGTK on Linux won't render MediaStream in a <video> element
+  // reliably. Instead we pull frames manually via requestAnimationFrame
+  // and paint them onto a canvas — this path always works.
   useEffect(() => {
-    function syncStream() {
-      const stream = gestureEngine.getMediaStream();
-      const video  = videoRef.current;
-      if (!video) return;
+    let running = true;
 
-      if (stream && video.srcObject !== stream) {
-        video.srcObject = stream;
-        video.play().catch(() => {});
-        setCameraReady(true);
-        setLoading(false);
-      } else if (!stream) {
+    function startFeedLoop(stream: MediaStream) {
+      // Create an off-screen video element as the decode source
+      const vid = document.createElement("video");
+      vid.srcObject = stream;
+      vid.playsInline = true;
+      vid.muted = true;
+      videoRef.current = vid;
+
+      vid.play().catch(() => {});
+
+      function drawFrame() {
+        if (!running) return;
+        const canvas = feedCanvasRef.current;
+        if (canvas && vid.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            // Mirror horizontally to match user's natural perspective
+            ctx.save();
+            ctx.scale(-1, 1);
+            ctx.drawImage(vid, -canvas.width, 0, canvas.width, canvas.height);
+            ctx.restore();
+          }
+        }
+        feedRafRef.current = requestAnimationFrame(drawFrame);
+      }
+
+      feedRafRef.current = requestAnimationFrame(drawFrame);
+      setCameraReady(true);
+      setLoading(false);
+    }
+
+    function pollStream() {
+      const stream = gestureEngine.getMediaStream();
+      if (stream && !videoRef.current) {
+        startFeedLoop(stream);
+      } else if (!stream && videoRef.current) {
+        videoRef.current.srcObject = null;
+        videoRef.current = null;
         setCameraReady(false);
-        video.srcObject = null;
       }
     }
 
-    syncStream();
-    const id = setInterval(syncStream, 400);
-    return () => clearInterval(id);
+    pollStream();
+    const id = setInterval(pollStream, 400);
+
+    return () => {
+      running = false;
+      clearInterval(id);
+      if (feedRafRef.current !== null) cancelAnimationFrame(feedRafRef.current);
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+        videoRef.current = null;
+      }
+    };
   }, []);
 
   // ── Draw skeleton when landmarks arrive ───────────────────
@@ -170,19 +213,17 @@ export function GestureOverlay({ onClose }: GestureOverlayProps) {
           </div>
         )}
 
-        {/* Camera feed — mirrored so it feels like a mirror */}
-        <video
-          ref={videoRef}
+        {/* Camera feed — drawn via RAF into canvas (works in WebKitGTK) */}
+        <canvas
+          ref={feedCanvasRef}
+          width={208}
+          height={150}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
             cameraReady ? "opacity-100" : "opacity-0"
           }`}
-          style={{ transform: "scaleX(-1)" }}
-          playsInline
-          muted
-          autoPlay
         />
 
-        {/* Skeleton canvas — same mirror transform */}
+        {/* Skeleton canvas — CSS mirror matches the feed canvas mirror */}
         <canvas
           ref={canvasRef}
           width={208}

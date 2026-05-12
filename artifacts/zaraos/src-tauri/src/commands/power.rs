@@ -17,10 +17,10 @@ use tauri::command;
 // ── App Exit ──────────────────────────────────────────────────
 
 /// Quit the ZaraOS process immediately.
-/// Used during development so "Shut Down" kills the app instead of the whole PC.
+/// Uses std::process::exit so nothing can intercept or delay it.
 #[command]
-pub fn exit_app(app: tauri::AppHandle) {
-    app.exit(0);
+pub fn exit_app() {
+    std::process::exit(0);
 }
 
 // ── Power Management ──────────────────────────────────────────

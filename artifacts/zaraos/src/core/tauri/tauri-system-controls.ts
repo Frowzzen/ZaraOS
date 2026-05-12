@@ -22,12 +22,7 @@ export async function exitApp(): Promise<void> {
     console.warn("[SystemControls] exitApp requires the native desktop app.");
     return;
   }
-  try {
-    await tauriInvoke<void>("exit_app");
-  } catch {
-    // Fallback if the binary predates the exit_app command
-    window.close();
-  }
+  await tauriInvoke<void>("exit_app");
 }
 
 export async function systemPower(action: PowerAction): Promise<void> {
