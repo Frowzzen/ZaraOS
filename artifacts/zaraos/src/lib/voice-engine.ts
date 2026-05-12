@@ -1,132 +1,127 @@
 // ============================================================
-// ZaraOS Voice Engine — Alpha 0.4
+// ZaraOS Voice Engine — Alpha 0.7
 //
-// Real voice input via the Web Speech API (SpeechRecognition).
+// Two recording paths, selected automatically:
 //
-// Browser support:
-//   Chrome 33+     — full support (webkitSpeechRecognition)
-//   Edge 79+       — full support (SpeechRecognition)
-//   Safari iOS 14+ — partial support (webkitSpeechRecognition)
-//   Firefox        — NOT supported (no SpeechRecognition)
-//   Node / SSR     — NOT supported (browser-only API)
+//   Tauri (native OS):
+//     getUserMedia() → MediaRecorder → audio blob
+//     → POST /v1/audio/transcriptions (Ollama whisper)
+//     → text result fired to subscribers
+//     No internet. No Chrome. No cloud speech service.
+//     Requires: ollama pull whisper (done once)
 //
-// When not supported, the engine degrades gracefully:
-//   isSupported = false, startListening() emits a state change
-//   to "unsupported" — the UI can show a helpful message.
+//   Browser (Replit preview / Chrome / Edge):
+//     Web Speech API (SpeechRecognition) — real-time streaming
+//     Requires Chrome or Edge.
 //
-// How it works:
-//   1. User clicks the mic button → startListening() called
-//   2. Browser requests microphone permission automatically
-//   3. Interim results stream in → onResult fires with isFinal=false
-//   4. User stops speaking → onResult fires with isFinal=true
-//   5. Recognition ends → state returns to "idle"
+// Both paths share the same subscriber interface (onResult, onStateChange)
+// so callers never need to care which path is active.
 //
-// Subscribers (UI components) use onResult() and onStateChange()
-// which return unsubscribe functions — safe to use in useEffect.
-//
-// Alpha 0.5+ plan:
-//   Replace SpeechRecognition with Whisper.cpp via Tauri subprocess
-//   for offline-only, higher accuracy transcription. The engine
-//   interface stays identical — only the internals change.
+// Usage:
+//   voiceEngine.startListening()  — begin capture
+//   voiceEngine.stopListening()   — stop capture (Tauri: triggers transcription)
+//   voiceEngine.abort()           — discard and reset
+//   voiceEngine.onResult(cb)      — (text, isFinal) callbacks
+//   voiceEngine.onStateChange(cb) — VoiceState transitions
 // ============================================================
-
-// ── Types ─────────────────────────────────────────────────
 
 export type VoiceState =
   | "idle"
   | "listening"
+  | "transcribing"
   | "error"
   | "unsupported";
 
 export type VoiceResultCallback  = (text: string, isFinal: boolean) => void;
 export type VoiceStateCallback   = (state: VoiceState, errorMessage?: string) => void;
 
-// Internal SpeechRecognition types — not in all TS lib versions
 interface SpeechRecognitionResult {
   readonly isFinal: boolean;
   readonly length: number;
   item(index: number): { readonly transcript: string; readonly confidence: number };
   [index: number]: { readonly transcript: string; readonly confidence: number };
 }
-
 interface SpeechRecognitionResultList {
   readonly length: number;
   item(index: number): SpeechRecognitionResult;
   [index: number]: SpeechRecognitionResult;
 }
-
 interface SpeechRecognitionEvent extends Event {
   readonly resultIndex: number;
   readonly results: SpeechRecognitionResultList;
 }
-
 interface SpeechRecognitionErrorEvent extends Event {
   readonly error: string;
   readonly message: string;
 }
-
 interface SpeechRecognitionInstance extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
   maxAlternatives: number;
-  onstart: ((this: SpeechRecognitionInstance, ev: Event) => void) | null;
-  onend: ((this: SpeechRecognitionInstance, ev: Event) => void) | null;
-  onresult: ((this: SpeechRecognitionInstance, ev: SpeechRecognitionEvent) => void) | null;
-  onerror: ((this: SpeechRecognitionInstance, ev: SpeechRecognitionErrorEvent) => void) | null;
+  onstart:  ((ev: Event) => void) | null;
+  onend:    ((ev: Event) => void) | null;
+  onresult: ((ev: SpeechRecognitionEvent) => void) | null;
+  onerror:  ((ev: SpeechRecognitionErrorEvent) => void) | null;
   start(): void;
   stop(): void;
   abort(): void;
 }
 
-// ── Error messages ─────────────────────────────────────────
-
-const ERROR_MESSAGES: Record<string, string> = {
-  "no-speech":           "No speech detected. Tap the mic and speak clearly.",
-  "audio-capture":       "Microphone not accessible. Check your device settings.",
-  "not-allowed":         "Microphone access denied. Allow it in your browser's site permissions.",
-  "service-not-allowed": "Speech recognition service is not allowed in this context.",
-  "network":             "Network error — voice recognition requires an internet connection in this browser.",
-  "aborted":             "", // user-initiated stop, not shown
+const WEB_SPEECH_ERRORS: Record<string, string> = {
+  "no-speech":              "No speech detected. Tap the mic and speak clearly.",
+  "audio-capture":          "Microphone not accessible. Check your device settings.",
+  "not-allowed":            "Microphone access denied.",
+  "service-not-allowed":    "Speech recognition not allowed in this context.",
+  "network":                "Network error — Web Speech API requires an internet connection.",
+  "aborted":                "",
   "language-not-supported": "Language not supported by this browser's speech engine.",
 };
 
-// ── Engine ────────────────────────────────────────────────
-
 class VoiceEngine {
-  private recognition: SpeechRecognitionInstance | null = null;
+  private recognition:   SpeechRecognitionInstance | null = null;
+  private mediaRecorder: MediaRecorder | null = null;
+  private mediaStream:   MediaStream   | null = null;
+  private autoStopTimer: ReturnType<typeof setTimeout> | null = null;
+
   private _state: VoiceState = "idle";
   private _errorMessage = "";
-  private _isSupported: boolean;
   private _simInterval: ReturnType<typeof setInterval> | null = null;
 
-  private resultSubs:   Set<VoiceResultCallback> = new Set();
-  private stateSubs:    Set<VoiceStateCallback>  = new Set();
-  private speakingSubs: Set<(speaking: boolean) => void> = new Set();
+  private resultSubs:   Set<VoiceResultCallback>         = new Set();
+  private stateSubs:    Set<VoiceStateCallback>           = new Set();
+  private speakingSubs: Set<(speaking: boolean) => void>  = new Set();
 
-  constructor() {
-    // SpeechRecognition is NOT available in WebKit2GTK (Tauri on Linux).
-    // Voice input via microphone will be added in Alpha 0.7 via Whisper.cpp / Rust IPC.
-    this._isSupported =
+  // ── Capability detection ──────────────────────────────────────────────────
+
+  private get _isTauriRuntime(): boolean {
+    return (
       typeof window !== "undefined" &&
-      ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+      ("__TAURI_INTERNALS__" in window || "__TAURI__" in window)
+    );
   }
 
-  // Returns true when running inside the Tauri native app.
-  // Used to show accurate "coming soon" messages instead of "use Chrome/Edge".
-  get isTauriMode(): boolean {
-    return typeof window !== "undefined" && "__TAURI__" in window;
+  private get _hasSpeechRecognition(): boolean {
+    return (
+      typeof window !== "undefined" &&
+      ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)
+    );
   }
 
-  // ── Public state ───────────────────────────────────────
+  // Voice is always "supported" in Tauri mode (we use our own recorder).
+  // In the browser we need the Web Speech API.
+  get isSupported(): boolean {
+    return this._isTauriRuntime || this._hasSpeechRecognition;
+  }
 
-  get isSupported(): boolean { return this._isSupported; }
-  get isListening(): boolean { return this._state === "listening"; }
-  get state(): VoiceState    { return this._state; }
-  get lastError(): string    { return this._errorMessage; }
+  get isListening(): boolean {
+    return this._state === "listening" || this._state === "transcribing";
+  }
 
-  // ── Subscriptions ──────────────────────────────────────
-  // Both return an unsubscribe function — use them inside useEffect.
+  get state(): VoiceState { return this._state; }
+  get lastError(): string { return this._errorMessage; }
+
+  // ── Subscriptions ────────────────────────────────────────────────────────
 
   onResult(cb: VoiceResultCallback): () => void {
     this.resultSubs.add(cb);
@@ -138,95 +133,193 @@ class VoiceEngine {
     return () => this.stateSubs.delete(cb);
   }
 
-  // ── Permission ─────────────────────────────────────────
-  // Speech recognition requests mic permission automatically when started.
-  // Call this explicitly only if you want to pre-warm the permission prompt.
+  // ── Permission pre-warm ───────────────────────────────────────────────────
 
   async requestPermission(): Promise<boolean> {
-    if (!this._isSupported) return false;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((t) => t.stop()); // release immediately
+      stream.getTracks().forEach((t) => t.stop());
       return true;
     } catch {
       return false;
     }
   }
 
-  // ── Start listening ────────────────────────────────────
+  // ── Start listening ───────────────────────────────────────────────────────
 
   startListening(options?: { lang?: string }): void {
-    if (!this._isSupported) {
-      const msg = this.isTauriMode
-        ? "Voice input via microphone is coming in Alpha 0.7 (Whisper.cpp). Use the keyboard to talk to Zara for now."
-        : "Voice input is not supported in this browser. Use Chrome or Edge.";
-      this.setState("unsupported", msg);
+    if (this._state === "listening" || this._state === "transcribing") return;
+
+    if (!this.isSupported) {
+      this.setState("unsupported", "Voice input is not supported in this environment.");
       return;
     }
 
-    if (this._state === "listening") return;
+    if (this._isTauriRuntime) {
+      void this._startTauriRecording();
+    } else {
+      this._startWebSpeech(options);
+    }
+  }
 
-    // Construct SpeechRecognition instance
-    const SpeechRecognitionCtor =
+  // ── Tauri recording path ──────────────────────────────────────────────────
+  // getUserMedia() → MediaRecorder → blob → Ollama /v1/audio/transcriptions
+
+  private async _startTauriRecording(): Promise<void> {
+    // 1. Capture microphone stream
+    try {
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      const isDenied = err instanceof DOMException && err.name === "NotAllowedError";
+      this.setState(
+        "error",
+        isDenied
+          ? "Microphone access denied. Check the Privacy panel and try again."
+          : `Microphone unavailable: ${err instanceof Error ? err.message : "unknown error"}`
+      );
+      return;
+    }
+
+    // 2. Pick a MIME type supported by WebKitGTK (webm → ogg fallback)
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+      ? "audio/webm;codecs=opus"
+      : MediaRecorder.isTypeSupported("audio/webm")
+      ? "audio/webm"
+      : MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
+      ? "audio/ogg;codecs=opus"
+      : "";
+
+    const chunks: Blob[] = [];
+    this.mediaRecorder = new MediaRecorder(
+      this.mediaStream,
+      mimeType ? { mimeType } : {}
+    );
+    this.mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+
+    // 3. When recording stops, send to Ollama for transcription
+    this.mediaRecorder.onstop = async () => {
+      this._releaseMediaStream();
+      if (chunks.length === 0) {
+        this.setState("idle");
+        return;
+      }
+      this.setState("transcribing");
+
+      const audioBlob = new Blob(chunks, {
+        type: mimeType || "audio/webm",
+      });
+
+      await this._transcribeWithOllama(audioBlob);
+    };
+
+    this.mediaRecorder.start(200);
+    this.setState("listening");
+
+    // Auto-stop after 12 s so the user isn't stuck
+    this.autoStopTimer = setTimeout(() => {
+      this.stopListening();
+    }, 12_000);
+  }
+
+  private async _transcribeWithOllama(audioBlob: Blob): Promise<void> {
+    try {
+      const form = new FormData();
+      form.append("file", audioBlob, "recording.webm");
+      form.append("model", "whisper");
+
+      const res = await fetch("http://localhost:11434/v1/audio/transcriptions", {
+        method: "POST",
+        body: form,
+      });
+
+      if (!res.ok) {
+        // 404 usually means whisper model not installed
+        if (res.status === 404) {
+          this.setState(
+            "error",
+            "Whisper model not found. Run: ollama pull whisper"
+          );
+        } else {
+          this.setState("error", `Transcription failed (${res.status}). Is Ollama running?`);
+        }
+        return;
+      }
+
+      const json = (await res.json()) as { text?: string };
+      const text = json.text?.trim();
+
+      if (text) {
+        this.resultSubs.forEach((cb) => cb(text, true));
+        this.setState("idle");
+      } else {
+        this.setState("error", "No speech detected. Try speaking more clearly.");
+      }
+    } catch {
+      this.setState(
+        "error",
+        "Could not reach Ollama. Make sure it is running on port 11434."
+      );
+    }
+  }
+
+  private _releaseMediaStream(): void {
+    if (this.autoStopTimer !== null) {
+      clearTimeout(this.autoStopTimer);
+      this.autoStopTimer = null;
+    }
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach((t) => t.stop());
+      this.mediaStream = null;
+    }
+    this.mediaRecorder = null;
+  }
+
+  // ── Web Speech API path (browser) ────────────────────────────────────────
+
+  private _startWebSpeech(options?: { lang?: string }): void {
+    const Ctor =
       (window as unknown as Record<string, unknown>)["SpeechRecognition"] as
         (new () => SpeechRecognitionInstance) | undefined ??
       (window as unknown as Record<string, unknown>)["webkitSpeechRecognition"] as
         (new () => SpeechRecognitionInstance) | undefined;
 
-    if (!SpeechRecognitionCtor) {
-      this.setState("unsupported", "Speech recognition constructor not found.");
+    if (!Ctor) {
+      this.setState("unsupported", "Speech recognition not available.");
       return;
     }
 
-    const rec = new SpeechRecognitionCtor();
-    rec.continuous     = false;       // stops after one utterance — good UX for commands
-    rec.interimResults = true;        // stream partial results to input box
-    rec.lang           = options?.lang ?? "en-US";
+    const rec = new Ctor();
+    rec.continuous      = false;
+    rec.interimResults  = true;
+    rec.lang            = options?.lang ?? "en-US";
     rec.maxAlternatives = 1;
 
-    rec.onstart = () => {
-      this.setState("listening");
-    };
-
-    rec.onresult = (ev: SpeechRecognitionEvent) => {
-      let interim = "";
-      let final_  = "";
-
-      for (let i = ev.resultIndex; i < ev.results.length; i++) {
-        const result = ev.results[i];
-        const text   = result[0]?.transcript ?? "";
-        if (result.isFinal) {
-          final_ += text;
-        } else {
-          interim += text;
-        }
-      }
-
-      if (interim) {
-        this.resultSubs.forEach((cb) => cb(interim, false));
-      }
-      if (final_) {
-        this.resultSubs.forEach((cb) => cb(final_.trim(), true));
-      }
-    };
-
-    rec.onend = () => {
-      // Only transition to idle if we weren't already moved to error/unsupported
-      if (this._state === "listening") {
-        this.setState("idle");
-      }
+    rec.onstart  = () => this.setState("listening");
+    rec.onend    = () => {
+      if (this._state === "listening") this.setState("idle");
       this.recognition = null;
     };
-
-    rec.onerror = (ev: SpeechRecognitionErrorEvent) => {
-      const msg = ERROR_MESSAGES[ev.error] ?? `Voice recognition error: ${ev.error}`;
+    rec.onerror  = (ev: SpeechRecognitionErrorEvent) => {
+      const msg = WEB_SPEECH_ERRORS[ev.error] ?? `Voice error: ${ev.error}`;
       if (ev.error === "aborted") {
-        // User-initiated stop — not an error state
         this.setState("idle");
       } else {
         this.setState("error", msg);
       }
       this.recognition = null;
+    };
+    rec.onresult = (ev: SpeechRecognitionEvent) => {
+      let interim = "";
+      let final_  = "";
+      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        const r = ev.results[i];
+        const t = r[0]?.transcript ?? "";
+        if (r.isFinal) final_ += t; else interim += t;
+      }
+      if (interim) this.resultSubs.forEach((cb) => cb(interim, false));
+      if (final_)  this.resultSubs.forEach((cb) => cb(final_.trim(), true));
     };
 
     try {
@@ -237,22 +330,35 @@ class VoiceEngine {
     }
   }
 
-  // ── Stop / Abort ───────────────────────────────────────
+  // ── Stop / Abort ─────────────────────────────────────────────────────────
 
-  // stopListening — waits for the current utterance to finish naturally
   stopListening(): void {
-    if (this.recognition && this._state === "listening") {
-      this.recognition.stop();
+    if (this._isTauriRuntime) {
+      // Stopping the MediaRecorder fires onstop → transcription
+      if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+        this.mediaRecorder.stop();
+      } else {
+        this._releaseMediaStream();
+        this.setState("idle");
+      }
+    } else {
+      if (this.recognition && this._state === "listening") {
+        this.recognition.stop();
+      }
     }
   }
 
-  // abort — immediately cancels without firing onresult
   abort(): void {
-    // Cancel any in-progress simulation so it stops streaming after abort.
     if (this._simInterval !== null) {
       clearInterval(this._simInterval);
       this._simInterval = null;
     }
+    if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+      this.mediaRecorder.ondataavailable = null;
+      this.mediaRecorder.onstop = null;
+      this.mediaRecorder.stop();
+    }
+    this._releaseMediaStream();
     if (this.recognition) {
       this.recognition.abort();
       this.recognition = null;
@@ -260,13 +366,10 @@ class VoiceEngine {
     this.setState("idle");
   }
 
-  // ── Testing / Demo ─────────────────────────────────────
-  // Fires callbacks as if a real voice result arrived.
-  // Kept for dev/testing — allows voice simulation without a real mic.
+  // ── Simulation (dev/testing) ──────────────────────────────────────────────
 
   simulateVoiceInput(text: string): void {
     if (this._state !== "listening") return;
-    // Simulate streaming characters as interim. Store ID so abort() can cancel.
     let i = 0;
     this._simInterval = setInterval(() => {
       i += 3;
@@ -283,9 +386,7 @@ class VoiceEngine {
     }, 60);
   }
 
-  // ── Text-to-Speech ─────────────────────────────────────
-  // Uses the browser's built-in SpeechSynthesis API.
-  // Supported in WebKit2GTK (Tauri on Linux) — no network needed.
+  // ── Text-to-Speech (SpeechSynthesis — works in WebKitGTK) ────────────────
 
   get isTTSSupported(): boolean {
     return typeof window !== "undefined" && "speechSynthesis" in window;
@@ -297,11 +398,8 @@ class VoiceEngine {
 
   speak(text: string, options?: { rate?: number; pitch?: number; volume?: number }): void {
     if (!this.isTTSSupported) return;
-
-    // Cancel any in-progress speech
     window.speechSynthesis.cancel();
 
-    // Strip markdown so it reads naturally
     const clean = text
       .replace(/```[\s\S]*?```/g, "code block omitted")
       .replace(/`[^`]+`/g, "")
@@ -313,8 +411,7 @@ class VoiceEngine {
 
     if (!clean) return;
 
-    // WebKit2GTK (Tauri on Linux) requires a pause after cancel() before the
-    // next speak() call — without it, the utterance silently drops.
+    // WebKit2GTK needs a small pause after cancel() before the next speak()
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(clean);
       utterance.rate   = options?.rate   ?? 1.05;
@@ -322,28 +419,26 @@ class VoiceEngine {
       utterance.volume = options?.volume ?? 1.0;
       utterance.lang   = "en-US";
 
-      // Pick a voice — getVoices() may be empty on first call; that's OK,
-      // the browser will use its default voice.
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
-        const preferred = voices.find((v) =>
-          v.lang.startsWith("en") && /female|woman|zira|hazel|samantha|karen|victoria|moira|tessa|fiona/i.test(v.name)
-        ) ?? voices.find((v) => v.lang.startsWith("en")) ?? null;
+        const preferred =
+          voices.find((v) =>
+            v.lang.startsWith("en") &&
+            /female|woman|zira|hazel|samantha|karen|victoria|moira|tessa|fiona/i.test(v.name)
+          ) ??
+          voices.find((v) => v.lang.startsWith("en")) ??
+          null;
         if (preferred) utterance.voice = preferred;
       }
 
       this.speakingSubs.forEach((cb) => cb(true));
-
       const done = () => this.speakingSubs.forEach((cb) => cb(false));
-
       utterance.addEventListener("end",   done, { once: true });
       utterance.addEventListener("error", done, { once: true });
 
       const wordCount   = clean.split(" ").length;
       const safeguardMs = Math.max(8000, wordCount * 500 + 5000);
-      const safeguard   = setTimeout(() => {
-        this.speakingSubs.forEach((cb) => cb(false));
-      }, safeguardMs);
+      const safeguard   = setTimeout(() => this.speakingSubs.forEach((cb) => cb(false)), safeguardMs);
       utterance.addEventListener("end",   () => clearTimeout(safeguard), { once: true });
       utterance.addEventListener("error", () => clearTimeout(safeguard), { once: true });
 
@@ -361,7 +456,7 @@ class VoiceEngine {
     return () => this.speakingSubs.delete(cb);
   }
 
-  // ── Internal ───────────────────────────────────────────
+  // ── Internal ──────────────────────────────────────────────────────────────
 
   private setState(state: VoiceState, errorMessage = ""): void {
     this._state        = state;
@@ -370,5 +465,4 @@ class VoiceEngine {
   }
 }
 
-// Singleton — one voice engine for the entire OS session.
 export const voiceEngine = new VoiceEngine();

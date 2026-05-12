@@ -148,30 +148,18 @@ export function DesktopShell() {
   }, []);
 
   // ── Voice engine wiring ───────────────────────────────────────────────────
+  // handleCommandRef is initialised below (after handleCommand is defined).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleCommandRef = useRef<(input: string) => Promise<void>>(null as any);
+
+  // Persistent subscriptions — set up once, live for the lifetime of the shell.
+  // This lets Tauri's async transcription fire callbacks even after voiceActive
+  // has already been toggled back to false.
   useEffect(() => {
-    if (!voiceActive) {
-      voiceEngine.abort();
-      setInterimText("");
-      return;
-    }
-
-    if (!voiceEngine.isSupported) {
-      setVoiceError(
-        isTauri
-          ? "Mic input coming in Alpha 0.7 — use the keyboard or command bar to talk to Zara."
-          : "Voice input requires Chrome or Edge. Use the keyboard in this browser."
-      );
-      setVoice(false);
-      setTimeout(() => setVoiceError(null), 6000);
-      return;
-    }
-
-    voiceEngine.startListening();
-
     const unsubResult = voiceEngine.onResult((text, isFinal) => {
       if (isFinal) {
         setInterimText("");
-        handleCommand(text);
+        void handleCommandRef.current(text);
         setVoice(false);
       } else {
         setInterimText(text);
@@ -182,18 +170,42 @@ export function DesktopShell() {
       if (state === "error" && errorMsg) {
         setVoiceError(errorMsg);
         setVoice(false);
-        setTimeout(() => setVoiceError(null), 4000);
+        setTimeout(() => setVoiceError(null), 5000);
+      }
+      if (state === "transcribing") {
+        setInterimText("Transcribing...");
       }
       if (state === "idle") {
         setInterimText("");
+        setVoice(false);
       }
     });
 
-    return () => {
-      unsubResult();
-      unsubState();
-      voiceEngine.abort();
-    };
+    return () => { unsubResult(); unsubState(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Start / stop recording based on voiceActive toggle.
+  // In Tauri: stopListening() triggers MediaRecorder.stop() → onstop → Ollama transcription.
+  // In browser: stopListening() ends the Web Speech session normally.
+  useEffect(() => {
+    if (voiceActive) {
+      if (!voiceEngine.isSupported) {
+        setVoiceError(
+          isTauri
+            ? "Run 'ollama pull whisper' to enable mic input, then try again."
+            : "Voice input requires Chrome or Edge."
+        );
+        setVoice(false);
+        setTimeout(() => setVoiceError(null), 6000);
+        return;
+      }
+      voiceEngine.startListening();
+    } else {
+      // stopListening (not abort) so Tauri records get transcribed
+      voiceEngine.stopListening();
+      setInterimText("");
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voiceActive]);
 
@@ -347,6 +359,9 @@ export function DesktopShell() {
     },
     [openWindow]
   );
+  // Keep the ref pointing at the latest handleCommand so the persistent
+  // voice subscription always dispatches to the current closure.
+  handleCommandRef.current = handleCommand;
 
   // ── Clock ────────────────────────────────────────────────────────────────────
 

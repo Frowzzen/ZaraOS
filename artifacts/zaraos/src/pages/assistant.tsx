@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { ZaraStatus, InputSource } from "@/core/types";
+import { isTauriRuntime } from "@/core/tauri/tauri-bridge";
 
 interface Message {
   role: "user" | "assistant";
@@ -97,6 +98,7 @@ export default function Assistant() {
   } = useRuntime();
   const [, navigate] = useLocation();
   const { setMicActive, localAIRunning, cloudAIRunning } = usePrivacy();
+  const isTauri = isTauriRuntime();
 
   const [showConnectPanel, setShowConnectPanel] = useState(false);
   const [input, setInput] = useState("");
@@ -594,8 +596,8 @@ export default function Assistant() {
               <div className="flex items-center gap-2 mb-3 px-1 text-[11px] font-mono text-amber-400/50">
                 <Mic className="w-3 h-3 flex-shrink-0" />
                 <span>
-                  {voiceEngine.isTauriMode
-                    ? "Mic input coming in Alpha 0.7 — type commands or ask Zara anything below."
+                  {isTauri
+                    ? "Mic input via Whisper — run: ollama pull whisper"
                     : "Voice input requires Chrome or Edge."}
                 </span>
               </div>
@@ -619,8 +621,8 @@ export default function Assistant() {
                 data-testid="button-voice-toggle"
                 title={
                   !voiceSupported
-                    ? voiceEngine.isTauriMode
-                      ? "Mic input coming in Alpha 0.7 — use the keyboard for now"
+                    ? isTauri
+                      ? "Tap to record — transcribed by Ollama whisper"
                       : "Voice not supported — use Chrome or Edge"
                     : isListening
                     ? "Stop listening"

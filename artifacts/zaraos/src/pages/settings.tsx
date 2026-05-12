@@ -288,10 +288,10 @@ export default function Settings() {
                         <div className="text-sm font-medium text-slate-800">Microphone Input (STT)</div>
                         <div className="text-xs text-muted-foreground">
                           {voiceEngine.isSupported
-                            ? "Web Speech API available"
-                            : voiceEngine.isTauriMode
-                              ? "Coming in Alpha 0.7 via Whisper.cpp"
-                              : "Not available — use Chrome or Edge"}
+                            ? isTauri
+                              ? "Whisper via Ollama (ollama pull whisper)"
+                              : "Web Speech API available"
+                            : "Not available — use Chrome or Edge"}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
