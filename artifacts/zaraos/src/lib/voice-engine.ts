@@ -298,7 +298,7 @@ class VoiceEngine {
   speak(text: string, options?: { rate?: number; pitch?: number; volume?: number }): void {
     if (!this.isTTSSupported) return;
 
-    // Cancel any in-progress speech before starting new
+    // Cancel any in-progress speech
     window.speechSynthesis.cancel();
 
     // Strip markdown so it reads naturally
@@ -313,42 +313,42 @@ class VoiceEngine {
 
     if (!clean) return;
 
-    const utterance = new SpeechSynthesisUtterance(clean);
-    utterance.rate   = options?.rate   ?? 1.05;
-    utterance.pitch  = options?.pitch  ?? 1.0;
-    utterance.volume = options?.volume ?? 1.0;
-    utterance.lang   = "en-US";
+    // WebKit2GTK (Tauri on Linux) requires a pause after cancel() before the
+    // next speak() call — without it, the utterance silently drops.
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(clean);
+      utterance.rate   = options?.rate   ?? 1.05;
+      utterance.pitch  = options?.pitch  ?? 1.0;
+      utterance.volume = options?.volume ?? 1.0;
+      utterance.lang   = "en-US";
 
-    // Pick a voice — getVoices() may be empty on first call; that's OK,
-    // the browser will use its default voice.
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      const preferred = voices.find((v) =>
-        v.lang.startsWith("en") && /female|woman|zira|hazel|samantha|karen|victoria|moira|tessa|fiona/i.test(v.name)
-      ) ?? voices.find((v) => v.lang.startsWith("en")) ?? null;
-      if (preferred) utterance.voice = preferred;
-    }
+      // Pick a voice — getVoices() may be empty on first call; that's OK,
+      // the browser will use its default voice.
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        const preferred = voices.find((v) =>
+          v.lang.startsWith("en") && /female|woman|zira|hazel|samantha|karen|victoria|moira|tessa|fiona/i.test(v.name)
+        ) ?? voices.find((v) => v.lang.startsWith("en")) ?? null;
+        if (preferred) utterance.voice = preferred;
+      }
 
-    // Notify subscribers that speech is starting
-    this.speakingSubs.forEach((cb) => cb(true));
+      this.speakingSubs.forEach((cb) => cb(true));
 
-    const done = () => this.speakingSubs.forEach((cb) => cb(false));
+      const done = () => this.speakingSubs.forEach((cb) => cb(false));
 
-    // Use addEventListener (more reliable than property assignment on WebKit2GTK)
-    utterance.addEventListener("end",   done, { once: true });
-    utterance.addEventListener("error", done, { once: true });
+      utterance.addEventListener("end",   done, { once: true });
+      utterance.addEventListener("error", done, { once: true });
 
-    // Safety fallback: if onend never fires (WebKit2GTK quirk), reset after
-    // a generous timeout (word count × ~500ms + 5s buffer).
-    const wordCount  = clean.split(" ").length;
-    const safeguardMs = Math.max(8000, wordCount * 500 + 5000);
-    const safeguard  = setTimeout(() => {
-      this.speakingSubs.forEach((cb) => cb(false));
-    }, safeguardMs);
-    utterance.addEventListener("end",   () => clearTimeout(safeguard), { once: true });
-    utterance.addEventListener("error", () => clearTimeout(safeguard), { once: true });
+      const wordCount   = clean.split(" ").length;
+      const safeguardMs = Math.max(8000, wordCount * 500 + 5000);
+      const safeguard   = setTimeout(() => {
+        this.speakingSubs.forEach((cb) => cb(false));
+      }, safeguardMs);
+      utterance.addEventListener("end",   () => clearTimeout(safeguard), { once: true });
+      utterance.addEventListener("error", () => clearTimeout(safeguard), { once: true });
 
-    window.speechSynthesis.speak(utterance);
+      window.speechSynthesis.speak(utterance);
+    }, 80);
   }
 
   stopSpeaking(): void {

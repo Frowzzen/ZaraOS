@@ -366,7 +366,7 @@ export default function Assistant() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-bold text-lg text-white leading-none">Zara</h2>
+                <h2 className="font-bold text-lg text-gray-900 leading-none">Zara</h2>
                 <span
                   className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
                     zaraStatus === "offline"
@@ -388,18 +388,18 @@ export default function Assistant() {
 
           <div className="flex items-center gap-2 text-xs font-mono">
             {(aiRuntimeStatus.memoryTokens ?? 0) > 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded bg-white/5 border border-white/10 text-muted-foreground/50">
+              <div className="flex items-center gap-1 px-2 py-1 rounded bg-gray-100 border border-gray-200 text-gray-500">
                 <Database className="w-3 h-3" />
                 <span>{aiRuntimeStatus.memoryTokens} tok</span>
               </div>
             )}
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 border border-white/10">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-gray-100 border border-gray-200">
               {localAIRunning ? (
-                <Cpu className="w-3.5 h-3.5 text-green-400" />
+                <Cpu className="w-3.5 h-3.5 text-green-600" />
               ) : (
-                <CloudOff className="w-3.5 h-3.5 text-red-400" />
+                <CloudOff className="w-3.5 h-3.5 text-red-500" />
               )}
-              <span className={localAIRunning ? "text-green-400" : "text-red-400"}>
+              <span className={localAIRunning ? "text-green-700 text-xs font-mono" : "text-red-600 text-xs font-mono"}>
                 {aiRuntimeStatus.providerName}
               </span>
             </div>
@@ -481,8 +481,8 @@ export default function Assistant() {
                   <div
                     className={`px-4 py-3 rounded-2xl text-[14px] leading-relaxed ${
                       msg.role === "user"
-                        ? "bg-primary/20 border border-primary/30 text-white rounded-tr-sm shadow-[0_4px_20px_rgba(0,240,255,0.1)]"
-                        : "bg-card/80 border border-white/5 text-gray-200 rounded-tl-sm"
+                        ? "bg-sky-50 border border-sky-200 text-gray-900 rounded-tr-sm shadow-sm"
+                        : "bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm"
                     }`}
                   >
                     {msg.content}
@@ -514,7 +514,7 @@ export default function Assistant() {
                   <span className="font-mono font-bold text-sm">Z</span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <div className="px-4 py-3 rounded-2xl bg-card/80 border border-primary/10 text-gray-200 rounded-tl-sm shadow-[0_0_12px_rgba(0,240,255,0.05)]">
+                  <div className="px-4 py-3 rounded-2xl bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm">
                     {streamingContent}
                     <span className="inline-block w-0.5 h-4 ml-0.5 bg-primary/70 animate-pulse align-middle" />
                   </div>
@@ -532,7 +532,7 @@ export default function Assistant() {
                 <div className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center border bg-purple-900/30 border-purple-500/30 text-purple-400 shadow-lg">
                   <span className="font-mono font-bold text-sm">Z</span>
                 </div>
-                <div className="px-4 py-3 rounded-2xl bg-card/80 border border-white/5 text-gray-200 rounded-tl-sm flex items-center gap-1.5">
+                <div className="px-4 py-3 rounded-2xl bg-white border border-gray-200 text-gray-700 rounded-tl-sm shadow-sm flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "0ms" }} />
                   <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "150ms" }} />
                   <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "300ms" }} />
@@ -542,7 +542,7 @@ export default function Assistant() {
           </div>
 
           {/* ── Input Bar ── */}
-          <div className="p-4 bg-black/40 border-t border-white/5 backdrop-blur-xl">
+          <div className="p-4 bg-white border-t border-gray-100">
 
             {/* Zara speaking indicator */}
             {isSpeaking && (

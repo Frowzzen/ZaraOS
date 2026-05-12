@@ -9,6 +9,7 @@ import { useInputMode } from "@/core/input-mode";
 import { gestureEngine } from "@/lib/gesture-engine";
 import { voiceEngine } from "@/lib/voice-engine";
 import { zaraRuntime } from "@/core/zara-runtime";
+import { useRuntime } from "@/core/runtime-context";
 import {
   Mic,
   MicOff,
@@ -112,6 +113,12 @@ let zCounter = 100;
 
 // ── Desktop shell ─────────────────────────────────────────────────────────────
 
+interface ZaraInlineResponse {
+  query: string;
+  reply: string;
+  streaming: boolean;
+}
+
 export function DesktopShell() {
   const [windows, setWindows] = useState<WinState[]>([]);
   const [command, setCommand] = useState("");
@@ -119,9 +126,11 @@ export function DesktopShell() {
   const [showPowerMenu, setShowPowerMenu] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [interimText, setInterimText] = useState("");
+  const [zaraInline, setZaraInline] = useState<ZaraInlineResponse | null>(null);
 
   const isTauri = isTauriRuntime();
   const { voiceActive, gestureActive, toggleVoice, toggleGesture, setVoice } = useInputMode();
+  const { streamAssistantMessage } = useRuntime();
   const inputRef = useRef<HTMLInputElement>(null);
   const windowsRef = useRef<WinState[]>([]);
 
@@ -189,12 +198,15 @@ export function DesktopShell() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voiceActive]);
 
-  // Ctrl+Space focuses the command bar
+  // Ctrl+Space focuses the command bar; Escape dismisses inline panel
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.code === "Space") {
         e.preventDefault();
         inputRef.current?.focus();
+      }
+      if (e.key === "Escape") {
+        setZaraInline(null);
       }
     };
     window.addEventListener("keydown", handler);
@@ -282,19 +294,41 @@ export function DesktopShell() {
   // ── Command bar ──────────────────────────────────────────────────────────────
 
   const handleCommand = useCallback(
-    (input: string) => {
+    async (input: string) => {
       const q = input.trim();
       if (!q) return;
-      const appId = parseCommand(q);
-      // When the command falls through to the assistant, carry the original
-      // text so the assistant window can auto-send it instead of starting blank.
-      if (appId === "assistant") {
-        sessionStorage.setItem("zaraos:pendingQuery", q);
-      }
-      openWindow(appId);
       setCommand("");
+
+      const appId = parseCommand(q);
+
+      // Non-AI commands open their panel window as usual
+      if (appId !== "assistant") {
+        openWindow(appId);
+        return;
+      }
+
+      // AI question — stream the answer inline above the bar, no window pop-up
+      setZaraInline({ query: q, reply: "", streaming: true });
+      let accumulated = "";
+      try {
+        await streamAssistantMessage(
+          q,
+          (chunk) => {
+            if (!chunk.done) {
+              accumulated += chunk.delta;
+              setZaraInline((prev) => prev ? { ...prev, reply: accumulated } : null);
+            }
+          },
+          "keyboard"
+        );
+        setZaraInline((prev) => prev ? { ...prev, reply: accumulated, streaming: false } : null);
+        if (accumulated) voiceEngine.speak(accumulated);
+      } catch {
+        const err = "Something went wrong. Make sure Ollama is running.";
+        setZaraInline((prev) => prev ? { ...prev, reply: err, streaming: false } : null);
+      }
     },
-    [openWindow]
+    [openWindow, streamAssistantMessage]
   );
 
   // ── Clock ────────────────────────────────────────────────────────────────────
@@ -419,9 +453,9 @@ export function DesktopShell() {
                   height: win.height,
                   zIndex: win.zIndex,
                   borderRadius: 14,
-                  background: "hsl(222, 16%, 22%)",
-                  border: "1px solid hsl(220, 16%, 34%)",
-                  boxShadow: "0 32px 80px rgba(0,0,0,0.70), 0 12px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(136,192,208,0.08)",
+                  background: "white",
+                  border: "1px solid rgba(0,0,0,0.09)",
+                  boxShadow: "0 40px 100px rgba(0,0,0,0.90), 0 16px 48px rgba(0,0,0,0.65)",
                 }}
                 onClick={() => focusWindow(win.id)}
               >
@@ -429,9 +463,9 @@ export function DesktopShell() {
                 <div
                   className="flex items-center h-10 px-3 gap-3 flex-shrink-0 cursor-move select-none"
                   style={{
-                    borderBottom: "1px solid hsl(220, 16%, 30%)",
+                    borderBottom: "1px solid rgba(0,0,0,0.08)",
                     borderRadius: "14px 14px 0 0",
-                    background: "hsl(222, 16%, 25%)",
+                    background: "#f7f7f8",
                   }}
                   onMouseDown={(e) => startDrag(win.id, e)}
                 >
@@ -439,7 +473,7 @@ export function DesktopShell() {
                   <div className="flex-1 flex items-center gap-2 pointer-events-none min-w-0">
                     <span
                       className="text-[11px] font-semibold tracking-widest uppercase truncate"
-                      style={{ color: "hsl(197, 45%, 67%)", letterSpacing: "0.12em" }}
+                      style={{ color: "#1a1a2e", letterSpacing: "0.12em" }}
                     >
                       {appMeta[win.appId].title}
                     </span>
@@ -452,11 +486,11 @@ export function DesktopShell() {
                       onClick={(e) => { e.stopPropagation(); minimizeWindow(win.id); }}
                       title="Minimize"
                       className="group flex items-center justify-center rounded transition-colors"
-                      style={{ width: 26, height: 22, background: "hsl(220, 16%, 32%)" }}
+                      style={{ width: 26, height: 22, background: "#e2e2e4" }}
                     >
                       <Minus
                         style={{ width: "0.6rem", height: "0.6rem" }}
-                        className="text-white/40 group-hover:text-white/80 transition-colors"
+                        className="text-gray-500 group-hover:text-gray-800 transition-colors"
                       />
                     </button>
                     <button
@@ -464,27 +498,27 @@ export function DesktopShell() {
                       onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }}
                       title="Close"
                       className="group flex items-center justify-center rounded transition-colors"
-                      style={{ width: 26, height: 22, background: "hsl(220, 16%, 32%)" }}
+                      style={{ width: 26, height: 22, background: "#e2e2e4" }}
                     >
                       <X
                         style={{ width: "0.6rem", height: "0.6rem" }}
-                        className="text-white/40 group-hover:text-red-400 transition-colors"
+                        className="text-gray-500 group-hover:text-red-500 transition-colors"
                       />
                     </button>
                   </div>
                 </div>
 
-                {/* Content */}
+                {/* Content — light background inside window */}
                 <div
-                  className="flex-1 overflow-hidden min-h-0"
+                  className="flex-1 overflow-hidden min-h-0 zaraos-window-body"
                   style={{ borderRadius: "0 0 14px 14px" }}
                 >
                   <Suspense
                     fallback={
-                      <div className="flex items-center justify-center h-full w-full">
+                      <div className="flex items-center justify-center h-full w-full bg-white">
                         <div
                           className="w-5 h-5 rounded-full animate-spin"
-                          style={{ border: "2px solid hsl(220,16%,32%)", borderTopColor: "hsl(197,45%,67%)" }}
+                          style={{ border: "2px solid #e2e2e4", borderTopColor: "#0ea5e9" }}
                         />
                       </div>
                     }
@@ -553,6 +587,70 @@ export function DesktopShell() {
             ))}
           </div>
         )}
+
+        {/* ── Inline Zara response panel ─────────────────────────────────────── */}
+        <AnimatePresence>
+          {zaraInline && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 6, scale: 0.97 }}
+              transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
+              className="w-full rounded-2xl overflow-hidden"
+              style={{
+                background: "white",
+                border: "1px solid rgba(0,0,0,0.09)",
+                boxShadow: "0 -8px 40px rgba(0,0,0,0.55), 0 8px 32px rgba(0,0,0,0.35)",
+              }}
+            >
+              {/* User query */}
+              <div className="px-5 pt-4 pb-2.5 border-b border-gray-100">
+                <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest mb-1">You</p>
+                <p className="text-sm text-gray-800 font-medium leading-snug">{zaraInline.query}</p>
+              </div>
+
+              {/* Zara reply */}
+              <div className="px-5 pt-3 pb-3 overflow-y-auto" style={{ maxHeight: 240 }}>
+                <p className="text-[10px] font-mono tracking-widest uppercase mb-1.5" style={{ color: "#0891b2" }}>Zara</p>
+                {zaraInline.reply ? (
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {zaraInline.reply}
+                    {zaraInline.streaming && (
+                      <span className="inline-block w-0.5 h-3.5 ml-0.5 bg-cyan-500/70 animate-pulse align-middle" />
+                    )}
+                  </p>
+                ) : (
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="px-5 py-2.5 border-t border-gray-100 flex items-center justify-between">
+                <button
+                  onClick={() => {
+                    sessionStorage.setItem("zaraos:pendingQuery", zaraInline.query);
+                    setZaraInline(null);
+                    openWindow("assistant");
+                  }}
+                  className="text-[11px] font-mono hover:underline transition-colors"
+                  style={{ color: "#0891b2" }}
+                >
+                  Open full assistant
+                </button>
+                <button
+                  onClick={() => setZaraInline(null)}
+                  className="text-[11px] font-mono text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  Dismiss  (Esc)
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Input */}
         <div
