@@ -102,14 +102,30 @@ export function RuntimeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     zaraRuntime.initialize();
-    // Silently ping Ollama — if running, switch from simulated to real AI automatically
-    // and immediately update the UI status so the user sees "Ollama (Local)" without
-    // needing to send a message first.
-    autoConnectLocalProviders().then((connected) => {
-      if (connected) {
-        aiRuntime.notifyProviderConnected(connected.id, connected.name, connected.model);
-      }
-    }).catch(() => { /* non-fatal */ });
+
+    // Auto-connect to Ollama: try immediately, then retry at 3 s and 8 s in case
+    // Ollama is still starting up. Each attempt is independent and non-fatal.
+    const tryConnect = () =>
+      autoConnectLocalProviders()
+        .then((connected) => {
+          if (connected) {
+            aiRuntime.notifyProviderConnected(connected.id, connected.name, connected.model);
+            return true;
+          }
+          return false;
+        })
+        .catch(() => false);
+
+    // Attempt 1 — immediate
+    tryConnect().then((ok) => {
+      if (ok) return;
+      // Attempt 2 — 3 s later (Ollama may still be starting)
+      setTimeout(() => tryConnect().then((ok2) => {
+        if (ok2) return;
+        // Attempt 3 — 8 s later
+        setTimeout(() => tryConnect(), 5000);
+      }), 3000);
+    });
     const unsubZara = zaraRuntime.onStatusChange(setZaraStatus);
     const unsubAI  = zaraRuntime.onAIStatusChange(setAIRuntimeStatus);
     // Drive the orb's "speaking" state from real TTS events

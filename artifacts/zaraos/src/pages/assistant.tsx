@@ -117,22 +117,34 @@ export default function Assistant() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const greetingSpoken = useRef(false);
 
-  // Boot greeting — spoken once after TTS voices load
+  // Boot greeting — spoken once on mount.
+  // Uses polling because WebKit2GTK does not reliably fire "voiceschanged".
   useEffect(() => {
     if (greetingSpoken.current) return;
     greetingSpoken.current = true;
-    const speak = () => {
+
+    const doSpeak = () =>
       voiceEngine.speak(
         "Hello. I am Zara. I am online and running locally on this device. How can I help you today?",
         { rate: 0.97, pitch: 1.05 }
       );
-    };
-    // Voices may not be loaded instantly; wait for them
-    if (window.speechSynthesis?.getVoices().length > 0) {
-      setTimeout(speak, 800);
-    } else {
-      window.speechSynthesis?.addEventListener("voiceschanged", () => setTimeout(speak, 400), { once: true });
-    }
+
+    // Poll every 300 ms until voices are available (max 5 s), then speak.
+    // If voices never load, speak anyway — browser uses its default voice.
+    let attempts = 0;
+    const poll = setInterval(() => {
+      attempts++;
+      const voicesReady =
+        typeof window !== "undefined" &&
+        "speechSynthesis" in window &&
+        window.speechSynthesis.getVoices().length > 0;
+      if (voicesReady || attempts >= 17) {
+        clearInterval(poll);
+        setTimeout(doSpeak, 600);
+      }
+    }, 300);
+
+    return () => clearInterval(poll);
   }, []);
 
   // Track TTS speaking state for visual feedback and stop button

@@ -141,7 +141,7 @@ export default function AIProviders() {
     }
   }, [checkAIProviderHealth]);
 
-  const fetchOllamaModels = useCallback(async (baseUrl = "http://localhost:11434") => {
+  const fetchOllamaModels = useCallback(async (baseUrl = "http://127.0.0.1:11434") => {
     setOllamaModelsFetching(true);
     setOllamaModelsError(null);
     try {
@@ -233,7 +233,7 @@ export default function AIProviders() {
     ollamaHealth !== "checking" &&
     (ollamaHealth as AIProviderStatus).available === true;
 
-  const ollamaEndpoint = endpoints["ollama"] ?? summaries.find((s) => s.id === "ollama")?.currentEndpoint ?? "http://localhost:11434";
+  const ollamaEndpoint = endpoints["ollama"] ?? summaries.find((s) => s.id === "ollama")?.currentEndpoint ?? "http://127.0.0.1:11434";
 
   return (
     <Layout>

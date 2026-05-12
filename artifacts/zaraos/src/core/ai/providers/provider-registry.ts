@@ -272,8 +272,8 @@ export function getProviderSummaries(): ProviderSummary[] {
     requiresKey: boolean; requiresEndpoint: boolean; defaultEndpoint?: string;
   }> = [
     { id: "local",     name: "Zara Local Runtime",  isLocal: true,  isCloud: false, requiresKey: false, requiresEndpoint: false },
-    { id: "ollama",    name: "Ollama",               isLocal: true,  isCloud: false, requiresKey: false, requiresEndpoint: true,  defaultEndpoint: "http://localhost:11434" },
-    { id: "llamacpp",  name: "llama.cpp Server",     isLocal: true,  isCloud: false, requiresKey: false, requiresEndpoint: true,  defaultEndpoint: "http://localhost:8080"  },
+    { id: "ollama",    name: "Ollama",               isLocal: true,  isCloud: false, requiresKey: false, requiresEndpoint: true,  defaultEndpoint: "http://127.0.0.1:11434" },
+    { id: "llamacpp",  name: "llama.cpp Server",     isLocal: true,  isCloud: false, requiresKey: false, requiresEndpoint: true,  defaultEndpoint: "http://127.0.0.1:8080"  },
     { id: "openai",    name: "OpenAI",               isLocal: false, isCloud: true,  requiresKey: true,  requiresEndpoint: false },
     { id: "anthropic", name: "Anthropic",            isLocal: false, isCloud: true,  requiresKey: true,  requiresEndpoint: false },
     { id: "gemini",    name: "Google Gemini",        isLocal: false, isCloud: true,  requiresKey: true,  requiresEndpoint: false },
@@ -309,33 +309,52 @@ export function setCloudAIAllowed(allowed: boolean): void {
 //
 // Called once from RuntimeProvider after zaraRuntime.initialize().
 // Safe to call multiple times — exits early if provider is already set.
+
+// WebKit2GTK-compatible fetch with timeout.
+// AbortSignal.timeout() is not supported on all WebKit versions; use manual abort.
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+    return res;
+  } catch (e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
 export async function autoConnectLocalProviders(): Promise<{ id: string; name: string; model: string } | null> {
-  // Don't override an explicit user choice (but do re-probe if already set to ollama,
-  // in case the model list changed or the provider info needs refreshing)
+  // Don't override an explicit user choice — but always re-probe if already ollama
+  // so model name stays current across restarts.
   const saved = localStorage.getItem(SK_PREFERRED);
   if (saved && saved !== "local" && saved !== "ollama") return null;
 
+  // Always prefer 127.0.0.1 over localhost — on Linux, localhost may resolve
+  // to ::1 (IPv6) but Ollama only binds to 127.0.0.1 (IPv4).
   const endpoints = loadJson<Record<string, string>>(SK_ENDPOINTS, {});
-  const ollamaUrl = endpoints["ollama"] ?? "http://localhost:11434";
+  const rawUrl    = endpoints["ollama"] ?? "http://127.0.0.1:11434";
+  const ollamaUrl = rawUrl.replace("localhost", "127.0.0.1");
 
   try {
-    const res = await fetch(`${ollamaUrl}/api/tags`, {
-      signal: AbortSignal.timeout(3000),
-    });
+    const res = await fetchWithTimeout(`${ollamaUrl}/api/tags`, 4000);
     if (!res.ok) return null;
 
     const data = (await res.json()) as { models?: { name: string }[] };
     const models = data.models ?? [];
     if (models.length === 0) return null;
 
-    // Ollama is running and has at least one model — switch to it
     const model = models[0].name;
     providerRouter.setPreferredProvider("ollama");
     localStorage.setItem(SK_PREFERRED, "ollama");
+    // Update the live OllamaProvider instance AND persist the corrected endpoint.
+    // setProviderEndpoint() patches the running instance's baseUrl so this session
+    // immediately uses 127.0.0.1 rather than waiting for the next app restart.
+    setProviderEndpoint("ollama", ollamaUrl);
 
     return { id: "ollama", name: "Ollama (Local)", model };
   } catch {
-    // Ollama not reachable — stay on simulated provider, no error surfaced
     return null;
   }
 }

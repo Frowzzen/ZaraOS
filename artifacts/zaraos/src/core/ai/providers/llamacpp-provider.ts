@@ -42,7 +42,14 @@ import type { AICapabilities } from "../models/ai-capabilities";
 import { LLAMACPP_CAPABILITIES } from "../models/ai-capabilities";
 import { getSimulatedResponse } from "../prompts/zara-system-prompt";
 
-const LLAMACPP_DEFAULT_ENDPOINT = "http://localhost:8080";
+const LLAMACPP_DEFAULT_ENDPOINT = "http://127.0.0.1:8080";
+
+// WebKit2GTK-compatible fetch timeout (AbortSignal.timeout is not supported).
+function makeFetchSignal(ms: number): AbortSignal {
+  const ctrl  = new AbortController();
+  setTimeout(() => ctrl.abort(), ms);
+  return ctrl.signal;
+}
 
 export class LlamaCppProvider implements AIProviderAdapter {
   readonly id = "llamacpp";
@@ -81,7 +88,7 @@ export class LlamaCppProvider implements AIProviderAdapter {
           temperature: options?.temperature ?? 0.7,
           max_tokens: options?.maxTokens ?? 512,
         }),
-        signal: AbortSignal.timeout(60000),
+        signal: makeFetchSignal(60000),
       });
 
       if (!response.ok) throw new Error(`llama.cpp error: ${response.status}`);
@@ -152,7 +159,7 @@ export class LlamaCppProvider implements AIProviderAdapter {
   async healthCheck(): Promise<AIProviderStatus> {
     try {
       const response = await fetch(`${this.endpoint}/health`, {
-        signal: AbortSignal.timeout(2000),
+        signal: makeFetchSignal(2000),
       });
       if (response.ok) {
         this.isAvailable = true;
@@ -160,7 +167,7 @@ export class LlamaCppProvider implements AIProviderAdapter {
       }
     } catch { /* Not running */ }
     this.isAvailable = false;
-    return { available: false, healthy: false, reason: "llama.cpp server not reachable at localhost:8080", lastCheckedAt: Date.now() };
+    return { available: false, healthy: false, reason: "llama.cpp server not reachable at 127.0.0.1:8080", lastCheckedAt: Date.now() };
   }
 
   supportsStreaming(): boolean { return true; }

@@ -48,9 +48,21 @@ import type { AICapabilities } from "../models/ai-capabilities";
 import { OLLAMA_CAPABILITIES } from "../models/ai-capabilities";
 import { getSimulatedResponse } from "../prompts/zara-system-prompt";
 
-const OLLAMA_BASE_URL = "http://localhost:11434";
+// Always use 127.0.0.1 — on Linux, "localhost" may resolve to ::1 (IPv6)
+// while Ollama only binds to 127.0.0.1 (IPv4).
+const OLLAMA_BASE_URL = "http://127.0.0.1:11434";
 const OLLAMA_DEFAULT_MODEL = "llama3";
 const HEALTH_CHECK_TIMEOUT_MS = 3000;
+
+// WebKit2GTK does not support AbortSignal.timeout(); use manual abort.
+function makeFetchSignal(ms: number): { signal: AbortSignal; cancel: () => void } {
+  const ctrl  = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  return {
+    signal: ctrl.signal,
+    cancel: () => clearTimeout(timer),
+  };
+}
 
 export class OllamaProvider implements AIProviderAdapter {
   readonly id = "ollama";
@@ -100,7 +112,7 @@ export class OllamaProvider implements AIProviderAdapter {
             num_predict: options?.maxTokens ?? 512,
           },
         }),
-        signal: AbortSignal.timeout(30000),
+        signal: makeFetchSignal(30000).signal,
       });
 
       if (!response.ok) {
@@ -183,7 +195,7 @@ export class OllamaProvider implements AIProviderAdapter {
 
     try {
       const response = await fetch(`${this.baseUrl}/api/tags`, {
-        signal: AbortSignal.timeout(HEALTH_CHECK_TIMEOUT_MS),
+        signal: makeFetchSignal(HEALTH_CHECK_TIMEOUT_MS).signal,
       });
       const data = await response.json() as { models?: Array<{ name: string }> };
       return (data.models ?? []).map((m) => m.name);
@@ -200,7 +212,7 @@ export class OllamaProvider implements AIProviderAdapter {
     try {
       const start = Date.now();
       const response = await fetch(`${this.baseUrl}/api/version`, {
-        signal: AbortSignal.timeout(HEALTH_CHECK_TIMEOUT_MS),
+        signal: makeFetchSignal(HEALTH_CHECK_TIMEOUT_MS).signal,
       });
       const latencyMs = Date.now() - start;
 
@@ -227,7 +239,7 @@ export class OllamaProvider implements AIProviderAdapter {
         reason: isCorsBlocked
           ? "Ollama is running but is blocking this browser origin (CORS). " +
             "Restart Ollama with: OLLAMA_ORIGINS=* ollama serve"
-          : "Ollama not reachable at localhost:11434. Install Ollama and run " +
+          : "Ollama not reachable at 127.0.0.1:11434. Install Ollama and run " +
             "'OLLAMA_ORIGINS=* ollama serve' to enable.",
         lastCheckedAt: this.lastHealthCheck,
       };
@@ -251,7 +263,7 @@ export class OllamaProvider implements AIProviderAdapter {
     try {
       await fetch(`${this.baseUrl}/api/version`, {
         mode: "no-cors",
-        signal: AbortSignal.timeout(2000),
+        signal: makeFetchSignal(2000).signal,
       });
       // Fetch succeeded with no-cors → server IS up, CORS is the blocker.
       return true;

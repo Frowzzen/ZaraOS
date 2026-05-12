@@ -84,7 +84,7 @@ export function ConnectAIPanel({ onConnected }: ConnectAIPanelProps) {
   // ── Ollama connect test ──────────────────────────────────
   const handleTestOllama = async () => {
     setStatus("checking");
-    setStatusMsg("Checking Ollama at localhost:11434...");
+    setStatusMsg("Checking Ollama at 127.0.0.1:11434...");
     enableAIProvider("ollama", true);
     const result = await checkAIProviderHealth("ollama");
     if (result.available) {
