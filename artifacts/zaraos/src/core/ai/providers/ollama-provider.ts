@@ -217,13 +217,33 @@ export class OllamaProvider implements AIProviderAdapter {
       const latencyMs = Date.now() - start;
 
       if (response.ok) {
+        // Detect installed models and auto-select the first available one.
+        // This prevents the silent failure where Ollama is running but
+        // "llama3" is not installed — we use whatever model IS there.
+        const models = await this.listModels();
+        if (models.length > 0) {
+          // If the currently configured model isn't installed, pick the first one.
+          if (!models.includes(this.activeModel)) {
+            this.activeModel = models[0];
+          }
+        } else {
+          // Ollama is running but no models are pulled.
+          this.isAvailable = false;
+          return {
+            available: false,
+            healthy: false,
+            reason: `Ollama is running but no models are installed. Run: ollama pull llama3.2:3b`,
+            lastCheckedAt: this.lastHealthCheck,
+          };
+        }
+
         this.isAvailable = true;
         return {
           available: true,
           healthy: true,
           latencyMs,
           activeModel: this.activeModel,
-          reason: "Ollama is running and reachable",
+          reason: `Ollama connected — using model: ${this.activeModel}`,
           lastCheckedAt: this.lastHealthCheck,
         };
       }

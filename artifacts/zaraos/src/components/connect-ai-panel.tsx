@@ -90,8 +90,8 @@ export function ConnectAIPanel({ onConnected }: ConnectAIPanelProps) {
     if (result.available) {
       selectAIProvider("ollama" as AIProvider);
       setStatus("success");
-      setStatusMsg(`Ollama connected (${result.latencyMs}ms). Local inference active.`);
-      setTimeout(() => onConnected?.(), 1800);
+      setStatusMsg(result.reason ?? `Ollama connected (${result.latencyMs ?? 0}ms). Local inference active.`);
+      setTimeout(() => onConnected?.(), 2200);
     } else {
       setStatus("error");
       setStatusMsg(result.reason ?? "Ollama not reachable. See instructions below.");
