@@ -26,24 +26,7 @@ pub struct DiskInfo {
     pub is_boot: bool,      // true if this disk contains the current boot partition
 }
 
-#[derive(Debug, Deserialize)]
-struct LsblkOutput {
-    blockdevices: Vec<LsblkDevice>,
-}
-
-#[derive(Debug, Deserialize)]
-struct LsblkDevice {
-    name: String,
-    size: Option<String>,
-    model: Option<String>,
-    tran: Option<String>,
-    rm: Option<bool>,        // removable
-    #[serde(rename = "type")]
-    device_type: Option<String>,
-    // lsblk outputs size in bytes when using -b
-    #[serde(rename = "size-raw")]
-    size_raw: Option<serde_json::Value>,
-}
+// Parsed via serde_json::Value directly in list_disks() for flexibility.
 
 /// Returns a list of physical disks suitable for OS installation.
 /// Excludes partitions, loop devices, and ROM drives.
