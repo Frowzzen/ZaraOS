@@ -52,6 +52,8 @@ fn main() {
             // ── App launcher ──────────────────────────────────
             commands::apps::list_installed_apps,
             commands::apps::launch_app,
+            // ── Installer (disk detection) ────────────────────
+            commands::disks::list_disks,
         ])
         .run(tauri::generate_context!())
         .expect("error while running ZaraOS");

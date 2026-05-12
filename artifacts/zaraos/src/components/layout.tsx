@@ -22,6 +22,7 @@ import {
   RotateCcw,
   Moon,
   Lock,
+  HardDriveDownload,
 } from "lucide-react";
 import { systemPower } from "@/core/tauri/tauri-system-controls";
 import { isTauriRuntime } from "@/core/tauri/tauri-bridge";
@@ -48,8 +49,9 @@ const navItems = [
   { href: "/privacy",      icon: ShieldAlert,   label: "Privacy"      },
   { href: "/ai-providers", icon: Cpu,           label: "AI Providers" },
   { href: "/memory",       icon: Brain,         label: "Memory"       },
-  { href: "/developers",   icon: Code,          label: "Developers"   },
-  { href: "/skills",       icon: Zap,           label: "Skills"       },
+  { href: "/developers",   icon: Code,              label: "Developers"   },
+  { href: "/skills",       icon: Zap,               label: "Skills"       },
+  { href: "/install",      icon: HardDriveDownload,  label: "Install"      },
 ];
 
 export function Layout({ children }: LayoutProps) {

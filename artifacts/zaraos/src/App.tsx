@@ -40,6 +40,7 @@ const AIProviders = lazy(() => import("@/pages/ai-providers"));
 const Developers  = lazy(() => import("@/pages/developers"));
 const Skills      = lazy(() => import("@/pages/skills"));
 const Memory      = lazy(() => import("@/pages/memory"));
+const Install     = lazy(() => import("@/pages/install"));
 const NotFound    = lazy(() => import("@/pages/not-found"));
 
 // ── Page loading fallback ─────────────────────────────────
@@ -77,6 +78,7 @@ function Router() {
         <Route path="/developers"  component={Developers} />
         <Route path="/skills"      component={Skills} />
         <Route path="/memory"      component={Memory} />
+        <Route path="/install"     component={Install} />
         <Route                     component={NotFound} />
       </Switch>
     </Suspense>
