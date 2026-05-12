@@ -24,7 +24,7 @@ pub fn run() {
                 use tauri::Manager;
                 if let Some(win) = app.get_webview_window("main") {
                     let _ = win.with_webview(|wv| {
-                        use webkit2gtk::prelude::*;
+                        use webkit2gtk::{WebViewExt, PermissionRequestExt};
                         wv.inner().connect_permission_request(|_view, req| {
                             req.allow();
                             true
