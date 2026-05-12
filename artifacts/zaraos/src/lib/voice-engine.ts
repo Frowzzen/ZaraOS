@@ -105,9 +105,17 @@ class VoiceEngine {
   private speakingSubs: Set<(speaking: boolean) => void> = new Set();
 
   constructor() {
+    // SpeechRecognition is NOT available in WebKit2GTK (Tauri on Linux).
+    // Voice input via microphone will be added in Alpha 0.7 via Whisper.cpp / Rust IPC.
     this._isSupported =
       typeof window !== "undefined" &&
       ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+  }
+
+  // Returns true when running inside the Tauri native app.
+  // Used to show accurate "coming soon" messages instead of "use Chrome/Edge".
+  get isTauriMode(): boolean {
+    return typeof window !== "undefined" && "__TAURI__" in window;
   }
 
   // ── Public state ───────────────────────────────────────
@@ -149,10 +157,10 @@ class VoiceEngine {
 
   startListening(options?: { lang?: string }): void {
     if (!this._isSupported) {
-      this.setState(
-        "unsupported",
-        "Voice input is not supported in this browser. Use Chrome or Edge for voice input."
-      );
+      const msg = this.isTauriMode
+        ? "Voice input via microphone is coming in Alpha 0.7 (Whisper.cpp). Use the keyboard to talk to Zara for now."
+        : "Voice input is not supported in this browser. Use Chrome or Edge.";
+      this.setState("unsupported", msg);
       return;
     }
 

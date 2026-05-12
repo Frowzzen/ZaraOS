@@ -569,11 +569,15 @@ export default function Assistant() {
               </div>
             )}
 
-            {/* Voice not supported notice (shown once on first try if not supported) */}
-            {!voiceSupported && voiceError && (
-              <div className="flex items-center gap-2 mb-3 px-1 text-[11px] font-mono text-amber-400/60">
-                <AlertTriangle className="w-3 h-3" />
-                <span>Use Chrome or Edge for voice input. Firefox does not support the Web Speech API.</span>
+            {/* Voice not available — always visible when running in Tauri on Linux */}
+            {!voiceSupported && (
+              <div className="flex items-center gap-2 mb-3 px-1 text-[11px] font-mono text-amber-400/50">
+                <Mic className="w-3 h-3 flex-shrink-0" />
+                <span>
+                  {voiceEngine.isTauriMode
+                    ? "Mic input coming in Alpha 0.7 — type commands or ask Zara anything below."
+                    : "Voice input requires Chrome or Edge."}
+                </span>
               </div>
             )}
 
@@ -594,7 +598,9 @@ export default function Assistant() {
                 data-testid="button-voice-toggle"
                 title={
                   !voiceSupported
-                    ? "Voice not supported — use Chrome or Edge"
+                    ? voiceEngine.isTauriMode
+                      ? "Mic input coming in Alpha 0.7 — use the keyboard for now"
+                      : "Voice not supported — use Chrome or Edge"
                     : isListening
                     ? "Stop listening"
                     : "Start voice input"

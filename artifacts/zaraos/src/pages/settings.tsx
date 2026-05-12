@@ -42,6 +42,7 @@ import {
 } from "@/core/tauri/tauri-system-controls";
 import type { WifiNetwork } from "@/core/tauri/tauri-system-controls";
 import { isTauriRuntime } from "@/core/tauri/tauri-bridge";
+import { voiceEngine } from "@/lib/voice-engine";
 import { getSystemStats } from "@/core/tauri/tauri-system";
 import type { SystemStats } from "@/core/tauri/tauri-system";
 import { Input } from "@/components/ui/input";
@@ -248,6 +249,67 @@ export default function Settings() {
                   <h2 className="text-2xl font-bold text-white mb-1">Voice</h2>
                   <p className="text-muted-foreground text-sm">Assistant voice configuration and audio.</p>
                 </div>
+
+                {/* Hardware status summary */}
+                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                  <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Cpu className="w-4 h-4 text-primary" />Hardware Status</CardTitle></CardHeader>
+                  <CardContent className="pb-6 flex flex-col gap-3">
+                    {/* TTS */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-white">Speaker Output (TTS)</div>
+                        <div className="text-xs text-muted-foreground">
+                          {voiceEngine.isTTSSupported
+                            ? "speech-dispatcher detected — Zara can speak"
+                            : "speech-dispatcher not found — install espeak-ng"}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${voiceEngine.isTTSSupported ? "bg-green-400" : "bg-red-400"}`} />
+                        <span className={`text-xs font-mono ${voiceEngine.isTTSSupported ? "text-green-400" : "text-red-400"}`}>
+                          {voiceEngine.isTTSSupported ? "Ready" : "Missing dep"}
+                        </span>
+                      </div>
+                    </div>
+                    {voiceEngine.isTTSSupported && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="self-start gap-2 border-white/10 hover:border-primary/50 text-xs font-mono"
+                        onClick={() => voiceEngine.speak("Hello. I am Zara. Audio output is working correctly.", { rate: 0.97, pitch: 1.05 })}
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                        Test Speakers
+                      </Button>
+                    )}
+                    {!voiceEngine.isTTSSupported && (
+                      <div className="text-[11px] font-mono text-amber-400/70 bg-amber-400/5 border border-amber-400/10 rounded px-3 py-2">
+                        sudo apt install espeak-ng speech-dispatcher speech-dispatcher-espeak-ng
+                      </div>
+                    )}
+
+                    {/* Mic */}
+                    <div className="flex items-center justify-between border-t border-white/5 pt-3">
+                      <div>
+                        <div className="text-sm font-medium text-white">Microphone Input (STT)</div>
+                        <div className="text-xs text-muted-foreground">
+                          {voiceEngine.isSupported
+                            ? "Web Speech API available"
+                            : voiceEngine.isTauriMode
+                              ? "Coming in Alpha 0.7 via Whisper.cpp"
+                              : "Not available — use Chrome or Edge"}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${voiceEngine.isSupported ? "bg-green-400" : "bg-amber-400"}`} />
+                        <span className={`text-xs font-mono ${voiceEngine.isSupported ? "text-green-400" : "text-amber-400"}`}>
+                          {voiceEngine.isSupported ? "Ready" : "Alpha 0.7"}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <Card className="bg-card/40 border-white/5 backdrop-blur">
                   <CardContent className="pt-6 flex flex-col gap-6">
                     <div className="grid grid-cols-[1fr_180px] gap-4 items-center">
@@ -278,10 +340,10 @@ export default function Settings() {
                         <div className="text-sm font-medium text-white">Always Listening (Wake Word)</div>
                         <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
                           Respond to "Hey Zara"
-                          <span className="bg-amber-500/20 text-amber-400 px-1 rounded text-[10px] uppercase">High Battery</span>
+                          <span className="bg-amber-500/20 text-amber-400 px-1 rounded text-[10px] uppercase">Alpha 0.7</span>
                         </div>
                       </div>
-                      <Switch />
+                      <Switch disabled />
                     </div>
                   </CardContent>
                 </Card>
