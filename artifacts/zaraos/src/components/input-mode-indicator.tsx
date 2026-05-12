@@ -29,14 +29,14 @@ export function InputModeIndicator() {
     <div className="relative w-full">
       {/* Mode picker dropdown */}
       {pickerOpen && (
-        <div className="absolute bottom-full mb-2 left-0 right-0 bg-card border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 backdrop-blur-xl">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
+        <div className="absolute bottom-full mb-2 left-0 right-0 rounded-xl overflow-hidden z-50" style={{ background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.20)", boxShadow: "6px 6px 20px rgba(166,180,200,0.35), -4px -4px 14px rgba(255,255,255,0.90)" }}>
+          <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100">
             <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
               Input Mode
             </span>
             <button
               onClick={() => setPickerOpen(false)}
-              className="text-muted-foreground hover:text-white transition-colors"
+              className="text-muted-foreground hover:text-slate-900 transition-colors"
             >
               <X className="w-3 h-3" />
             </button>
@@ -48,7 +48,7 @@ export function InputModeIndicator() {
               <button
                 key={m}
                 onClick={() => { setMode(m); setPickerOpen(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all hover:bg-white/5 ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all hover:bg-slate-50 ${
                   isActive ? mm.bgColor : ""
                 }`}
                 data-testid={`mode-option-${m}`}
@@ -57,7 +57,7 @@ export function InputModeIndicator() {
                   {MODE_ICONS[m]}
                 </span>
                 <div className="min-w-0">
-                  <div className={`text-xs font-medium ${isActive ? "text-white" : "text-muted-foreground"}`}>
+                  <div className={`text-xs font-medium ${isActive ? "text-slate-900" : "text-muted-foreground"}`}>
                     {mm.label}
                   </div>
                   {isActive && (
@@ -79,7 +79,7 @@ export function InputModeIndicator() {
       <button
         onClick={() => setPickerOpen((v) => !v)}
         onDoubleClick={cycleMode}
-        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-200 hover:bg-white/5 ${meta.borderColor} ${meta.bgColor}`}
+        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-200 hover:bg-slate-50 ${meta.borderColor} ${meta.bgColor}`}
         title={`${meta.label} — click to change`}
         data-testid="button-input-mode-indicator"
       >

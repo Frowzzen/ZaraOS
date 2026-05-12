@@ -456,7 +456,7 @@ export default function Assistant() {
         )}
 
         {/* ── Chat Panel ── */}
-        <div className="flex-1 min-h-0 bg-card/30 border border-white/5 rounded-xl overflow-hidden backdrop-blur-md shadow-2xl flex flex-col">
+        <div className="flex-1 min-h-0 rounded-xl overflow-hidden flex flex-col" style={{ background: "rgba(255,255,255,0.85)", border: "1px solid rgba(148,163,184,0.14)", boxShadow: "6px 6px 20px rgba(166,180,200,0.25), -4px -4px 14px rgba(255,255,255,0.88)" }}>
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5" ref={scrollRef}>
             {messages.map((msg, i) => (
@@ -465,11 +465,15 @@ export default function Assistant() {
                 className={`flex gap-3 max-w-[88%] ${msg.role === "user" ? "ml-auto flex-row-reverse" : ""}`}
               >
                 <div
-                  className={`w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center border shadow-lg ${
+                  className={`w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center shadow-sm ${
                     msg.role === "user"
-                      ? "bg-card border-white/10 text-white"
-                      : "bg-purple-900/30 border-purple-500/30 text-purple-400"
+                      ? "text-slate-500"
+                      : "text-indigo-500"
                   }`}
+                style={msg.role === "user"
+                  ? { background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.20)", boxShadow: "2px 2px 8px rgba(166,180,200,0.30), -2px -2px 6px rgba(255,255,255,0.85)" }
+                  : { background: "linear-gradient(145deg,#f0f1fb,#e8eaf8)", border: "1px solid rgba(99,102,241,0.18)", boxShadow: "2px 2px 8px rgba(148,163,200,0.28), -2px -2px 6px rgba(255,255,255,0.88)" }
+                }
                 >
                   {msg.role === "user" ? (
                     <Command className="w-4 h-4" />
@@ -510,13 +514,13 @@ export default function Assistant() {
             {/* Streaming bubble */}
             {isStreaming && (
               <div className="flex gap-3 max-w-[88%]">
-                <div className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center border bg-purple-900/30 border-purple-500/30 text-purple-400 shadow-lg">
+                <div className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center text-indigo-500 shadow-sm" style={{ background: "linear-gradient(145deg,#f0f1fb,#e8eaf8)", border: "1px solid rgba(99,102,241,0.18)", boxShadow: "2px 2px 8px rgba(148,163,200,0.28), -2px -2px 6px rgba(255,255,255,0.88)" }}>
                   <span className="font-mono font-bold text-sm">Z</span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <div className="px-4 py-3 rounded-2xl bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm">
+                  <div className="px-4 py-3 rounded-2xl bg-white border border-slate-100 text-slate-700 rounded-tl-sm shadow-sm">
                     {streamingContent}
-                    <span className="inline-block w-0.5 h-4 ml-0.5 bg-primary/70 animate-pulse align-middle" />
+                    <span className="inline-block w-0.5 h-4 ml-0.5 animate-pulse align-middle" style={{ background: "linear-gradient(to bottom, #6366f1, #8b5cf6)", borderRadius: 2, opacity: 0.7 }} />
                   </div>
                   <div className="ml-1 text-[10px] font-mono text-primary/30 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-pulse inline-block" />
@@ -529,10 +533,10 @@ export default function Assistant() {
             {/* Thinking indicator */}
             {zaraStatus === "thinking" && !isStreaming && (
               <div className="flex gap-3 max-w-[88%]">
-                <div className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center border bg-purple-900/30 border-purple-500/30 text-purple-400 shadow-lg">
+                <div className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center text-indigo-500 shadow-sm" style={{ background: "linear-gradient(145deg,#f0f1fb,#e8eaf8)", border: "1px solid rgba(99,102,241,0.18)", boxShadow: "2px 2px 8px rgba(148,163,200,0.28), -2px -2px 6px rgba(255,255,255,0.88)" }}>
                   <span className="font-mono font-bold text-sm">Z</span>
                 </div>
-                <div className="px-4 py-3 rounded-2xl bg-white border border-gray-200 text-gray-700 rounded-tl-sm shadow-sm flex items-center gap-1.5">
+                <div className="px-4 py-3 rounded-2xl bg-white border border-slate-100 text-slate-700 rounded-tl-sm shadow-sm flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "0ms" }} />
                   <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "150ms" }} />
                   <span className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: "300ms" }} />
@@ -542,17 +546,18 @@ export default function Assistant() {
           </div>
 
           {/* ── Input Bar ── */}
-          <div className="p-4 bg-white border-t border-gray-100">
+          <div className="p-4 border-t border-slate-100" style={{ background: "rgba(248,249,254,0.96)" }}>
 
             {/* Zara speaking indicator */}
             {isSpeaking && (
               <div className="flex items-center gap-2 mb-3 px-1">
                 <VoiceWaveform active={true} color="cyan" size="sm" />
-                <span className="text-xs font-mono text-cyan-400 tracking-wider">
+                <span className="text-xs font-mono text-indigo-500 tracking-wider">
                   ZARA IS SPEAKING
                 </span>
                 <button
-                  className="ml-auto text-[10px] font-mono px-2.5 py-1 rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors"
+                  className="ml-auto text-[10px] font-mono px-2.5 py-1 rounded transition-colors"
+                  style={{ border: "1px solid rgba(99,102,241,0.25)", background: "rgba(99,102,241,0.08)", color: "#6366f1" }}
                   onClick={() => voiceEngine.stopSpeaking()}
                 >
                   stop
@@ -576,7 +581,7 @@ export default function Assistant() {
                 <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
                 <span className="text-xs font-mono text-red-400/80">{voiceError}</span>
                 <button
-                  className="ml-auto text-[10px] font-mono text-muted-foreground/40 hover:text-white"
+                  className="ml-auto text-[10px] font-mono text-slate-400 hover:text-slate-700"
                   onClick={() => setVoiceError(null)}
                 >
                   dismiss
@@ -603,11 +608,12 @@ export default function Assistant() {
                 size="icon"
                 className={`h-12 w-12 rounded-full flex-shrink-0 border-2 transition-all duration-300 ${
                   !voiceSupported
-                    ? "border-white/5 text-muted-foreground/20 cursor-not-allowed opacity-40"
+                    ? "border-slate-200 text-slate-300 cursor-not-allowed opacity-40"
                     : isListening
-                    ? "border-amber-500 bg-amber-500/20 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.4)]"
-                    : "border-white/10 hover:border-primary/50 hover:text-primary hover:bg-primary/10"
+                    ? "border-amber-500 bg-amber-500/20 text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)]"
+                    : "border-transparent hover:text-indigo-500"
                 }`}
+                style={(!voiceSupported || isListening) ? {} : { background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.22)", boxShadow: "3px 3px 10px rgba(166,180,200,0.32), -2px -2px 8px rgba(255,255,255,0.88)" }}
                 onClick={voiceSupported ? toggleVoice : undefined}
                 disabled={!voiceSupported || isBusy}
                 data-testid="button-voice-toggle"
@@ -635,7 +641,7 @@ export default function Assistant() {
                       : "Type a command or ask Zara anything..."
                   }
                   disabled={isListening || isBusy}
-                  className={`w-full h-12 bg-background border-white/10 focus-visible:ring-primary focus-visible:border-primary text-sm px-5 rounded-full shadow-inner pr-14 ${
+                  className={`w-full h-12 text-sm px-5 rounded-full pr-14 ${
                     isListening && interimTranscript ? "text-amber-300/80 italic" : ""
                   }`}
                   data-testid="input-chat"
@@ -658,7 +664,8 @@ export default function Assistant() {
               {SUGGESTED_COMMANDS.map((cmd) => (
                 <button
                   key={cmd}
-                  className="text-[11px] font-mono text-muted-foreground bg-white/5 px-2 py-1 rounded border border-white/10 cursor-pointer hover:bg-white/10 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="text-[11px] font-mono text-slate-400 hover:text-indigo-600 px-2 py-1 rounded cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.20)", boxShadow: "2px 2px 5px rgba(166,180,200,0.25), -1px -1px 4px rgba(255,255,255,0.80)" }}
                   onClick={() => handleSend(cmd, "keyboard")}
                   disabled={isBusy || isListening}
                   data-testid={`suggestion-${cmd.replace(/\s+/g, "-")}`}

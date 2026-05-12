@@ -67,87 +67,80 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* ── ZaraOS — Nord dark theme (always dark, never light) ── */
-/*
-  Nord palette used:
-    Polar Night: #2E3440 #3B4252 #434C5E #4C566A
-    Snow Storm:  #D8DEE9 #E5E9F0 #ECEFF4
-    Frost:       #8FBCBB #88C0D0 #81A1C1 #5E81AC
-    Aurora:      #BF616A (red) #D08770 (orange) #EBCB8B (yellow) #A3BE8C (green) #B48EAD (purple)
-*/
+/* ── ZaraOS — Soft modern light theme ── */
 :root {
-  --button-outline: rgba(255,255,255,0.08);
-  --badge-outline: rgba(255,255,255,0.06);
+  --button-outline: rgba(148,163,184,0.18);
+  --badge-outline: rgba(148,163,184,0.12);
   --opaque-button-border-intensity: -5;
-  --elevate-1: rgba(255,255,255,0.04);
-  --elevate-2: rgba(255,255,255,0.08);
+  --elevate-1: rgba(148,163,184,0.08);
+  --elevate-2: rgba(148,163,184,0.14);
 
-  /* Nord Polar Night — backgrounds */
-  --background:    220 16% 18%;   /* #242933 — deepest desktop bg  */
-  --foreground:    218 27% 94%;   /* #ECEFF4 — snow storm bright   */
+  /* Soft light backgrounds */
+  --background:    220 30% 96%;   /* #eef0f8 */
+  --foreground:    222 47% 15%;   /* #1e293b */
 
-  --border:        220 16% 32%;   /* #434C5E */
-  --input:         222 16% 24%;   /* between P1 and P2             */
-  --ring:          197 45% 67%;   /* #88C0D0 frost accent          */
+  --border:        218 20% 88%;   /* soft slate border */
+  --input:         220 30% 97%;
+  --ring:          239 84% 67%;   /* indigo-500 */
 
-  /* Cards / panels — sit above the desktop */
-  --card:              222 16% 24%;   /* #3B4252-ish                   */
-  --card-foreground:   218 27% 94%;   /* #ECEFF4                       */
-  --card-border:       220 16% 32%;   /* #434C5E                       */
+  /* Cards / panels */
+  --card:              0 0% 100%;
+  --card-foreground:   222 47% 15%;
+  --card-border:       218 20% 90%;
 
-  --popover:           222 16% 22%;
-  --popover-foreground: 218 27% 94%;
-  --popover-border:    220 16% 32%;
+  --popover:           0 0% 100%;
+  --popover-foreground: 222 47% 15%;
+  --popover-border:    218 20% 90%;
 
-  /* Primary action — Nord frost blue */
-  --primary:           197 45% 67%;   /* #88C0D0 */
-  --primary-foreground: 220 16% 18%;  /* dark text on frost button     */
+  /* Primary — indigo */
+  --primary:           239 84% 67%;   /* #6366f1 */
+  --primary-foreground: 0 0% 100%;
 
-  /* Secondary — lighter polar night */
-  --secondary:         220 17% 32%;   /* #434C5E */
-  --secondary-foreground: 218 27% 88%; /* #D8DEE9 */
+  /* Secondary — soft slate */
+  --secondary:         218 20% 93%;
+  --secondary-foreground: 222 47% 25%;
 
-  --muted:             220 16% 28%;   /* #3B4252 */
-  --muted-foreground:  210 35% 63%;   /* #81A1C1 — frost dim           */
+  --muted:             220 20% 94%;
+  --muted-foreground:  215 20% 55%;   /* #64748b */
 
-  --accent:            211 33% 52%;   /* #5E81AC — frost darker        */
-  --accent-foreground: 218 27% 94%;   /* #ECEFF4 */
+  --accent:            265 84% 67%;   /* #8b5cf6 violet */
+  --accent-foreground: 0 0% 100%;
 
-  /* Destructive — Nord aurora red */
-  --destructive:       354 42% 56%;   /* #BF616A */
-  --destructive-foreground: 218 27% 94%;
+  /* Destructive — soft rose */
+  --destructive:       354 70% 60%;
+  --destructive-foreground: 0 0% 100%;
 
-  /* Sidebar — darkest layer */
-  --sidebar:              220 16% 15%;   /* darker than background        */
-  --sidebar-foreground:   218 27% 88%;   /* #D8DEE9 */
-  --sidebar-border:       220 16% 28%;
-  --sidebar-primary:      197 45% 67%;   /* frost accent */
-  --sidebar-primary-foreground: 220 16% 18%;
-  --sidebar-accent:       220 16% 28%;
-  --sidebar-accent-foreground: 218 27% 94%;
-  --sidebar-ring:         197 45% 67%;
+  /* Sidebar */
+  --sidebar:              220 30% 97%;
+  --sidebar-foreground:   222 47% 20%;
+  --sidebar-border:       218 20% 90%;
+  --sidebar-primary:      239 84% 67%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent:       265 84% 67%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-ring:         239 84% 67%;
 
-  /* Charts — frost + aurora range */
-  --chart-1: 197 45% 67%;
-  --chart-2: 210 35% 63%;
-  --chart-3: 160 25% 65%;   /* #8FBCBB */
-  --chart-4: 354 42% 56%;   /* aurora red */
-  --chart-5: 37  74% 74%;   /* #EBCB8B aurora yellow */
+  /* Charts */
+  --chart-1: 239 84% 67%;
+  --chart-2: 265 84% 67%;
+  --chart-3: 197 71% 53%;
+  --chart-4: 354 70% 60%;
+  --chart-5: 45 96% 58%;
 
   --app-font-sans: 'Syne', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: 'Space Mono', monospace;
-  --radius: 0.5rem;
+  --radius: 0.625rem;
 
-  /* Strong shadows for elevated windows */
-  --shadow-2xs: 0 1px 4px rgba(0,0,0,0.30);
-  --shadow-xs:  0 2px 8px rgba(0,0,0,0.35);
-  --shadow-sm:  0 4px 12px rgba(0,0,0,0.40), 0 1px 4px rgba(0,0,0,0.30);
-  --shadow:     0 8px 24px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.30);
-  --shadow-md:  0 12px 36px rgba(0,0,0,0.50), 0 4px 12px rgba(0,0,0,0.35);
-  --shadow-lg:  0 20px 52px rgba(0,0,0,0.55), 0 6px 18px rgba(0,0,0,0.40);
-  --shadow-xl:  0 28px 64px rgba(0,0,0,0.60), 0 10px 24px rgba(0,0,0,0.45);
-  --shadow-2xl: 0 40px 80px rgba(0,0,0,0.70), 0 16px 32px rgba(0,0,0,0.50);
+  /* Soft neumorphic shadows */
+  --shadow-2xs: 2px 2px 6px rgba(166,180,200,0.30), -1px -1px 4px rgba(255,255,255,0.80);
+  --shadow-xs:  3px 3px 10px rgba(166,180,200,0.35), -2px -2px 8px rgba(255,255,255,0.85);
+  --shadow-sm:  4px 4px 14px rgba(166,180,200,0.38), -3px -3px 10px rgba(255,255,255,0.88);
+  --shadow:     6px 6px 20px rgba(166,180,200,0.40), -4px -4px 14px rgba(255,255,255,0.90);
+  --shadow-md:  8px 8px 26px rgba(166,180,200,0.42), -5px -5px 18px rgba(255,255,255,0.92);
+  --shadow-lg:  10px 10px 32px rgba(166,180,200,0.44), -6px -6px 22px rgba(255,255,255,0.94);
+  --shadow-xl:  12px 12px 40px rgba(166,180,200,0.46), -8px -8px 28px rgba(255,255,255,0.95);
+  --shadow-2xl: 16px 16px 50px rgba(166,180,200,0.48), -10px -10px 34px rgba(255,255,255,0.96);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
@@ -160,48 +153,48 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
-/* .dark is identical to :root — ZaraOS is always dark */
+/* .dark mirrors :root — ZaraOS is always soft light */
 .dark {
-  --button-outline: rgba(255,255,255,0.08);
-  --badge-outline: rgba(255,255,255,0.06);
+  --button-outline: rgba(148,163,184,0.18);
+  --badge-outline: rgba(148,163,184,0.12);
   --opaque-button-border-intensity: -5;
-  --elevate-1: rgba(255,255,255,0.04);
-  --elevate-2: rgba(255,255,255,0.08);
-  --background:    220 16% 18%;
-  --foreground:    218 27% 94%;
-  --border:        220 16% 32%;
-  --input:         222 16% 24%;
-  --ring:          197 45% 67%;
-  --card:              222 16% 24%;
-  --card-foreground:   218 27% 94%;
-  --card-border:       220 16% 32%;
-  --popover:           222 16% 22%;
-  --popover-foreground: 218 27% 94%;
-  --popover-border:    220 16% 32%;
-  --primary:           197 45% 67%;
-  --primary-foreground: 220 16% 18%;
-  --secondary:         220 17% 32%;
-  --secondary-foreground: 218 27% 88%;
-  --muted:             220 16% 28%;
-  --muted-foreground:  210 35% 63%;
-  --accent:            211 33% 52%;
-  --accent-foreground: 218 27% 94%;
-  --destructive:       354 42% 56%;
-  --destructive-foreground: 218 27% 94%;
-  --sidebar:              220 16% 15%;
-  --sidebar-foreground:   218 27% 88%;
-  --sidebar-border:       220 16% 28%;
-  --sidebar-primary:      197 45% 67%;
-  --sidebar-primary-foreground: 220 16% 18%;
-  --sidebar-accent:       220 16% 28%;
-  --sidebar-accent-foreground: 218 27% 94%;
-  --sidebar-ring:         197 45% 67%;
-  --chart-1: 197 45% 67%;
-  --chart-2: 210 35% 63%;
-  --chart-3: 160 25% 65%;
-  --chart-4: 354 42% 56%;
-  --chart-5: 37  74% 74%;
-  --shadow-2xl: 0 40px 80px rgba(0,0,0,0.70), 0 16px 32px rgba(0,0,0,0.50);
+  --elevate-1: rgba(148,163,184,0.08);
+  --elevate-2: rgba(148,163,184,0.14);
+  --background:    220 30% 96%;
+  --foreground:    222 47% 15%;
+  --border:        218 20% 88%;
+  --input:         220 30% 97%;
+  --ring:          239 84% 67%;
+  --card:              0 0% 100%;
+  --card-foreground:   222 47% 15%;
+  --card-border:       218 20% 90%;
+  --popover:           0 0% 100%;
+  --popover-foreground: 222 47% 15%;
+  --popover-border:    218 20% 90%;
+  --primary:           239 84% 67%;
+  --primary-foreground: 0 0% 100%;
+  --secondary:         218 20% 93%;
+  --secondary-foreground: 222 47% 25%;
+  --muted:             220 20% 94%;
+  --muted-foreground:  215 20% 55%;
+  --accent:            265 84% 67%;
+  --accent-foreground: 0 0% 100%;
+  --destructive:       354 70% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --sidebar:              220 30% 97%;
+  --sidebar-foreground:   222 47% 20%;
+  --sidebar-border:       218 20% 90%;
+  --sidebar-primary:      239 84% 67%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent:       265 84% 67%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-ring:         239 84% 67%;
+  --chart-1: 239 84% 67%;
+  --chart-2: 265 84% 67%;
+  --chart-3: 197 71% 53%;
+  --chart-4: 354 70% 60%;
+  --chart-5: 45 96% 58%;
+  --shadow-2xl: 16px 16px 50px rgba(166,180,200,0.48), -10px -10px 34px rgba(255,255,255,0.96);
 }
 
 @layer base {
@@ -209,22 +202,21 @@
   body { @apply font-sans antialiased bg-background text-foreground; }
 }
 
-/* ── Light window content override ───────────────────────────────────────── */
-/* Applied to window content areas so panels render on white instead of dark. */
+/* ── Window content override — inherits the soft light theme ── */
 .zaraos-window-body {
   --background:             0 0% 100%;
-  --foreground:             222 47% 11%;
-  --card:                   220 14% 98%;
-  --card-foreground:        222 47% 11%;
+  --foreground:             222 47% 15%;
+  --card:                   220 30% 98%;
+  --card-foreground:        222 47% 15%;
   --popover:                0 0% 100%;
-  --popover-foreground:     222 47% 11%;
-  --muted:                  220 14% 95%;
-  --muted-foreground:       215 16% 46%;
-  --border:                 214 32% 91%;
-  --input:                  214 32% 91%;
+  --popover-foreground:     222 47% 15%;
+  --muted:                  220 20% 95%;
+  --muted-foreground:       215 20% 55%;
+  --border:                 218 20% 90%;
+  --input:                  220 30% 97%;
   color-scheme: light;
   background-color: white;
-  color: hsl(222 47% 11%);
+  color: hsl(222 47% 15%);
 }
 
 @layer utilities {
@@ -241,4 +233,26 @@
   .active-elevate:active { background-color: var(--elevate-2); }
   .toggle-elevate { background-color: transparent; }
   .toggle-elevated { background-color: var(--elevate-1); }
+
+  /* ── Neumorphic utilities ── */
+  .neu-raised {
+    background: linear-gradient(145deg, #ffffff, #eef0f8);
+    box-shadow: 6px 6px 16px rgba(166,180,200,0.45), -4px -4px 12px rgba(255,255,255,0.95);
+  }
+  .neu-inset {
+    background: linear-gradient(145deg, #e8eaf2, #f4f5fb);
+    box-shadow: inset 4px 4px 10px rgba(166,180,200,0.40), inset -3px -3px 8px rgba(255,255,255,0.90);
+  }
+  .neu-flat {
+    background: #f0f2f8;
+    box-shadow: 4px 4px 12px rgba(166,180,200,0.38), -3px -3px 10px rgba(255,255,255,0.92);
+  }
+
+  /* Gradient accent text */
+  .text-gradient-accent {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }

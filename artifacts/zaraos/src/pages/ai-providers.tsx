@@ -63,7 +63,7 @@ function StatusBadge({ id, health }: { id: string; health: AIProviderStatus | "c
   }
   if (health === "checking") {
     return (
-      <span className="text-[9px] font-mono text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded border border-white/10 flex items-center gap-1">
+      <span className="text-[9px] font-mono text-muted-foreground bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200 flex items-center gap-1">
         <Loader2 className="w-2.5 h-2.5 animate-spin" />
         CHECKING
       </span>
@@ -241,7 +241,7 @@ export default function AIProviders() {
 
         {/* ── Header ── */}
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
+          <h1 className="text-4xl font-bold text-slate-800 mb-2 flex items-center gap-3">
             <Cpu className="w-10 h-10 text-primary" />
             AI Provider Management
           </h1>
@@ -283,7 +283,7 @@ export default function AIProviders() {
             return (
               <Card
                 key={p.id}
-                className={`bg-card/40 border-white/5 backdrop-blur transition-all duration-200 ${
+                className={`bg-white border-slate-100 shadow-sm transition-all duration-200 ${
                   isPreferred
                     ? "border-primary/40 shadow-[0_0_24px_rgba(0,240,255,0.08)]"
                     : aiRuntimeStatus.providerId === p.id
@@ -339,13 +339,13 @@ export default function AIProviders() {
                           value={endpoints[p.id] ?? p.currentEndpoint ?? p.defaultEndpoint ?? ""}
                           onChange={(e) => setEndpoints((prev) => ({ ...prev, [p.id]: e.target.value }))}
                           placeholder={p.defaultEndpoint}
-                          className="bg-black/50 border-white/10 text-sm h-9 font-mono flex-1"
+                          className="bg-white border-slate-200 text-sm h-9 font-mono flex-1"
                           data-testid={`input-endpoint-${p.id}`}
                         />
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-9 px-3 border-white/10 text-xs"
+                          className="h-9 px-3 border-slate-200 text-xs"
                           onClick={() => handleSaveEndpoint(p.id)}
                         >
                           Save
@@ -380,13 +380,13 @@ export default function AIProviders() {
                           placeholder={p.hasApiKey ? "Key saved — enter new key to replace" : getKeyPlaceholder(p.id)}
                           value={apiKeys[p.id] ?? ""}
                           onChange={(e) => setApiKeys((prev) => ({ ...prev, [p.id]: e.target.value }))}
-                          className="bg-black/50 border-white/10 text-sm h-9 font-mono flex-1"
+                          className="bg-white border-slate-200 text-sm h-9 font-mono flex-1"
                           data-testid={`input-key-${p.id}`}
                         />
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-9 px-3 border-white/10 text-xs"
+                          className="h-9 px-3 border-slate-200 text-xs"
                           onClick={() => handleSaveApiKey(p.id)}
                           disabled={!apiKeys[p.id]}
                         >
@@ -437,7 +437,7 @@ export default function AIProviders() {
                   )}
                 </CardContent>
 
-                <CardFooter className="pt-3 border-t border-white/5 flex justify-between items-center gap-3 flex-wrap">
+                <CardFooter className="pt-3 border-t border-slate-100 flex justify-between items-center gap-3 flex-wrap">
                   <div className="flex items-center gap-2">
                     {p.requiresEndpoint && (
                       <Button
@@ -492,7 +492,7 @@ export default function AIProviders() {
         </div>
 
         {/* ── Ollama Model Manager ── */}
-        <Card className="bg-card/40 border-white/5 backdrop-blur">
+        <Card className="bg-white border-slate-100 shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <CardTitle className="text-base flex items-center gap-2">
@@ -566,7 +566,7 @@ export default function AIProviders() {
                     className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-all ${
                       model.name === activeOllamaModel || model.name === (ollamaHealth as AIProviderStatus | null)?.activeModel
                         ? "bg-primary/5 border-primary/20"
-                        : "bg-black/30 border-white/5 hover:border-white/10"
+                        : "bg-white border-slate-100 hover:border-indigo-200"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -574,7 +574,7 @@ export default function AIProviders() {
                         model.name === activeOllamaModel ? "text-primary" : "text-muted-foreground/40"
                       }`} />
                       <div className="min-w-0">
-                        <p className="text-sm text-white font-mono truncate">{model.name}</p>
+                        <p className="text-sm text-slate-800 font-mono truncate">{model.name}</p>
                         {model.modified_at && (
                           <p className="text-[10px] text-muted-foreground/40 font-mono">
                             Updated {new Date(model.modified_at).toLocaleDateString()}
@@ -599,7 +599,7 @@ export default function AIProviders() {
             )}
 
             {/* Install guidance */}
-            <div className="pt-2 border-t border-white/5">
+            <div className="pt-2 border-t border-slate-100">
               <p className="text-[10px] text-muted-foreground/40 font-mono leading-relaxed">
                 To add models: <code className="text-green-400/60">ollama pull llama3.2</code> or <code className="text-green-400/60">ollama pull mistral</code>. Zara will use the first available model unless you set a preferred one via <code className="text-primary/50">ollama run &lt;model&gt;</code>.
               </p>
@@ -611,7 +611,7 @@ export default function AIProviders() {
         </Card>
 
         {/* ── How to install Ollama ── */}
-        <Card className="bg-card/40 border-white/5 backdrop-blur">
+        <Card className="bg-white border-slate-100 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Server className="w-4 h-4 text-primary" />
@@ -622,7 +622,7 @@ export default function AIProviders() {
             <p className="text-xs text-muted-foreground font-mono leading-relaxed">
               Ollama is the recommended path to real local AI. Install it, pull a model, and Zara will automatically detect and use it.
             </p>
-            <div className="bg-black/60 rounded-lg p-4 font-mono text-xs text-green-300/80 flex flex-col gap-1.5 border border-white/5">
+            <div className="rounded-lg p-4 font-mono text-xs text-green-700 flex flex-col gap-1.5" style={{ background: "linear-gradient(145deg,#1e2a1e,#151f15)", border: "1px solid rgba(34,197,94,0.15)" }}>
               <span className="text-muted-foreground/50"># Install Ollama (Linux / macOS)</span>
               <span>curl -fsSL https://ollama.com/install.sh | sh</span>
               <span className="text-muted-foreground/50 mt-1"># Pull a model (choose one)</span>
@@ -668,7 +668,7 @@ export default function AIProviders() {
         </Card>
 
         {/* ── Memory Panel ── */}
-        <Card className="bg-card/40 border-white/5 backdrop-blur">
+        <Card className="bg-white border-slate-100 shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
@@ -698,7 +698,7 @@ export default function AIProviders() {
                 ].map(({ label, value }) => (
                   <div key={label} className="flex flex-col gap-1">
                     <span className="text-muted-foreground/50 uppercase tracking-widest text-[9px]">{label}</span>
-                    <span className="text-white text-lg font-bold">{value}</span>
+                    <span className="text-slate-800 text-lg font-bold">{value}</span>
                   </div>
                 ))}
               </div>

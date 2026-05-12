@@ -46,7 +46,7 @@ function SkillCard({ skill, onExecute }: { skill: ZaraSkill; onExecute: (skill: 
 
   return (
     <Card
-      className={`bg-card/40 border-white/5 backdrop-blur hover:border-white/10 transition-all duration-200 group ${
+      className={`bg-white border-slate-100 hover:border-indigo-200 transition-all duration-200 group shadow-sm ${
         !skill.enabled ? "opacity-50" : ""
       }`}
       data-testid={`skill-card-${skill.id}`}
@@ -76,7 +76,7 @@ function SkillCard({ skill, onExecute }: { skill: ZaraSkill; onExecute: (skill: 
                 </span>
               )}
             </div>
-            <h3 className="font-bold text-white text-sm leading-tight">{skill.name}</h3>
+            <h3 className="font-bold text-slate-800 text-sm leading-tight">{skill.name}</h3>
           </div>
           {/* Category pill */}
           <span className={`flex-shrink-0 text-[10px] font-mono px-2 py-0.5 rounded-full border ${categoryMeta.color} ${categoryMeta.bgColor} ${categoryMeta.borderColor}`}>
@@ -116,7 +116,7 @@ function SkillCard({ skill, onExecute }: { skill: ZaraSkill; onExecute: (skill: 
             {skill.permissions.map((perm) => (
               <span
                 key={perm}
-                className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/8 text-muted-foreground"
+                className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200 text-muted-foreground"
               >
                 {PERMISSION_ICONS[perm]}
                 {perm.replace("_", " ")}
@@ -155,7 +155,7 @@ function SkillCard({ skill, onExecute }: { skill: ZaraSkill; onExecute: (skill: 
           disabled={!skill.enabled || skill.status === "future"}
           className={`w-full mt-1 text-xs font-medium border transition-all duration-200 ${
             skill.status === "future"
-              ? "border-white/8 text-muted-foreground/40 cursor-not-allowed"
+              ? "border-slate-100 text-muted-foreground/40 cursor-not-allowed"
               : skill.dangerous
               ? "border-red-500/20 text-red-400/70 hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/8"
               : "border-primary/15 text-primary/60 hover:border-primary/35 hover:text-primary hover:bg-primary/8"
@@ -219,7 +219,7 @@ export default function Skills() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end gap-4">
           <div className="flex-1">
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
+            <h1 className="text-4xl font-bold text-slate-800 mb-2 flex items-center gap-3">
               <Zap className="w-9 h-9 text-primary" />
               Zara Skills Hub
             </h1>
@@ -231,7 +231,7 @@ export default function Skills() {
           {/* Stats */}
           <div className="flex items-center gap-4 text-sm font-mono">
             <div className="text-center">
-              <div className="text-white font-bold text-lg">{stats.total}</div>
+              <div className="text-slate-800 font-bold text-lg">{stats.total}</div>
               <div className="text-muted-foreground text-[10px] uppercase tracking-wide">Total</div>
             </div>
             <div className="text-center">
@@ -253,7 +253,7 @@ export default function Skills() {
         {lastResult && (
           <div className="flex items-start gap-3 bg-primary/8 border border-primary/20 rounded-lg px-4 py-3 animate-in fade-in duration-200">
             <Zap className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-white font-mono">{lastResult}</p>
+            <p className="text-sm text-slate-700 font-mono">{lastResult}</p>
           </div>
         )}
 
@@ -265,7 +265,7 @@ export default function Skills() {
               placeholder="Search skills by name, description, or voice command..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-card/40 border-white/10 text-white placeholder:text-muted-foreground/40 font-mono text-sm"
+              className="pl-10 bg-white border-slate-200 text-slate-800 placeholder:text-muted-foreground/40 font-mono text-sm"
               data-testid="skill-search"
             />
           </div>
@@ -280,7 +280,7 @@ export default function Skills() {
             className={`text-xs font-mono border transition-all ${
               selectedCategory === "all"
                 ? "border-primary/30 bg-primary/10 text-primary"
-                : "border-white/8 text-muted-foreground hover:text-white hover:border-white/15"
+                : "border-slate-200 text-muted-foreground hover:text-slate-900 hover:border-slate-300"
             }`}
             data-testid="category-all"
           >
@@ -299,7 +299,7 @@ export default function Skills() {
                 className={`text-xs font-mono border transition-all ${
                   selectedCategory === cat
                     ? `${meta.borderColor} ${meta.bgColor} ${meta.color}`
-                    : "border-white/8 text-muted-foreground hover:text-white hover:border-white/15"
+                    : "border-slate-200 text-muted-foreground hover:text-slate-900 hover:border-slate-300"
                 }`}
                 data-testid={`category-${cat}`}
               >

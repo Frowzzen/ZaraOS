@@ -183,7 +183,7 @@ export function GlobalCommandBox() {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto" />
+      <div className="absolute inset-0 backdrop-blur-sm pointer-events-auto" style={{ background: "rgba(238,240,248,0.55)" }} />
 
       {/* Panel */}
       <div
@@ -191,16 +191,16 @@ export function GlobalCommandBox() {
         className="relative w-full max-w-2xl mx-4 mb-8 pointer-events-auto animate-in slide-in-from-bottom-6 fade-in duration-200"
       >
         {/* Header bar */}
-        <div className="flex items-center justify-between px-4 py-2 bg-card/90 border border-white/10 border-b-0 rounded-t-2xl backdrop-blur-xl">
+        <div className="flex items-center justify-between px-4 py-2 border-b-0 rounded-t-2xl" style={{ background: "rgba(255,255,255,0.96)", border: "1px solid rgba(148,163,184,0.15)", borderBottom: "none" }}>
           <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
-            <Terminal className="w-3.5 h-3.5 text-primary" />
-            <span className="text-primary/80">ZARA COMMAND</span>
-            <span className="text-white/20 px-1">|</span>
+            <Terminal className="w-3.5 h-3.5 text-indigo-500" />
+            <span className="font-semibold text-indigo-600/80">ZARA COMMAND</span>
+            <span className="text-slate-300 px-1">|</span>
             <span>Ctrl+Space to toggle</span>
             {isVoiceListening && (
               <>
-                <span className="text-white/20 px-1">|</span>
-                <span className="text-amber-400 flex items-center gap-1.5">
+                <span className="text-slate-300 px-1">|</span>
+                <span className="text-amber-500 flex items-center gap-1.5">
                   <VoiceWaveform active={isVoiceListening} color="amber" size="xs" />
                   LISTENING
                 </span>
@@ -213,7 +213,7 @@ export function GlobalCommandBox() {
             </span>
             <button
               onClick={closeCommandBox}
-              className="text-muted-foreground hover:text-white transition-colors p-1 rounded"
+              className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded"
               data-testid="button-close-command-box"
             >
               <X className="w-3.5 h-3.5" />
@@ -222,10 +222,10 @@ export function GlobalCommandBox() {
         </div>
 
         {/* Main panel */}
-        <div className="bg-card/95 border border-white/10 border-t-0 rounded-b-2xl backdrop-blur-xl overflow-hidden shadow-2xl shadow-black/50">
+        <div className="border-t-0 rounded-b-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.97)", border: "1px solid rgba(148,163,184,0.15)", borderTop: "none", boxShadow: "0 16px 48px rgba(148,163,184,0.38), 0 6px 16px rgba(148,163,184,0.20), -4px -4px 20px rgba(255,255,255,0.88)" }}>
           {/* History */}
           {history.length > 0 && (
-            <div className="px-4 pt-3 pb-1 flex flex-col gap-1.5 border-b border-white/5">
+            <div className="px-4 pt-3 pb-1 flex flex-col gap-1.5 border-b border-slate-100">
               {history.slice(0, 3).map((entry, i) => (
                 <button
                   key={i}
@@ -235,7 +235,7 @@ export function GlobalCommandBox() {
                 >
                   <Clock className="w-3 h-3 text-muted-foreground/40 mt-0.5 flex-shrink-0" />
                   <div className="min-w-0">
-                    <div className="text-xs font-mono text-muted-foreground/60 group-hover:text-white/60 transition-colors truncate">
+                    <div className="text-xs font-mono text-slate-400 group-hover:text-slate-700 transition-colors truncate">
                       {entry.input}
                     </div>
                     <div className="text-[10px] text-muted-foreground/30 truncate">
@@ -254,7 +254,7 @@ export function GlobalCommandBox() {
               <AlertTriangle className="w-3 h-3 flex-shrink-0" />
               <span className="flex-1">{voiceError}</span>
               <button
-                className="text-muted-foreground/40 hover:text-white text-[10px]"
+                className="text-muted-foreground/40 hover:text-slate-700 text-[10px]"
                 onClick={() => setVoiceError(null)}
               >
                 dismiss
@@ -271,8 +271,8 @@ export function GlobalCommandBox() {
               onChange={(e) => !isVoiceListening && setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={isVoiceListening ? "Speak your command..." : "Type any command or question..."}
-              className={`flex-1 bg-transparent text-base placeholder:text-muted-foreground/40 outline-none font-sans ${
-                isVoiceListening && interimTranscript ? "text-amber-300/80 italic" : "text-white"
+              className={`flex-1 bg-transparent text-base placeholder:text-slate-300 outline-none font-sans ${
+                isVoiceListening && interimTranscript ? "text-violet-600 italic" : "text-slate-800"
               }`}
               data-testid="input-global-command"
               disabled={isProcessing}
@@ -283,8 +283,8 @@ export function GlobalCommandBox() {
                 <button
                   className={`transition-colors p-1 rounded ${
                     isVoiceListening
-                      ? "text-amber-400 hover:text-amber-300"
-                      : "text-muted-foreground/40 hover:text-amber-400"
+                      ? "text-amber-500 hover:text-amber-600"
+                      : "text-slate-300 hover:text-amber-500"
                   }`}
                   onClick={toggleVoice}
                   title={isVoiceListening ? "Stop listening" : "Voice input"}
@@ -318,7 +318,8 @@ export function GlobalCommandBox() {
               <button
                 key={cmd}
                 onClick={() => setInput(cmd)}
-                className="text-[11px] font-mono text-muted-foreground/50 bg-white/5 hover:bg-white/10 hover:text-white px-2 py-0.5 rounded border border-white/10 transition-colors"
+                className="text-[11px] font-mono text-slate-400 hover:text-indigo-600 px-2 py-0.5 rounded transition-colors"
+                style={{ background: "linear-gradient(145deg, #ffffff, #f0f2f8)", border: "1px solid rgba(148,163,184,0.20)", boxShadow: "2px 2px 5px rgba(166,180,200,0.25), -1px -1px 4px rgba(255,255,255,0.80)" }}
                 data-testid={`cmd-suggestion-${cmd.replace(/\s+/g, "-")}`}
               >
                 {cmd}
@@ -327,7 +328,7 @@ export function GlobalCommandBox() {
           </div>
 
           {/* Status line */}
-          <div className="px-4 py-2 border-t border-white/5 flex items-center justify-between">
+          <div className="px-4 py-2 border-t border-slate-100 flex items-center justify-between">
             <span className="text-[10px] font-mono text-muted-foreground/30">
               {voiceEngine.isSupported
                 ? "Voice + text input — routes through Zara Runtime"

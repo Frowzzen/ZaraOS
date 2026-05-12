@@ -55,12 +55,12 @@ function StatCard({
   sub?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1 p-4 rounded-xl bg-black/40 border border-white/5">
+    <div className="flex flex-col gap-1 p-4 rounded-xl" style={{ background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.18)", boxShadow: "3px 3px 10px rgba(166,180,200,0.25), -2px -2px 8px rgba(255,255,255,0.88)" }}>
       <div className="flex items-center gap-2">
         <Icon className={`w-3.5 h-3.5 ${color}`} />
         <span className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-widest">{label}</span>
       </div>
-      <span className="text-2xl font-bold text-white">{value}</span>
+      <span className={`text-2xl font-bold ${color}`}>{value}</span>
       {sub && <span className="text-[10px] font-mono text-muted-foreground/40">{sub}</span>}
     </div>
   );
@@ -87,12 +87,12 @@ function ConfirmDialog({
   };
   if (!target) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-800/40 backdrop-blur-sm">
       <div className="bg-card border border-red-500/20 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl shadow-red-900/20">
         <div className="flex items-start gap-3 mb-4">
           <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="text-white font-bold text-base mb-1">{titles[target]}</h3>
+            <h3 className="text-slate-800 font-bold text-base mb-1">{titles[target]}</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">{descriptions[target]}</p>
           </div>
         </div>
@@ -105,7 +105,7 @@ function ConfirmDialog({
         <div className="flex gap-3">
           <Button
             variant="ghost"
-            className="flex-1 border border-white/10 hover:bg-white/5"
+            className="flex-1 border border-slate-200 hover:bg-slate-50"
             onClick={onCancel}
           >
             Cancel
@@ -240,7 +240,7 @@ export default function Memory() {
 
         {/* ── Header ── */}
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
+          <h1 className="text-4xl font-bold text-slate-800 mb-2 flex items-center gap-3">
             <Brain className="w-10 h-10 text-primary" />
             Memory
           </h1>
@@ -258,11 +258,11 @@ export default function Memory() {
         </div>
 
         {/* ── Memory Toggle ── */}
-        <Card className="bg-card/40 border-white/5 backdrop-blur">
+        <Card className="bg-white border-slate-100 shadow-sm">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-white font-semibold">Conversation Memory</p>
+                <p className="text-slate-800 font-semibold">Conversation Memory</p>
                 <p className="text-xs text-muted-foreground font-mono mt-0.5">
                   {memoryEnabled
                     ? "Memory is active — Zara remembers this session"
@@ -294,7 +294,7 @@ export default function Memory() {
           <StatCard icon={FileText} label="Total Entries" value={stats?.totalEntries ?? 0} color="text-primary" />
           <StatCard icon={Clock} label="Persistent" value={stats?.persistentEntries ?? 0} color="text-cyan-400" />
           <StatCard icon={Database} label="Session" value={stats?.sessionEntries ?? 0} color="text-muted-foreground" />
-          <div className="flex flex-col gap-1 p-4 rounded-xl bg-black/40 border border-white/5">
+          <div className="flex flex-col gap-1 p-4 rounded-xl" style={{ background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.18)", boxShadow: "3px 3px 10px rgba(166,180,200,0.25), -2px -2px 8px rgba(255,255,255,0.88)" }}>
             <div className="flex items-center gap-2">
               <FileText className="w-3.5 h-3.5 text-muted-foreground" />
               <span className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-widest">Session ID</span>
@@ -304,7 +304,7 @@ export default function Memory() {
         </div>
 
         {/* ── Pinned Memories ── */}
-        <Card className="bg-card/40 border-white/5 backdrop-blur">
+        <Card className="bg-white border-slate-100 shadow-sm">
           <CardHeader className="pb-3 cursor-pointer" onClick={() => setShowPinned(!showPinned)}>
             <CardTitle className="text-base flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ export default function Memory() {
                     <div key={entry.id} className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
                       <Pin className="w-3.5 h-3.5 text-amber-400/60 flex-shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-white leading-relaxed">{entry.content}</p>
+                        <p className="text-xs text-slate-700 leading-relaxed">{entry.content}</p>
                         <p className="text-[10px] text-muted-foreground/40 font-mono mt-1">
                           {formatAge(Date.now() - entry.timestamp)}
                         </p>
@@ -343,7 +343,7 @@ export default function Memory() {
         </Card>
 
         {/* ── Recent Memory Entries ── */}
-        <Card className="bg-card/40 border-white/5 backdrop-blur">
+        <Card className="bg-white border-slate-100 shadow-sm">
           <CardHeader className="pb-3 cursor-pointer" onClick={() => setShowRecent(!showRecent)}>
             <CardTitle className="text-base flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -363,7 +363,7 @@ export default function Memory() {
                 <div className="flex flex-col divide-y divide-white/5">
                   {recentEntries.map((entry) => (
                     <div key={entry.id} className="flex items-start gap-3 py-3">
-                      <span className="text-[9px] font-mono text-muted-foreground/40 bg-white/5 px-1.5 py-0.5 rounded mt-0.5 flex-shrink-0 uppercase">
+                      <span className="text-[9px] font-mono text-muted-foreground/40 bg-slate-100 px-1.5 py-0.5 rounded mt-0.5 flex-shrink-0 uppercase">
                         {entry.category}
                       </span>
                       <p className="text-xs text-muted-foreground leading-relaxed flex-1 min-w-0 line-clamp-2">{entry.content}</p>
@@ -379,7 +379,7 @@ export default function Memory() {
         </Card>
 
         {/* ── Skill Usage ── */}
-        <Card className="bg-card/40 border-white/5 backdrop-blur">
+        <Card className="bg-white border-slate-100 shadow-sm">
           <CardHeader className="pb-3 cursor-pointer" onClick={() => setShowSkills(!showSkills)}>
             <CardTitle className="text-base flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -398,16 +398,16 @@ export default function Memory() {
               ) : (
                 <div className="flex flex-col gap-2">
                   {skillUsage.map((record) => (
-                    <div key={record.skillId} className="flex items-center gap-3 p-3 rounded-lg bg-black/30 border border-white/5">
+                    <div key={record.skillId} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
                       <Zap className="w-3.5 h-3.5 text-violet-400/60 flex-shrink-0" />
-                      <span className="text-xs font-mono text-white flex-1">{record.skillId}</span>
+                      <span className="text-xs font-mono text-slate-700 flex-1">{record.skillId}</span>
                       <span className="text-[10px] font-mono text-muted-foreground/40">{record.useCount}x</span>
                       <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${
                         record.lastResult === "success"
                           ? "text-green-400 bg-green-500/10 border-green-500/20"
                           : record.lastResult === "failed"
                           ? "text-red-400 bg-red-500/10 border-red-500/20"
-                          : "text-muted-foreground bg-white/5 border-white/10"
+                          : "text-muted-foreground bg-slate-50 border-slate-200"
                       }`}>
                         {record.lastResult}
                       </span>
@@ -420,7 +420,7 @@ export default function Memory() {
         </Card>
 
         {/* ── Export / Import ── */}
-        <Card className="bg-card/40 border-white/5 backdrop-blur">
+        <Card className="bg-white border-slate-100 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <FileText className="w-4 h-4 text-primary" />
@@ -437,7 +437,7 @@ export default function Memory() {
             <div className="flex gap-3 flex-wrap">
               <Button
                 variant="outline"
-                className="gap-2 border-white/10 text-sm"
+                className="gap-2 border-slate-200 text-sm"
                 onClick={handleExport}
                 data-testid="button-export-memory"
               >
@@ -446,7 +446,7 @@ export default function Memory() {
               </Button>
               <Button
                 variant="outline"
-                className="gap-2 border-white/10 text-sm"
+                className="gap-2 border-slate-200 text-sm"
                 onClick={() => importRef.current?.click()}
                 data-testid="button-import-memory"
               >
@@ -487,9 +487,9 @@ export default function Memory() {
             </p>
             <div className="flex flex-col gap-3">
               {/* Clear session */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-black/30 border border-white/5">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
                 <div>
-                  <p className="text-sm text-white font-medium">Clear Current Session</p>
+                  <p className="text-sm text-slate-800 font-medium">Clear Current Session</p>
                   <p className="text-xs text-muted-foreground font-mono mt-0.5">Erase this conversation. Start a fresh session. Pinned entries preserved.</p>
                 </div>
                 <Button
@@ -505,9 +505,9 @@ export default function Memory() {
               </div>
 
               {/* Clear all history */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-black/30 border border-white/5">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
                 <div>
-                  <p className="text-sm text-white font-medium">Clear All History</p>
+                  <p className="text-sm text-slate-800 font-medium">Clear All History</p>
                   <p className="text-xs text-muted-foreground font-mono mt-0.5">Delete all conversations and entries. Pinned memories survive.</p>
                 </div>
                 <Button

@@ -175,7 +175,7 @@ export default function Developers() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-1 flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-slate-800 mb-1 flex items-center gap-3">
               <Code className="w-8 h-8 text-primary" />
               Developer Portal
             </h1>
@@ -192,7 +192,7 @@ export default function Developers() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 min-h-0">
           {/* Plugin Registry */}
           <div className="col-span-1 lg:col-span-2 flex flex-col gap-5 overflow-y-auto pr-1 pb-8">
-            <h2 className="text-base font-bold text-white flex items-center gap-2 flex-shrink-0">
+            <h2 className="text-base font-bold text-slate-800 flex items-center gap-2 flex-shrink-0">
               <Boxes className="w-4 h-4 text-muted-foreground" />
               Plugin Registry
               <span className="text-xs font-mono text-muted-foreground/50 font-normal ml-1">
@@ -204,7 +204,7 @@ export default function Developers() {
               {MOCK_PLUGINS.map((p) => (
                 <Card
                   key={p.id}
-                  className="bg-card/40 border-white/5 backdrop-blur flex flex-col"
+                  className="bg-white border-slate-100 shadow-sm flex flex-col"
                   data-testid={`plugin-card-${p.id}`}
                 >
                   <CardHeader className="pb-3">
@@ -256,7 +256,7 @@ export default function Developers() {
                         </div>
                         <div className="flex flex-col gap-1">
                           {p.voiceCommands.slice(0, 3).map((cmd) => (
-                            <span key={cmd} className="text-[11px] font-mono bg-black/40 border border-white/10 px-2 py-1 rounded text-gray-300">
+                            <span key={cmd} className="text-[11px] font-mono bg-slate-100 border border-slate-200 px-2 py-1 rounded text-slate-600">
                               "{cmd}"
                             </span>
                           ))}
@@ -270,7 +270,7 @@ export default function Developers() {
                         </div>
                         <div className="flex flex-col gap-1">
                           {p.gestureCommands.slice(0, 3).map((cmd) => (
-                            <span key={cmd} className="text-[11px] font-mono bg-black/40 border border-white/10 px-2 py-1 rounded text-gray-300">
+                            <span key={cmd} className="text-[11px] font-mono bg-slate-100 border border-slate-200 px-2 py-1 rounded text-slate-600">
                               {cmd}
                             </span>
                           ))}
@@ -287,7 +287,7 @@ export default function Developers() {
                         {p.permissions.map((perm) => (
                           <span
                             key={perm}
-                            className="flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded border border-white/10 bg-white/5 text-muted-foreground"
+                            className="flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-muted-foreground"
                           >
                             {PERMISSION_ICONS[perm]}
                             {perm.replace("_", " ")}
@@ -302,7 +302,7 @@ export default function Developers() {
                     </div>
                   </CardContent>
 
-                  <CardFooter className="pt-4 border-t border-white/5 gap-2">
+                  <CardFooter className="pt-4 border-t border-slate-100 gap-2">
                     <span className="text-[10px] font-mono text-muted-foreground/40 mr-auto">
                       by {p.developer}
                     </span>
@@ -310,7 +310,7 @@ export default function Developers() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-white/10 text-red-400 hover:bg-red-500/10 hover:text-red-400"
+                        className="border-red-200 text-red-400 hover:bg-red-50 hover:text-red-500"
                         data-testid={`button-uninstall-${p.id}`}
                       >
                         Uninstall
@@ -401,8 +401,8 @@ export default function Developers() {
             </div>
 
             {/* Ecosystem preview */}
-            <div className="p-4 rounded-xl border border-white/5 bg-card/20 backdrop-blur flex flex-col gap-3">
-              <h3 className="font-bold text-white text-sm">Zara Store — Coming Soon</h3>
+            <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 flex flex-col gap-3">
+              <h3 className="font-bold text-slate-800 text-sm">Zara Store — Coming Soon</h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 ZaraOS will support a curated store for:
               </p>

@@ -104,15 +104,15 @@ export function ConnectAIPanel({ onConnected }: ConnectAIPanelProps) {
   return (
     <div className="mt-4 mb-2 rounded-xl border border-primary/20 bg-background/60 backdrop-blur-md overflow-hidden">
       {/* ── Tab bar ── */}
-      <div className="flex border-b border-white/5">
+      <div className="flex border-b border-slate-100">
         {CLOUD_PROVIDERS.map((p) => (
           <button
             key={p.id}
             onClick={() => { setTab(p.id); setStatus("idle"); setStatusMsg(""); }}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-mono border-r border-white/5 transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-mono border-r border-slate-100 transition-colors ${
               tab === p.id
                 ? "bg-primary/10 text-primary border-b-2 border-b-primary"
-                : "text-muted-foreground hover:text-white hover:bg-white/5"
+                : "text-muted-foreground hover:text-slate-900 hover:bg-slate-50"
             }`}
           >
             <Cloud className="w-3 h-3" />
@@ -124,7 +124,7 @@ export function ConnectAIPanel({ onConnected }: ConnectAIPanelProps) {
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-mono transition-colors ${
             tab === "ollama"
               ? "bg-primary/10 text-primary border-b-2 border-b-primary"
-              : "text-muted-foreground hover:text-white hover:bg-white/5"
+              : "text-muted-foreground hover:text-slate-900 hover:bg-slate-50"
           }`}
         >
           <Cpu className="w-3 h-3" />
@@ -147,7 +147,7 @@ export function ConnectAIPanel({ onConnected }: ConnectAIPanelProps) {
                   value={apiKey}
                   onChange={(e) => { setApiKey(e.target.value); setStatus("idle"); }}
                   placeholder={providerMeta?.keyHint ?? "API key..."}
-                  className="pl-9 h-9 bg-background border-white/10 text-sm font-mono"
+                  className="pl-9 h-9 bg-white border-slate-200 text-sm font-mono"
                   onKeyDown={(e) => e.key === "Enter" && handleConnectCloud()}
                   disabled={status === "checking" || status === "success"}
                 />
@@ -229,7 +229,7 @@ export function ConnectAIPanel({ onConnected }: ConnectAIPanelProps) {
         {/* ── Status feedback ── */}
         {status !== "idle" && statusMsg && (
           <div className={`mt-3 flex items-center gap-2 text-[11px] font-mono px-3 py-2 rounded-lg border ${
-            status === "checking" ? "border-white/10 text-muted-foreground bg-white/5" :
+            status === "checking" ? "border-slate-200 text-muted-foreground bg-slate-50" :
             status === "success"  ? "border-green-500/30 text-green-400 bg-green-500/10" :
                                     "border-red-500/30 text-red-400 bg-red-500/10"
           }`}>

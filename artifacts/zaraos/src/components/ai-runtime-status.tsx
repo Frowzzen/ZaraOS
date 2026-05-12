@@ -66,12 +66,12 @@ export function AIRuntimeStatus({ compact = false }: AIRuntimeStatusProps) {
   }
 
   return (
-    <div className="rounded-xl border border-white/5 bg-card/30 backdrop-blur p-4 flex flex-col gap-3">
+    <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.18)", boxShadow: "3px 3px 10px rgba(166,180,200,0.25), -2px -2px 8px rgba(255,255,255,0.88)" }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Brain className="w-4 h-4 text-primary" />
-          <span className="text-sm font-semibold text-white">AI Runtime</span>
+          <span className="text-sm font-semibold text-slate-800">AI Runtime</span>
         </div>
         <span className={`text-[10px] font-mono ${phaseColors[phase]}`}>
           {phaseLabel[phase]}
@@ -84,14 +84,14 @@ export function AIRuntimeStatus({ compact = false }: AIRuntimeStatusProps) {
           <span className="text-muted-foreground/50 uppercase tracking-widest text-[9px]">Provider</span>
           <div className="flex items-center gap-1.5">
             <Cpu className="w-3 h-3 text-primary/60 flex-shrink-0" />
-            <span className="text-white/80 truncate">{providerName}</span>
+            <span className="text-slate-600 truncate">{providerName}</span>
           </div>
         </div>
         <div className="flex flex-col gap-0.5">
           <span className="text-muted-foreground/50 uppercase tracking-widest text-[9px]">Model</span>
           <div className="flex items-center gap-1.5">
             <Zap className="w-3 h-3 text-primary/60 flex-shrink-0" />
-            <span className="text-white/80 truncate">{modelId}</span>
+            <span className="text-slate-600 truncate">{modelId}</span>
           </div>
         </div>
       </div>
@@ -102,19 +102,19 @@ export function AIRuntimeStatus({ compact = false }: AIRuntimeStatusProps) {
           <span className="text-muted-foreground/50 uppercase tracking-widest text-[9px]">Tokens</span>
           <div className="flex items-center gap-1">
             <Database className="w-3 h-3 text-primary/60 flex-shrink-0" />
-            <span className="text-white/70">{(memoryTokens ?? 0).toLocaleString()}</span>
+            <span className="text-slate-600">{(memoryTokens ?? 0).toLocaleString()}</span>
           </div>
         </div>
         <div className="flex flex-col gap-0.5">
           <span className="text-muted-foreground/50 uppercase tracking-widest text-[9px]">Turns</span>
-          <span className="text-white/70">{conversationTurns ?? 0}</span>
+          <span className="text-slate-600">{conversationTurns ?? 0}</span>
         </div>
         {latencyMs !== undefined && (
           <div className="flex flex-col gap-0.5">
             <span className="text-muted-foreground/50 uppercase tracking-widest text-[9px]">Latency</span>
             <div className="flex items-center gap-1">
               <Clock className="w-3 h-3 text-primary/60 flex-shrink-0" />
-              <span className="text-white/70">{latencyMs}ms</span>
+              <span className="text-slate-600">{latencyMs}ms</span>
             </div>
           </div>
         )}

@@ -57,7 +57,7 @@ const MODELS = [
     ram: "—",
     description: "Continue without pulling a model. You can do this later in AI Providers.",
     badge: "Later",
-    badgeColor: "text-muted-foreground border-white/10 bg-white/5",
+    badgeColor: "text-muted-foreground border-slate-200 bg-slate-50",
   },
 ] as const;
 
@@ -134,17 +134,17 @@ export function FirstBootSetup({ onComplete }: FirstBootSetupProps) {
   if (!checked || !visible) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-      <div className="bg-card border border-white/10 rounded-2xl shadow-2xl shadow-black/60 w-full max-w-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed inset-0 backdrop-blur-sm z-[200] flex items-center justify-center p-4" style={{ background: "rgba(100,116,139,0.30)" }}>
+      <div className="w-full max-w-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300" style={{ background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.22)", borderRadius: 24, boxShadow: "8px 8px 30px rgba(166,180,200,0.45), -6px -6px 20px rgba(255,255,255,0.95)" }}>
 
         {/* Header */}
-        <div className="px-8 pt-8 pb-6 border-b border-white/5">
+        <div className="px-8 pt-8 pb-6 border-b border-slate-100">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/25">
               <span className="font-mono font-bold text-primary-foreground text-xl">Z</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Welcome to ZaraOS</h1>
+              <h1 className="text-xl font-bold text-slate-800">Welcome to ZaraOS</h1>
               <p className="text-xs font-mono text-muted-foreground/60">First launch — local AI setup</p>
             </div>
           </div>
@@ -174,17 +174,17 @@ export function FirstBootSetup({ onComplete }: FirstBootSetupProps) {
                   className={`w-full text-left p-4 rounded-xl border transition-all duration-150 ${
                     selected === model.id
                       ? "border-primary/40 bg-primary/8"
-                      : "border-white/8 bg-black/20 hover:border-white/15"
+                      : "border-slate-200 bg-white hover:border-indigo-200"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
-                        selected === model.id ? "border-primary bg-primary" : "border-white/20"
+                        selected === model.id ? "border-primary bg-primary" : "border-slate-300"
                       }`} />
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-white text-sm">{model.name}</span>
+                          <span className="font-semibold text-slate-800 text-sm">{model.name}</span>
                           <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${model.badgeColor}`}>
                             {model.badge}
                           </span>
@@ -219,7 +219,7 @@ export function FirstBootSetup({ onComplete }: FirstBootSetupProps) {
               </div>
               <div
                 ref={logRef}
-                className="bg-black/60 border border-white/8 rounded-xl p-4 h-48 overflow-y-auto"
+                className="rounded-xl p-4 h-48 overflow-y-auto font-mono text-xs text-green-700" style={{ background: "linear-gradient(145deg,#1a2a1a,#111a11)", border: "1px solid rgba(34,197,94,0.15)" }}
               >
                 {log.map((line, i) => (
                   <div key={i} className="text-xs font-mono text-green-400/80 leading-relaxed">
@@ -244,7 +244,7 @@ export function FirstBootSetup({ onComplete }: FirstBootSetupProps) {
             {phase === "select" && (
               <Button
                 variant="ghost"
-                className="text-muted-foreground/50 hover:text-white"
+                className="text-muted-foreground/50 hover:text-slate-700"
                 onClick={finalize}
               >
                 Skip

@@ -161,7 +161,7 @@ export default function Files() {
     return (
       <Layout>
         <div className="flex flex-col h-full max-w-6xl mx-auto gap-6">
-          <div className="flex justify-between items-center bg-card p-4 rounded-xl border border-white/5">
+          <div className="flex justify-between items-center p-4 rounded-xl" style={{ background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.18)", boxShadow: "3px 3px 10px rgba(166,180,200,0.28), -2px -2px 8px rgba(255,255,255,0.88)" }}>
             <div className="flex items-center gap-3 text-sm font-mono text-muted-foreground">
               <HardDrive className="w-4 h-4 text-primary" />
               <span>/home/zaraos/</span>
@@ -173,7 +173,7 @@ export default function Files() {
               <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
                 <Lock className="w-8 h-8 text-amber-400" />
               </div>
-              <h2 className="text-xl font-bold text-white">Native App Required</h2>
+              <h2 className="text-xl font-bold text-slate-800">Native App Required</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Real file system access requires the Tauri desktop app.
                 Build ZaraOS natively with{" "}
@@ -189,9 +189,9 @@ export default function Files() {
           {/* Mock folder grid shown as reference */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 opacity-30 pointer-events-none">
             {["Documents", "Downloads", "Pictures", "Music", "Videos"].map((name) => (
-              <div key={name} className="bg-card/30 border border-white/5 rounded-xl p-4 flex flex-col items-center gap-3">
+              <div key={name} className="rounded-xl p-4 flex flex-col items-center gap-3" style={{ background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.16)", boxShadow: "3px 3px 10px rgba(166,180,200,0.25), -2px -2px 8px rgba(255,255,255,0.88)" }}>
                 <Folder className="w-10 h-10 text-amber-400" />
-                <span className="text-sm font-bold text-white">{name}</span>
+                <span className="text-sm font-bold text-slate-700">{name}</span>
               </div>
             ))}
           </div>
@@ -206,11 +206,11 @@ export default function Files() {
       <div className="flex flex-col h-full max-w-7xl mx-auto gap-4">
 
         {/* ── Toolbar ── */}
-        <div className="flex items-center gap-2 bg-card/50 px-3 py-2.5 rounded-xl border border-white/5">
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.18)", boxShadow: "3px 3px 10px rgba(166,180,200,0.25), -2px -2px 8px rgba(255,255,255,0.85)" }}>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-white"
+            className="h-8 w-8 text-muted-foreground hover:text-slate-900"
             onClick={goUp}
             disabled={currentPath === "/"}
             title="Go up"
@@ -226,7 +226,7 @@ export default function Files() {
                 {i > 0 && <ChevronRight className="w-3 h-3 text-muted-foreground/30" />}
                 <button
                   onClick={() => navigateTo(crumb.path)}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-slate-900 transition-colors"
                 >
                   {crumb.label}
                 </button>
@@ -237,7 +237,7 @@ export default function Files() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-white flex-shrink-0"
+            className="h-8 w-8 text-muted-foreground hover:text-slate-900 flex-shrink-0"
             onClick={() => void loadDir(currentPath)}
             title="Refresh"
           >
@@ -249,7 +249,7 @@ export default function Files() {
         <div className="flex-1 flex gap-4 min-h-0">
 
           {/* File list */}
-          <div className="flex-1 bg-card/20 border border-white/5 rounded-xl overflow-hidden flex flex-col min-w-0">
+          <div className="flex-1 rounded-xl overflow-hidden flex flex-col min-w-0" style={{ background: "linear-gradient(145deg,#fafbfe,#f5f6fb)", border: "1px solid rgba(148,163,184,0.16)", boxShadow: "inset 2px 2px 6px rgba(166,180,200,0.18), inset -1px -1px 4px rgba(255,255,255,0.80)" }}>
             {loading && (
               <div className="flex-1 flex items-center justify-center">
                 <Loader2 className="w-6 h-6 text-primary animate-spin" />
@@ -260,7 +260,7 @@ export default function Files() {
               <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center p-6">
                 <AlertTriangle className="w-8 h-8 text-red-400" />
                 <p className="text-sm font-mono text-red-400/80">{error}</p>
-                <Button variant="outline" size="sm" onClick={() => void loadDir(currentPath)} className="border-white/10">
+                <Button variant="outline" size="sm" onClick={() => void loadDir(currentPath)} className="border-slate-200">
                   Retry
                 </Button>
               </div>
@@ -274,7 +274,7 @@ export default function Files() {
                   </div>
                 ) : (
                   <table className="w-full text-sm">
-                    <thead className="text-xs text-muted-foreground bg-black/40 font-mono sticky top-0">
+                    <thead className="text-xs text-muted-foreground bg-slate-100/80 font-mono sticky top-0">
                       <tr>
                         <th className="px-4 py-2.5 font-normal text-left">Name</th>
                         <th className="px-4 py-2.5 font-normal text-right hidden md:table-cell">Size</th>
@@ -287,8 +287,8 @@ export default function Files() {
                           key={entry.path}
                           className={`cursor-pointer transition-colors ${
                             selected === entry.path
-                              ? "bg-primary/10 text-white"
-                              : "hover:bg-white/5 text-gray-300"
+                              ? "bg-indigo-50 text-indigo-700"
+                              : "hover:bg-slate-100/60 text-slate-600"
                           }`}
                           onClick={() => setSelected(entry.path)}
                           onDoubleClick={() => void handleEntryDoubleClick(entry)}
@@ -296,7 +296,7 @@ export default function Files() {
                           <td className="px-4 py-2.5">
                             <div className="flex items-center gap-2.5">
                               <FileIcon name={entry.name} isDir={entry.isDir} />
-                              <span className={entry.isDir ? "font-medium text-white" : ""}>
+                              <span className={entry.isDir ? "font-medium text-slate-800" : ""}>
                                 {entry.name}
                               </span>
                             </div>
@@ -318,14 +318,14 @@ export default function Files() {
 
           {/* File preview panel */}
           {(preview || previewLoading) && (
-            <div className="w-96 bg-card/30 border border-white/5 rounded-xl flex flex-col overflow-hidden flex-shrink-0">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-black/30">
+            <div className="w-96 rounded-xl flex flex-col overflow-hidden flex-shrink-0" style={{ background: "linear-gradient(145deg,#fafbfe,#f5f6fb)", border: "1px solid rgba(148,163,184,0.16)" }}>
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100" style={{ background: "rgba(248,249,254,0.90)" }}>
                 <span className="text-xs font-mono text-muted-foreground truncate">
                   {preview?.name ?? "Loading..."}
                 </span>
                 <button
                   onClick={() => setPreview(null)}
-                  className="text-muted-foreground/40 hover:text-white transition-colors ml-2"
+                  className="text-muted-foreground/40 hover:text-slate-700 transition-colors ml-2"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>

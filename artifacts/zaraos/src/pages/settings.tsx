@@ -126,7 +126,7 @@ export default function Settings() {
 
         {/* ── Settings Sidebar ── */}
         <div className="w-56 flex-shrink-0 flex flex-col gap-2">
-          <h1 className="text-2xl font-bold text-white mb-4">Settings</h1>
+          <h1 className="text-2xl font-bold text-slate-800 mb-4">Settings</h1>
           <nav className="flex flex-col gap-1">
             {TABS.map((tab) => (
               <button
@@ -135,7 +135,7 @@ export default function Settings() {
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-left transition-all duration-200
                   ${activeTab === tab.id
                     ? "bg-primary/10 text-primary border border-primary/20 shadow-[inset_0_0_15px_rgba(0,240,255,0.05)]"
-                    : "text-muted-foreground hover:text-white hover:bg-white/5 border border-transparent"
+                    : "text-muted-foreground hover:text-slate-900 hover:bg-slate-50 border border-transparent"
                   }`}
                 data-testid={`settings-tab-${tab.id}`}
               >
@@ -145,11 +145,11 @@ export default function Settings() {
             ))}
           </nav>
 
-          <div className="mt-auto p-4 rounded-xl bg-card border border-white/5">
+          <div className="mt-auto p-4 rounded-xl bg-white border border-slate-100">
             <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-2">About</div>
-            <div className="text-sm text-white font-medium">ZaraOS Alpha</div>
+            <div className="text-sm text-slate-800 font-medium">ZaraOS Alpha</div>
             <div className="text-xs text-muted-foreground font-mono mt-0.5">v0.1.0-build.842</div>
-            <Button variant="outline" size="sm" className="w-full mt-3 border-white/10 hover:bg-white/5">
+            <Button variant="outline" size="sm" className="w-full mt-3 border-slate-200 hover:bg-slate-50">
               Check Updates
             </Button>
           </div>
@@ -163,19 +163,19 @@ export default function Settings() {
             {activeTab === "general" && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col gap-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-1">General</h2>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-1">General</h2>
                   <p className="text-muted-foreground text-sm">Basic system configuration and preferences.</p>
                 </div>
-                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                <Card className="bg-white border-slate-100 shadow-sm">
                   <CardHeader><CardTitle className="text-base">Language & Region</CardTitle></CardHeader>
                   <CardContent className="flex flex-col gap-4">
                     <div className="grid grid-cols-[1fr_180px] gap-4 items-center">
                       <div>
-                        <div className="text-sm font-medium text-white">System Language</div>
+                        <div className="text-sm font-medium text-slate-800">System Language</div>
                         <div className="text-xs text-muted-foreground">Primary interface language</div>
                       </div>
                       <Select defaultValue="en-us">
-                        <SelectTrigger className="bg-black/50 border-white/10">
+                        <SelectTrigger className="bg-white border-slate-200">
                           <SelectValue placeholder="Select Language" />
                         </SelectTrigger>
                         <SelectContent>
@@ -185,9 +185,9 @@ export default function Settings() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="grid grid-cols-[1fr_auto] gap-4 items-center border-t border-white/5 pt-4">
+                    <div className="grid grid-cols-[1fr_auto] gap-4 items-center border-t border-slate-100 pt-4">
                       <div>
-                        <div className="text-sm font-medium text-white">Time Zone</div>
+                        <div className="text-sm font-medium text-slate-800">Time Zone</div>
                         <div className="text-xs text-muted-foreground">Set local time automatically</div>
                       </div>
                       <Switch defaultChecked />
@@ -201,23 +201,23 @@ export default function Settings() {
             {activeTab === "appearance" && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col gap-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-1">Appearance</h2>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-1">Appearance</h2>
                   <p className="text-muted-foreground text-sm">Visual styling and UI density.</p>
                 </div>
-                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                <Card className="bg-white border-slate-100 shadow-sm">
                   <CardContent className="pt-6 flex flex-col gap-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-sm font-medium text-white">Theme Mode</div>
+                        <div className="text-sm font-medium text-slate-800">Theme Mode</div>
                         <div className="text-xs text-muted-foreground">ZaraOS is designed for Dark Mode.</div>
                       </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" className="border-primary text-primary bg-primary/10">Dark</Button>
-                        <Button variant="outline" size="sm" className="border-white/10 text-muted-foreground" disabled>Light</Button>
+                        <Button variant="outline" size="sm" className="border-slate-200 text-muted-foreground" disabled>Light</Button>
                       </div>
                     </div>
-                    <div className="border-t border-white/5 pt-6">
-                      <div className="text-sm font-medium text-white mb-1">Accent Color</div>
+                    <div className="border-t border-slate-100 pt-6">
+                      <div className="text-sm font-medium text-slate-800 mb-1">Accent Color</div>
                       <div className="text-xs text-muted-foreground mb-4">Primary UI highlight color</div>
                       <div className="flex gap-3">
                         {[
@@ -240,18 +240,18 @@ export default function Settings() {
             {activeTab === "voice" && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col gap-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-1">Voice</h2>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-1">Voice</h2>
                   <p className="text-muted-foreground text-sm">Assistant voice configuration and audio.</p>
                 </div>
 
                 {/* Hardware status summary */}
-                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                <Card className="bg-white border-slate-100 shadow-sm">
                   <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Cpu className="w-4 h-4 text-primary" />Hardware Status</CardTitle></CardHeader>
                   <CardContent className="pb-6 flex flex-col gap-3">
                     {/* TTS */}
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-sm font-medium text-white">Speaker Output (TTS)</div>
+                        <div className="text-sm font-medium text-slate-800">Speaker Output (TTS)</div>
                         <div className="text-xs text-muted-foreground">
                           {voiceEngine.isTTSSupported
                             ? "speech-dispatcher detected — Zara can speak"
@@ -269,7 +269,7 @@ export default function Settings() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="self-start gap-2 border-white/10 hover:border-primary/50 text-xs font-mono"
+                        className="self-start gap-2 border-slate-200 hover:border-primary/50 text-xs font-mono"
                         onClick={() => voiceEngine.speak("Hello. I am Zara. Audio output is working correctly.", { rate: 0.97, pitch: 1.05 })}
                       >
                         <Volume2 className="w-3.5 h-3.5" />
@@ -283,9 +283,9 @@ export default function Settings() {
                     )}
 
                     {/* Mic */}
-                    <div className="flex items-center justify-between border-t border-white/5 pt-3">
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-3">
                       <div>
-                        <div className="text-sm font-medium text-white">Microphone Input (STT)</div>
+                        <div className="text-sm font-medium text-slate-800">Microphone Input (STT)</div>
                         <div className="text-xs text-muted-foreground">
                           {voiceEngine.isSupported
                             ? "Web Speech API available"
@@ -304,15 +304,15 @@ export default function Settings() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                <Card className="bg-white border-slate-100 shadow-sm">
                   <CardContent className="pt-6 flex flex-col gap-6">
                     <div className="grid grid-cols-[1fr_180px] gap-4 items-center">
                       <div>
-                        <div className="text-sm font-medium text-white">Zara Voice Model</div>
+                        <div className="text-sm font-medium text-slate-800">Zara Voice Model</div>
                         <div className="text-xs text-muted-foreground">Synthesized voice characteristics</div>
                       </div>
                       <Select defaultValue="zara-1">
-                        <SelectTrigger className="bg-black/50 border-white/10">
+                        <SelectTrigger className="bg-white border-slate-200">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -321,17 +321,17 @@ export default function Settings() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="border-t border-white/5 pt-6">
-                      <div className="text-sm font-medium text-white mb-4">Speaking Speed</div>
+                    <div className="border-t border-slate-100 pt-6">
+                      <div className="text-sm font-medium text-slate-800 mb-4">Speaking Speed</div>
                       <div className="flex items-center gap-4">
                         <span className="text-xs font-mono text-muted-foreground w-8">0.5x</span>
                         <Slider defaultValue={[1]} max={2} step={0.1} className="flex-1" />
                         <span className="text-xs font-mono text-muted-foreground w-8">2.0x</span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between border-t border-white/5 pt-6">
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-6">
                       <div>
-                        <div className="text-sm font-medium text-white">Always Listening (Wake Word)</div>
+                        <div className="text-sm font-medium text-slate-800">Always Listening (Wake Word)</div>
                         <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
                           Respond to "Hey Zara"
                           <span className="bg-amber-500/20 text-amber-400 px-1 rounded text-[10px] uppercase">Alpha 0.7</span>
@@ -348,7 +348,7 @@ export default function Settings() {
             {activeTab === "input" && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col gap-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-1">Input Mode</h2>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-1">Input Mode</h2>
                   <p className="text-muted-foreground text-sm">
                     Controls which input channels are active. All modes route through the same Zara Runtime pipeline.
                     Text input is always available as a silent fallback in every mode.
@@ -367,7 +367,7 @@ export default function Settings() {
                         className={`relative p-4 rounded-xl border text-left transition-all duration-200 ${
                           isActive
                             ? `${meta.borderColor} ${meta.bgColor} shadow-lg`
-                            : "border-white/10 bg-card/30 hover:bg-white/5 hover:border-white/20"
+                            : "border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300"
                         }`}
                         data-testid={`input-mode-${m}`}
                       >
@@ -379,7 +379,7 @@ export default function Settings() {
                         <div className={`mb-3 ${isActive ? meta.color : "text-muted-foreground"}`}>
                           {MODE_ICONS[m]}
                         </div>
-                        <div className={`text-sm font-bold ${isActive ? "text-white" : "text-muted-foreground"}`}>
+                        <div className={`text-sm font-bold ${isActive ? "text-slate-900" : "text-muted-foreground"}`}>
                           {meta.label}
                         </div>
                         <div className="text-xs text-muted-foreground/60 mt-1 leading-snug">
@@ -391,7 +391,7 @@ export default function Settings() {
                 </div>
 
                 {/* Hardware toggles */}
-                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                <Card className="bg-white border-slate-100 shadow-sm">
                   <CardHeader>
                     <CardTitle className="text-sm">Hardware Input</CardTitle>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -404,14 +404,14 @@ export default function Settings() {
                     <div className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 ${
                       voiceActive
                         ? "border-amber-500/25 bg-amber-500/8"
-                        : "border-white/8 bg-white/3"
+                        : "border-slate-100 bg-slate-50/60"
                     }`}>
                       <div className="flex items-center gap-3">
-                        <div className={`p-1.5 rounded-lg ${voiceActive ? "bg-amber-500/15 text-amber-400" : "bg-white/5 text-muted-foreground/30"}`}>
+                        <div className={`p-1.5 rounded-lg ${voiceActive ? "bg-amber-500/15 text-amber-400" : "bg-slate-100 text-muted-foreground/50"}`}>
                           {voiceActive ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
                         </div>
                         <div>
-                          <div className={`text-sm font-medium ${voiceActive ? "text-white" : "text-muted-foreground/50"}`}>
+                          <div className={`text-sm font-medium ${voiceActive ? "text-slate-900" : "text-muted-foreground/50"}`}>
                             Voice Input
                           </div>
                           <div className="text-xs text-muted-foreground/50 mt-0.5">
@@ -430,14 +430,14 @@ export default function Settings() {
                     <div className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 ${
                       gestureActive
                         ? "border-purple-500/25 bg-purple-500/8"
-                        : "border-white/8 bg-white/3"
+                        : "border-slate-100 bg-slate-50/60"
                     }`}>
                       <div className="flex items-center gap-3">
-                        <div className={`p-1.5 rounded-lg ${gestureActive ? "bg-purple-500/15 text-purple-400" : "bg-white/5 text-muted-foreground/30"}`}>
+                        <div className={`p-1.5 rounded-lg ${gestureActive ? "bg-purple-500/15 text-purple-400" : "bg-slate-100 text-muted-foreground/50"}`}>
                           <Hand className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className={`text-sm font-medium ${gestureActive ? "text-white" : "text-muted-foreground/50"}`}>
+                          <div className={`text-sm font-medium ${gestureActive ? "text-slate-900" : "text-muted-foreground/50"}`}>
                             Gesture Input
                           </div>
                           <div className="text-xs text-muted-foreground/50 mt-0.5">
@@ -459,7 +459,7 @@ export default function Settings() {
                           <Keyboard className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-white flex items-center gap-2">
+                          <div className="text-sm font-medium text-slate-800 flex items-center gap-2">
                             Keyboard &amp; Text
                             <span className="text-[10px] font-mono text-green-400 bg-green-500/15 border border-green-500/20 px-1.5 py-0.5 rounded">
                               ALWAYS ON
@@ -489,27 +489,27 @@ export default function Settings() {
                 </Card>
 
                 {/* Command box shortcut */}
-                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                <Card className="bg-white border-slate-100 shadow-sm">
                   <CardContent className="pt-5 flex items-center justify-between">
                     <div>
-                      <div className="text-sm font-medium text-white">Command Box Shortcut</div>
+                      <div className="text-sm font-medium text-slate-800">Command Box Shortcut</div>
                       <div className="text-xs text-muted-foreground mt-0.5">
                         Open the floating text command box from any panel
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
-                      <kbd className="px-2 py-1 text-xs font-mono bg-black/50 border border-white/20 rounded text-muted-foreground">Ctrl</kbd>
+                      <kbd className="px-2 py-1 text-xs font-mono bg-slate-100 border border-slate-200 rounded text-muted-foreground">Ctrl</kbd>
                       <span className="text-muted-foreground/40 text-xs">+</span>
-                      <kbd className="px-2 py-1 text-xs font-mono bg-black/50 border border-white/20 rounded text-muted-foreground">Space</kbd>
+                      <kbd className="px-2 py-1 text-xs font-mono bg-slate-100 border border-slate-200 rounded text-muted-foreground">Space</kbd>
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Runtime note */}
-                <div className="flex items-start gap-3 p-4 rounded-xl border border-white/5 bg-card/20">
+                <div className="flex items-start gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50/50">
                   <ChevronRight className="w-4 h-4 text-primary/60 mt-0.5 flex-shrink-0" />
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    All input modes route through the same <span className="text-white font-mono">zaraRuntime.executeCommand()</span> pipeline.
+                    All input modes route through the same <span className="text-slate-800 font-mono">zaraRuntime.executeCommand()</span> pipeline.
                     Voice, gesture, and text never create separate command systems. Switching modes only changes which hardware channels are active.
                   </p>
                 </div>
@@ -520,7 +520,7 @@ export default function Settings() {
             {activeTab === "gestures" && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col gap-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-1">Gestures</h2>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-1">Gestures</h2>
                   <p className="text-muted-foreground text-sm">
                     Live hand gesture recognition via MediaPipe HandLandmarker (21-landmark, 30 fps).
                     All gestures route through the Zara Runtime pipeline identically to voice and keyboard.
@@ -528,11 +528,11 @@ export default function Settings() {
                 </div>
 
                 {/* Camera enable */}
-                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                <Card className="bg-white border-slate-100 shadow-sm">
                   <CardContent className="pt-5 flex flex-col gap-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-sm font-medium text-white">Camera Tracking</div>
+                        <div className="text-sm font-medium text-slate-800">Camera Tracking</div>
                         <div className="text-xs text-muted-foreground mt-0.5">
                           {gestureIsTracking
                             ? "MediaPipe HandLandmarker active — detecting hand gestures at 30 fps"
@@ -573,7 +573,7 @@ export default function Settings() {
                 )}
 
                 {/* Gesture mapping table */}
-                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                <Card className="bg-white border-slate-100 shadow-sm">
                   <CardHeader><CardTitle className="text-sm">Gesture Map</CardTitle></CardHeader>
                   <CardContent className="p-0">
                     <div className="divide-y divide-white/5">
@@ -581,7 +581,7 @@ export default function Settings() {
                         <div key={mapping.gesture} className="flex items-center gap-4 px-5 py-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-white">{mapping.label}</span>
+                              <span className="text-sm font-medium text-slate-800">{mapping.label}</span>
                               {mapping.requiresGestureMode && (
                                 <span className="text-[10px] font-mono text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1 rounded">
                                   Gesture Mode
@@ -597,7 +597,7 @@ export default function Settings() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 text-[11px] border-white/10 hover:bg-white/5 text-muted-foreground hover:text-white whitespace-nowrap"
+                              className="h-7 text-[11px] border-slate-200 hover:bg-slate-50 text-muted-foreground hover:text-slate-900 whitespace-nowrap"
                               onClick={() => simulateGesture(mapping.gesture, mapping.label)}
                               data-testid={`button-simulate-${mapping.gesture}`}
                             >
@@ -618,9 +618,9 @@ export default function Settings() {
                     The classifier maps 21 normalized landmarks to gesture types via finger-extension angles
                     and wrist velocity history. The WASM bundle is cached after the first load.
                     All gestures flow through{" "}
-                    <span className="text-white font-mono">gestureEngine.dispatchGesture()</span>{" "}
+                    <span className="text-slate-800 font-mono">gestureEngine.dispatchGesture()</span>{" "}
                     into the same{" "}
-                    <span className="text-white font-mono">zaraRuntime.executeCommand()</span>{" "}
+                    <span className="text-slate-800 font-mono">zaraRuntime.executeCommand()</span>{" "}
                     pipeline as voice and keyboard input.
                   </p>
                 </div>
@@ -631,12 +631,12 @@ export default function Settings() {
             {activeTab === "system" && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col gap-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-1">System</h2>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-1">System</h2>
                   <p className="text-muted-foreground text-sm">Hardware resources, display, audio, and power controls.</p>
                 </div>
 
                 {/* Hardware stats */}
-                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                <Card className="bg-white border-slate-100 shadow-sm">
                   <CardContent className="p-0">
                     <div className="grid grid-cols-2 divide-x divide-y divide-white/5">
                       <div className="p-6">
@@ -644,7 +644,7 @@ export default function Settings() {
                           <Cpu className="w-4 h-4" />
                           <span className="text-sm font-medium">Processor</span>
                         </div>
-                        <div className="text-base font-bold text-white truncate">
+                        <div className="text-base font-bold text-slate-800 truncate">
                           {sysStats ? sysStats.cpu_brand : "—"}
                         </div>
                         <div className="text-xs font-mono text-primary mt-1.5">
@@ -656,7 +656,7 @@ export default function Settings() {
                           <HardDrive className="w-4 h-4" />
                           <span className="text-sm font-medium">Memory</span>
                         </div>
-                        <div className="text-base font-bold text-white">
+                        <div className="text-base font-bold text-slate-800">
                           {sysStats ? `${sysStats.ram_total_gb} GB RAM` : "—"}
                         </div>
                         <div className="text-xs font-mono text-primary mt-1.5">
@@ -668,7 +668,7 @@ export default function Settings() {
                 </Card>
 
                 {/* Volume */}
-                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                <Card className="bg-white border-slate-100 shadow-sm">
                   <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Volume2 className="w-4 h-4 text-primary" />Volume</CardTitle></CardHeader>
                   <CardContent className="flex items-center gap-4 pb-6">
                     <span className="text-xs font-mono text-muted-foreground w-6">0</span>
@@ -681,12 +681,12 @@ export default function Settings() {
                         void setVolume(v);
                       }}
                     />
-                    <span className="text-xs font-mono text-white w-10 text-right">{volume}%</span>
+                    <span className="text-xs font-mono text-slate-700 w-10 text-right">{volume}%</span>
                   </CardContent>
                 </Card>
 
                 {/* Brightness */}
-                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                <Card className="bg-white border-slate-100 shadow-sm">
                   <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Sun className="w-4 h-4 text-amber-400" />Brightness</CardTitle></CardHeader>
                   <CardContent className="flex items-center gap-4 pb-6">
                     <span className="text-xs font-mono text-muted-foreground w-6">5</span>
@@ -699,12 +699,12 @@ export default function Settings() {
                         void setBrightness(v);
                       }}
                     />
-                    <span className="text-xs font-mono text-white w-10 text-right">{brightness}%</span>
+                    <span className="text-xs font-mono text-slate-700 w-10 text-right">{brightness}%</span>
                   </CardContent>
                 </Card>
 
                 {/* Power actions */}
-                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                <Card className="bg-white border-slate-100 shadow-sm">
                   <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Power className="w-4 h-4 text-red-400" />Power</CardTitle></CardHeader>
                   <CardContent className="flex flex-wrap gap-3 pb-6">
                     {[
@@ -741,7 +741,7 @@ export default function Settings() {
               <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col gap-6">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-1">Network</h2>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-1">Network</h2>
                     <p className="text-muted-foreground text-sm">WiFi networks managed via NetworkManager (nmcli).</p>
                   </div>
                   <Button
@@ -749,14 +749,14 @@ export default function Settings() {
                     size="sm"
                     onClick={() => void refreshWifi()}
                     disabled={wifiLoading}
-                    className="gap-2 border-white/10 hover:bg-white/5 mt-1"
+                    className="gap-2 border-slate-200 hover:bg-slate-50 mt-1"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${wifiLoading ? "animate-spin" : ""}`} />
                     Scan
                   </Button>
                 </div>
 
-                <Card className="bg-card/40 border-white/5 backdrop-blur">
+                <Card className="bg-white border-slate-100 shadow-sm">
                   <CardContent className="p-0">
                     {wifiNetworks.length === 0 && !wifiLoading ? (
                       <div className="flex flex-col items-center gap-3 py-12 text-center">
@@ -798,7 +798,7 @@ export default function Settings() {
 
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className={`font-medium text-sm ${net.connected ? "text-green-400" : "text-white"}`}>
+                                  <span className={`font-medium text-sm ${net.connected ? "text-green-600" : "text-slate-700"}`}>
                                     {net.ssid}
                                   </span>
                                   {net.connected && (
@@ -858,7 +858,7 @@ export default function Settings() {
                                         })();
                                       }
                                     }}
-                                    className="h-8 text-sm bg-black/40 border-white/10 focus:border-primary/30"
+                                    className="h-8 text-sm bg-white border-slate-200 focus:border-primary/50"
                                     autoFocus
                                   />
                                 )}
@@ -899,7 +899,7 @@ export default function Settings() {
                 </Card>
 
                 {!isTauri && (
-                  <div className="flex items-center gap-3 p-3 rounded-xl border border-white/8 bg-white/3 text-xs font-mono text-muted-foreground/50">
+                  <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/60 text-xs font-mono text-muted-foreground/50">
                     <Signal className="w-4 h-4 flex-shrink-0" />
                     Real WiFi scanning requires the native desktop app. Showing mock networks.
                   </div>

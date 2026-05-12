@@ -61,7 +61,7 @@ export function ConfirmationDialog({
               </div>
             )}
             <div>
-              <DialogTitle className="text-white text-base font-bold leading-tight">
+              <DialogTitle className="text-slate-800 text-base font-bold leading-tight">
                 Confirm Action
               </DialogTitle>
               {dangerous && (
@@ -74,7 +74,7 @@ export function ConfirmationDialog({
 
           <DialogDescription asChild>
             <div className="flex flex-col gap-3 mt-2">
-              <div className="text-sm text-white font-medium">{skillName}</div>
+              <div className="text-sm text-slate-800 font-medium">{skillName}</div>
               {reason && (
                 <div className={`flex items-start gap-2 rounded-lg p-3 ${
                   dangerous
@@ -98,7 +98,7 @@ export function ConfirmationDialog({
           <Button
             variant="ghost"
             onClick={onCancel}
-            className="flex-1 border border-white/10 hover:border-white/20 hover:bg-white/5 text-muted-foreground hover:text-white"
+            className="flex-1 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-muted-foreground hover:text-slate-900"
             autoFocus
           >
             Cancel

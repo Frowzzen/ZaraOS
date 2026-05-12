@@ -55,14 +55,15 @@ function AppTile({ app, onLaunch }: { app: InstalledApp; onLaunch: () => void })
   return (
     <button
       onClick={() => void handleClick()}
-      className="group bg-card/40 backdrop-blur border border-white/5 hover:border-primary/25 rounded-xl p-5 flex flex-col items-center gap-3 text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+      className="group rounded-xl p-5 flex flex-col items-center gap-3 text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+      style={{ background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.18)", boxShadow: "4px 4px 12px rgba(166,180,200,0.28), -3px -3px 10px rgba(255,255,255,0.90)" }}
       title={app.comment || app.name}
     >
       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
         <LayoutGrid className="w-6 h-6 text-primary" />
       </div>
       <div>
-        <p className="font-semibold text-sm text-white group-hover:text-primary transition-colors truncate max-w-[120px]">
+        <p className="font-semibold text-sm text-slate-700 group-hover:text-indigo-600 transition-colors truncate max-w-[120px]">
           {app.name}
         </p>
         {app.generic_name && app.generic_name !== app.name && (
@@ -124,7 +125,7 @@ export default function Apps() {
 
         {/* ── ZaraOS Modules ── */}
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Applications</h1>
+          <h1 className="text-3xl font-bold text-slate-800 mb-1">Applications</h1>
           <p className="text-muted-foreground font-mono text-sm mb-6">
             System modules and installed packages
           </p>
@@ -133,8 +134,8 @@ export default function Apps() {
             {BUILTIN_APPS.map((app, index) => (
               <Link key={app.name} href={app.path}>
                 <Card
-                  className={`cursor-pointer bg-card/40 backdrop-blur border-white/5 hover:${app.border} transition-all duration-300 group hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-900/10 animate-in fade-in slide-in-from-bottom-4`}
-                  style={{ animationDelay: `${index * 40}ms` }}
+                  className={`cursor-pointer hover:${app.border} transition-all duration-300 group hover:-translate-y-1 hover:shadow-xl animate-in fade-in slide-in-from-bottom-4`}
+                  style={{ background: "linear-gradient(145deg,#ffffff,#f4f5fc)", border: "1px solid rgba(148,163,184,0.18)", boxShadow: "4px 4px 14px rgba(166,180,200,0.28), -3px -3px 10px rgba(255,255,255,0.88)", animationDelay: `${index * 40}ms` }}
                   data-testid={`app-tile-${app.name.toLowerCase().replace(/\s+/g, "-")}`}
                 >
                   <CardContent className="p-6 flex flex-col items-center justify-center gap-4 text-center">
@@ -142,7 +143,7 @@ export default function Apps() {
                       <app.icon className={`w-7 h-7 ${app.color}`} />
                     </div>
                     <div>
-                      <h3 className="font-bold text-base text-white group-hover:text-primary transition-colors">{app.name}</h3>
+                      <h3 className="font-bold text-base text-slate-800 group-hover:text-indigo-600 transition-colors">{app.name}</h3>
                       <p className="text-xs text-muted-foreground font-mono mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Open Panel</p>
                     </div>
                   </CardContent>
@@ -157,7 +158,7 @@ export default function Apps() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xl font-bold text-white">Installed Applications</h2>
+                <h2 className="text-xl font-bold text-slate-800">Installed Applications</h2>
                 <p className="text-xs font-mono text-muted-foreground mt-0.5">
                   {loadingApps ? "Scanning..." : `${installedApps.length} apps found`}
                 </p>
@@ -168,7 +169,7 @@ export default function Apps() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search apps..."
-                  className="pl-8 h-8 text-sm bg-card/40 border-white/10 focus:border-primary/30"
+                  className="pl-8 h-8 text-sm bg-white border-slate-200 focus:border-primary/50"
                 />
               </div>
             </div>

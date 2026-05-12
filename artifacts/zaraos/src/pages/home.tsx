@@ -93,12 +93,12 @@ export default function Home() {
           {/* Clock */}
           <div className="flex flex-col items-center gap-1 select-none">
             <div
-              className="font-mono text-white tabular-nums leading-none"
+              className="font-mono tabular-nums leading-none text-gradient-accent"
               style={{ fontSize: "clamp(3.5rem, 8vw, 7rem)", fontWeight: 200, letterSpacing: "-0.02em" }}
             >
               {timeStr}
             </div>
-            <div className="text-sm font-medium text-white/35 tracking-widest uppercase font-mono">
+            <div className="text-sm font-medium tracking-widest uppercase font-mono" style={{ color: "rgba(100,116,135,0.60)" }}>
               {dateStr}
             </div>
           </div>
@@ -108,32 +108,29 @@ export default function Home() {
             <div
               className="flex items-center gap-3 px-5 py-2.5 rounded-full cursor-pointer transition-all duration-200 hover:scale-105 group"
               style={{
-                background: "rgba(0,240,255,0.06)",
-                border: "1px solid rgba(0,240,255,0.14)",
-                backdropFilter: "blur(12px)",
-                boxShadow: "0 0 24px rgba(0,240,255,0.06)",
+                background: "linear-gradient(145deg, #ffffff, #f0f2f8)",
+                border: "1px solid rgba(148,163,184,0.20)",
+                boxShadow: "4px 4px 12px rgba(166,180,200,0.35), -3px -3px 10px rgba(255,255,255,0.90)",
               }}
             >
               <div className="flex items-center gap-1.5">
-                {aiIcon && (
-                  <span className={`${isRealInference ? "text-green-400" : "text-primary/50"}`}>
-                    {aiIcon}
-                  </span>
-                )}
+                <span className={`${isRealInference ? "text-green-500" : "text-indigo-400"}`}>
+                  {aiIcon}
+                </span>
                 <div
                   className="w-1.5 h-1.5 rounded-full animate-pulse"
                   style={{
-                    background: isRealInference ? "#4ade80" : "hsl(184 100% 50%)",
+                    background: isRealInference ? "#22c55e" : "#6366f1",
                     boxShadow: isRealInference
-                      ? "0 0 8px rgba(74,222,128,0.8)"
-                      : "0 0 8px rgba(0,240,255,0.6)",
+                      ? "0 0 8px rgba(34,197,94,0.6)"
+                      : "0 0 8px rgba(99,102,241,0.5)",
                   }}
                 />
               </div>
-              <span className="text-xs font-mono text-white/55 tracking-wide">
+              <span className="text-xs font-mono tracking-wide" style={{ color: "rgba(100,116,135,0.75)" }}>
                 Zara — {aiText}
               </span>
-              <span className="text-xs text-primary/30 group-hover:text-primary/60 transition-colors font-mono ml-1">→</span>
+              <span className="text-xs text-indigo-400/50 group-hover:text-indigo-500 transition-colors font-mono ml-1">→</span>
             </div>
           </Link>
 
@@ -147,17 +144,17 @@ export default function Home() {
                     <div
                       className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-200"
                       style={{
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+                        background: "linear-gradient(145deg, #ffffff, #eef0f8)",
+                        border: "1px solid rgba(148,163,184,0.16)",
+                        boxShadow: "4px 4px 12px rgba(166,180,200,0.32), -3px -3px 10px rgba(255,255,255,0.90)",
                       }}
                     >
                       <Icon
                         style={{ width: "1.25rem", height: "1.25rem" }}
-                        className="text-white/40 group-hover:text-primary transition-colors duration-200 group-hover:drop-shadow-[0_0_8px_rgba(0,240,255,0.6)]"
+                        className="text-slate-400 group-hover:text-indigo-500 transition-colors duration-200"
                       />
                     </div>
-                    <span className="text-[10px] font-medium text-white/30 group-hover:text-white/60 transition-colors tracking-wide">
+                    <span className="text-[10px] font-medium text-slate-400 group-hover:text-slate-700 transition-colors tracking-wide">
                       {app.label}
                     </span>
                   </div>
@@ -171,8 +168,8 @@ export default function Home() {
         <div
           className="flex-shrink-0 flex items-center justify-center gap-6 px-8 py-3 flex-wrap"
           style={{
-            borderTop: "1px solid rgba(255,255,255,0.04)",
-            background: "rgba(0,0,0,0.2)",
+            borderTop: "1px solid rgba(148,163,184,0.14)",
+            background: "rgba(248,249,254,0.90)",
           }}
         >
           {/* System stats */}
@@ -181,13 +178,13 @@ export default function Home() {
               label: "CPU",
               value: systemStats ? `${systemStats.cpu_usage_percent.toFixed(0)}%` : "—",
               sub: systemStats ? `${systemStats.cpu_cores}c` : "",
-              color: "#00f0ff",
+              color: "#6366f1",
             },
             {
               label: "RAM",
               value: systemStats ? `${systemStats.ram_used_gb}` : "—",
               sub: systemStats ? `/ ${systemStats.ram_total_gb} GB` : "",
-              color: "#a855f7",
+              color: "#8b5cf6",
             },
             {
               label: "DISK",
@@ -202,18 +199,18 @@ export default function Home() {
               color: "#f59e0b",
             },
             ...(systemStats
-              ? [{ label: "UP", value: formatUptime(systemStats.uptime_seconds), sub: "", color: "rgba(255,255,255,0.3)" }]
+              ? [{ label: "UP", value: formatUptime(systemStats.uptime_seconds), sub: "", color: "rgba(100,116,135,0.60)" }]
               : []),
           ].map((s) => (
             <div key={s.label} className="flex items-baseline gap-1.5">
-              <span className="text-[9px] font-mono tracking-widest" style={{ color: "rgba(255,255,255,0.25)" }}>
+              <span className="text-[9px] font-mono tracking-widest" style={{ color: "rgba(100,116,135,0.45)" }}>
                 {s.label}
               </span>
               <span className="text-[12px] font-mono tabular-nums font-medium" style={{ color: s.color }}>
                 {s.value}
               </span>
               {s.sub && (
-                <span className="text-[9px] font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>
+                <span className="text-[9px] font-mono" style={{ color: "rgba(100,116,135,0.40)" }}>
                   {s.sub}
                 </span>
               )}
@@ -221,32 +218,32 @@ export default function Home() {
           ))}
 
           {/* Divider */}
-          <div className="w-px h-4" style={{ background: "rgba(255,255,255,0.06)" }} />
+          <div className="w-px h-4" style={{ background: "rgba(148,163,184,0.22)" }} />
 
           {/* Privacy indicators */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5" title="Microphone">
               {privacy.micActive
                 ? <Mic style={{ width: "0.625rem", height: "0.625rem" }} className="text-amber-400" />
-                : <MicOff style={{ width: "0.625rem", height: "0.625rem" }} className="text-white/15" />
+                : <MicOff style={{ width: "0.625rem", height: "0.625rem" }} className="text-slate-300" />
               }
             </div>
             <div className="flex items-center gap-1.5" title="Camera">
               {privacy.cameraActive
                 ? <Eye style={{ width: "0.625rem", height: "0.625rem" }} className="text-amber-400" />
-                : <EyeOff style={{ width: "0.625rem", height: "0.625rem" }} className="text-white/15" />
+                : <EyeOff style={{ width: "0.625rem", height: "0.625rem" }} className="text-slate-300" />
               }
             </div>
             <div className="flex items-center gap-1.5" title={`Cloud AI ${privacy.cloudAIRunning ? "active" : "blocked"}`}>
               <Wifi
                 style={{ width: "0.625rem", height: "0.625rem" }}
-                className={privacy.cloudAIRunning ? "text-amber-400" : "text-white/15"}
+                className={privacy.cloudAIRunning ? "text-amber-400" : "text-slate-300"}
               />
             </div>
             <div className="flex items-center gap-1.5" title="Local AI">
               <ShieldCheck
                 style={{ width: "0.625rem", height: "0.625rem" }}
-                className={privacy.localAIRunning ? "text-green-400" : "text-white/15"}
+                className={privacy.localAIRunning ? "text-green-500" : "text-slate-300"}
               />
             </div>
           </div>

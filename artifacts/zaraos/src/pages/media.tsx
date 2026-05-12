@@ -23,16 +23,16 @@ export default function Media() {
       <div className="max-w-6xl mx-auto flex flex-col h-full gap-6">
         <div className="flex justify-between items-end">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
+            <h1 className="text-4xl font-bold text-slate-800 mb-2 flex items-center gap-3">
               <PlaySquare className="w-10 h-10 text-purple-400" />
               Media Center
             </h1>
             <p className="text-muted-foreground font-mono text-sm">Unified playback interface.</p>
           </div>
-          <div className="flex gap-2 bg-black/40 p-1 rounded-lg border border-white/5">
+          <div className="flex gap-2 p-1 rounded-lg" style={{ background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.18)", boxShadow: "inset 2px 2px 6px rgba(166,180,200,0.25), inset -1px -1px 4px rgba(255,255,255,0.85)" }}>
             <Button
               variant={activeTab === "video" ? "default" : "ghost"}
-              className={activeTab === "video" ? "bg-primary/20 text-primary hover:bg-primary/30" : "text-muted-foreground hover:text-white"}
+              className={activeTab === "video" ? "bg-primary/20 text-primary hover:bg-primary/30" : "text-muted-foreground hover:text-slate-900"}
               onClick={() => setActiveTab("video")}
               data-testid="tab-video"
             >
@@ -40,7 +40,7 @@ export default function Media() {
             </Button>
             <Button
               variant={activeTab === "audio" ? "default" : "ghost"}
-              className={activeTab === "audio" ? "bg-primary/20 text-primary hover:bg-primary/30" : "text-muted-foreground hover:text-white"}
+              className={activeTab === "audio" ? "bg-primary/20 text-primary hover:bg-primary/30" : "text-muted-foreground hover:text-slate-900"}
               onClick={() => setActiveTab("audio")}
               data-testid="tab-audio"
             >
@@ -52,7 +52,7 @@ export default function Media() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
           <div className="lg:col-span-2 flex flex-col gap-6">
             {/* Player Viewport */}
-            <Card className="bg-black border-white/10 overflow-hidden relative flex-1 min-h-[300px] flex flex-col">
+            <Card className="overflow-hidden relative flex-1 min-h-[300px] flex flex-col" style={{ background: "linear-gradient(145deg,#1e1f2e,#15161f)", border: "1px solid rgba(99,102,241,0.15)" }}>
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-black to-black"></div>
               
               <div className="flex-1 flex items-center justify-center relative z-10">
@@ -86,10 +86,10 @@ export default function Media() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white" data-testid="btn-rewind">
+                      <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white" data-testid="btn-rewind">
                         <Rewind className="w-5 h-5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white" data-testid="btn-skip-back">
+                      <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white" data-testid="btn-skip-back">
                         <SkipBack className="w-5 h-5" />
                       </Button>
                       <Button 
@@ -101,10 +101,10 @@ export default function Media() {
                       >
                         {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-1" />}
                       </Button>
-                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white" data-testid="btn-skip-forward">
+                      <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white" data-testid="btn-skip-forward">
                         <SkipForward className="w-5 h-5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white" data-testid="btn-fast-forward">
+                      <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white" data-testid="btn-fast-forward">
                         <FastForward className="w-5 h-5" />
                       </Button>
                     </div>
@@ -112,7 +112,7 @@ export default function Media() {
                     <div className="flex items-center gap-4 w-48">
                       <Volume2 className="w-4 h-4 text-muted-foreground" />
                       <Slider value={volume} onValueChange={setVolume} max={100} step={1} className="flex-1" data-testid="slider-volume" />
-                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-white" data-testid="btn-maximize">
+                      <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white" data-testid="btn-maximize">
                         <Maximize className="w-4 h-4" />
                       </Button>
                     </div>
@@ -123,7 +123,7 @@ export default function Media() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <h3 className="font-bold text-white flex items-center justify-between border-b border-white/10 pb-2">
+            <h3 className="font-bold text-slate-800 flex items-center justify-between border-b border-slate-100 pb-2">
               Up Next
               <span className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">AUTOPLAY</span>
             </h3>
@@ -132,16 +132,16 @@ export default function Media() {
                 <div key={i} className={`p-4 rounded-xl border flex items-center justify-between cursor-pointer group transition-all
                   ${i === 0 
                     ? 'bg-purple-900/20 border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.1)]' 
-                    : 'bg-card/40 border-white/5 hover:border-white/20 hover:bg-white/5'}
+                    : 'bg-white border-slate-100 hover:border-indigo-200 hover:bg-slate-50'}
                 `}>
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center
-                      ${i === 0 ? 'bg-purple-500/20 text-purple-400' : 'bg-black/50 text-muted-foreground'}
+                      ${i === 0 ? 'bg-purple-500/20 text-purple-500' : 'bg-slate-100 text-muted-foreground'}
                     `}>
                       {item.type === 'video' ? <PlaySquare className="w-5 h-5" /> : <Music className="w-5 h-5" />}
                     </div>
                     <div>
-                      <div className={`font-medium text-sm line-clamp-1 ${i === 0 ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>
+                      <div className={`font-medium text-sm line-clamp-1 ${i === 0 ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-800'}`}>
                         {item.title}
                       </div>
                       <div className="text-xs text-muted-foreground font-mono mt-0.5">{item.duration}</div>

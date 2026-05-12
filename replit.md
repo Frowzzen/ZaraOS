@@ -138,9 +138,32 @@ cargo tauri build                 # compiles the native binary
 sudo bash scripts/build-iso.sh   # optional: build a bootable ISO
 ```
 
+## UI Theme — Soft Neumorphic Light
+
+ZaraOS uses a soft modern neumorphic light theme (not a traditional dark OS):
+
+- **Background**: `linear-gradient(135deg, #eef0f8, #e8ebf5, #ede8f8)` — light gray-lavender
+- **Accent gradient**: `linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4)` — indigo → violet → cyan
+- **Neumorphic shadow (raised)**: `6px 6px 20px rgba(166,180,200,0.40), -4px -4px 14px rgba(255,255,255,0.90)`
+- **Neumorphic shadow (inset)**: `inset 4px 4px 10px rgba(166,180,200,0.40), inset -3px -3px 8px rgba(255,255,255,0.90)`
+- **Cards**: white/near-white with slate borders (`border-slate-100`, `border-slate-200`)
+- **Text**: `text-slate-800` (headings), `text-slate-600` (body), `text-muted-foreground` (secondary)
+- **Intentional dark exceptions**: Console terminal panel (`#1e1f2e`), media player viewport, Ollama log terminal
+
+Dark-mode class replacement guide:
+- `text-white` → `text-slate-800` (headings) or `text-slate-600` (body)
+- `bg-black/X` → neumorphic inline style or `bg-slate-50`
+- `border-white/5` → `border-slate-100`
+- `border-white/10` → `border-slate-200`
+- `bg-white/5` → `bg-slate-50`
+- `bg-card/40 border-white/5 backdrop-blur` → `bg-white border-slate-100 shadow-sm`
+- `hover:text-white` → `hover:text-slate-900`
+- `hover:bg-white/5` → `hover:bg-slate-50`
+
 ## User preferences
 
-- ZaraOS is always dark mode — no light mode toggle at OS level
+- ZaraOS UI theme is soft neumorphic light (indigo/violet/cyan accents on light gray background)
+- No light/dark toggle — the neumorphic light theme IS the ZaraOS look
 - No emojis in the UI
 - Voice and gesture are first-class input methods (even as placeholders)
 - Local AI is the default; cloud AI is opt-in with user-provided keys

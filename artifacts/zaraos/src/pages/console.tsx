@@ -52,8 +52,8 @@ export default function Console() {
 
   return (
     <Layout>
-      <div className="flex flex-col h-full bg-black/80 border border-primary/20 rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,240,255,0.05)] font-mono">
-        <div className="p-3 bg-card border-b border-white/10 flex items-center gap-3">
+      <div className="flex flex-col h-full rounded-xl overflow-hidden font-mono" style={{ background: "linear-gradient(145deg,#1e1f2e,#15161f)", border: "1px solid rgba(99,102,241,0.18)", boxShadow: "6px 6px 20px rgba(166,180,200,0.35), -4px -4px 14px rgba(255,255,255,0.85)" }}>
+        <div className="p-3 flex items-center gap-3" style={{ background: "rgba(30,31,46,0.96)", borderBottom: "1px solid rgba(99,102,241,0.12)" }}>
           <TerminalIcon className="w-5 h-5 text-primary" />
           <span className="text-sm text-primary font-bold tracking-widest uppercase">Zara Console</span>
         </div>
@@ -71,13 +71,13 @@ export default function Console() {
           ))}
         </div>
 
-        <div className="p-4 border-t border-white/10 bg-black flex items-center">
+        <div className="p-4 flex items-center" style={{ borderTop: "1px solid rgba(99,102,241,0.12)", background: "rgba(20,21,30,0.98)" }}>
           <span className="text-primary font-bold mr-3">{">"}</span>
           <Input 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCommand()}
-            className="flex-1 bg-transparent border-none text-white focus-visible:ring-0 focus-visible:ring-offset-0 px-0 rounded-none h-auto font-mono text-sm placeholder:text-muted-foreground"
+            className="flex-1 bg-transparent border-none text-green-300 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 rounded-none h-auto font-mono text-sm placeholder:text-slate-600"
             placeholder="Enter command..."
             autoFocus
             data-testid="input-console"

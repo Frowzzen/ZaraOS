@@ -121,24 +121,25 @@ export function GestureOverlay({ onClose }: GestureOverlayProps) {
 
   return (
     <div
-      className="fixed bottom-5 right-5 z-50 w-52 rounded-xl overflow-hidden border border-purple-500/35 bg-black/85 backdrop-blur-sm shadow-2xl shadow-purple-900/40"
+      className="fixed bottom-5 right-5 z-50 w-52 rounded-xl overflow-hidden"
+      style={{ background: "rgba(255,255,255,0.96)", border: "1px solid rgba(148,163,184,0.16)", boxShadow: "0 12px 40px rgba(148,163,184,0.38), 0 4px 12px rgba(148,163,184,0.20), -4px -4px 16px rgba(255,255,255,0.88)" }}
       data-testid="gesture-overlay"
     >
       {/* ── Header bar ── */}
-      <div className="flex items-center justify-between px-2.5 py-1.5 bg-purple-900/40 border-b border-purple-500/20">
+      <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-slate-100/80" style={{ background: "linear-gradient(180deg, #ffffff 0%, #f8f9fc 100%)" }}>
         <div className="flex items-center gap-1.5">
-          <Hand className="w-3 h-3 text-purple-400" />
-          <span className="text-[10px] font-mono text-purple-300 uppercase tracking-widest">
+          <Hand className="w-3 h-3 text-indigo-400" />
+          <span className="text-[10px] font-mono text-indigo-500/70 uppercase tracking-widest">
             Gesture
           </span>
           {cameraReady && (
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse flex-shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse flex-shrink-0" />
           )}
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="text-muted-foreground/40 hover:text-white transition-colors ml-2"
+            className="text-slate-400 hover:text-slate-700 transition-colors ml-2"
             title="Hide gesture overlay"
           >
             <X className="w-3 h-3" />
@@ -152,8 +153,8 @@ export function GestureOverlay({ onClose }: GestureOverlayProps) {
         {/* Loading state */}
         {loading && !error && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10">
-            <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
-            <p className="text-[9px] font-mono text-purple-400/60">
+            <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
+            <p className="text-[9px] font-mono text-slate-400/80">
               Loading MediaPipe...
             </p>
           </div>
@@ -163,7 +164,7 @@ export function GestureOverlay({ onClose }: GestureOverlayProps) {
         {error && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 z-10">
             <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <p className="text-[9px] font-mono text-red-400/70 text-center leading-snug">
+            <p className="text-[9px] font-mono text-rose-500/75 text-center leading-snug">
               {error}
             </p>
           </div>
@@ -193,7 +194,7 @@ export function GestureOverlay({ onClose }: GestureOverlayProps) {
         {/* Gesture label badge */}
         {gesture && (
           <div className="absolute bottom-2 left-2 right-2 flex justify-center animate-in fade-in duration-100 z-20">
-            <span className="text-[10px] font-mono text-purple-100 bg-purple-900/90 border border-purple-500/40 px-2 py-0.5 rounded-full shadow-lg">
+            <span className="text-[10px] font-mono text-indigo-700 px-2 py-0.5 rounded-full shadow-sm" style={{ background: "rgba(255,255,255,0.92)", border: "1px solid rgba(99,102,241,0.25)" }}>
               {gesture.replace(/_/g, " ")}
             </span>
           </div>

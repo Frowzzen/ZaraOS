@@ -340,13 +340,13 @@ export function DesktopShell() {
   return (
     <div
       className="fixed inset-0 overflow-hidden"
-      style={{ background: "linear-gradient(135deg, #0a0a1a 0%, #0f0c29 35%, #0d1a2e 70%, #060d1a 100%)" }}
+      style={{ background: "linear-gradient(145deg, #eef0f8 0%, #e8ebf5 35%, #ede8f8 70%, #eef1f9 100%)" }}
     >
       {/* ── Voice error toast ───────────────────────────────────────────────── */}
       {voiceError && (
         <div
-          className="absolute top-11 left-1/2 -translate-x-1/2 z-[9500] px-4 py-2 rounded-xl text-xs font-mono text-red-300"
-          style={{ background: "rgba(30,10,10,0.90)", border: "1px solid rgba(255,80,80,0.25)", backdropFilter: "blur(16px)" }}
+          className="absolute top-11 left-1/2 -translate-x-1/2 z-[9500] px-4 py-2 rounded-xl text-xs font-mono text-red-500"
+          style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(239,68,68,0.20)", backdropFilter: "blur(16px)", boxShadow: "0 4px 20px rgba(166,180,200,0.30)" }}
         >
           {voiceError}
         </div>
@@ -356,14 +356,15 @@ export function DesktopShell() {
       <div
         className="absolute top-0 left-0 right-0 h-9 z-[9000] flex items-center px-4 gap-3"
         style={{
-          background: "rgba(10,10,26,0.75)",
-          backdropFilter: "blur(24px) saturate(1.6)",
-          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          background: "rgba(248,249,254,0.88)",
+          backdropFilter: "blur(24px) saturate(1.4)",
+          borderBottom: "1px solid rgba(148,163,184,0.14)",
+          boxShadow: "0 2px 12px rgba(166,180,200,0.18)",
         }}
       >
         <div className="flex items-center gap-2 flex-shrink-0">
-          <ZaraOSIcon size={13} className="text-cyan-400/70" />
-          <span className="text-[10px] font-bold text-white/30 tracking-widest hidden sm:block">ZaraOS</span>
+          <ZaraOSIcon size={13} className="text-indigo-500/80" />
+          <span className="text-[10px] font-bold tracking-widest hidden sm:block text-gradient-accent" style={{ opacity: 0.7 }}>ZaraOS</span>
         </div>
 
         <div className="flex-1" />
@@ -373,7 +374,7 @@ export function DesktopShell() {
           onClick={toggleVoice}
           data-testid="button-toggle-voice"
           title={voiceActive ? "Voice on" : "Voice off"}
-          className={`transition-colors ${voiceActive ? "text-cyan-400" : "text-white/25 hover:text-white/50"}`}
+          className={`transition-colors ${voiceActive ? "text-indigo-500" : "text-slate-400 hover:text-slate-600"}`}
         >
           {voiceActive
             ? <Mic style={{ width: "0.75rem", height: "0.75rem" }} />
@@ -383,8 +384,8 @@ export function DesktopShell() {
 
         {/* Clock */}
         <div className="flex flex-col items-end leading-none gap-0.5 select-none">
-          <span className="text-[11px] font-mono text-white/55 tabular-nums">{timeStr}</span>
-          <span className="text-[9px] font-mono text-white/28">{dateStr}</span>
+          <span className="text-[11px] font-mono tabular-nums" style={{ color: "rgba(51,65,85,0.75)" }}>{timeStr}</span>
+          <span className="text-[9px] font-mono" style={{ color: "rgba(100,116,135,0.55)" }}>{dateStr}</span>
         </div>
 
         {/* Power */}
@@ -392,7 +393,7 @@ export function DesktopShell() {
           <button
             onClick={() => setShowPowerMenu((v) => !v)}
             data-testid="button-power-menu"
-            className="text-white/25 hover:text-white/60 transition-colors"
+            className="text-slate-400 hover:text-slate-600 transition-colors"
             title="Power"
           >
             <Power style={{ width: "0.75rem", height: "0.75rem" }} />
@@ -402,9 +403,10 @@ export function DesktopShell() {
             <div
               className="absolute top-full mt-1.5 right-0 rounded-xl overflow-hidden min-w-[170px] z-[9999]"
               style={{
-                background: "hsl(222, 16%, 20%)",
-                border: "1px solid hsl(220, 16%, 32%)",
-                boxShadow: "0 16px 48px rgba(0,0,0,0.65), 0 4px 12px rgba(0,0,0,0.50)",
+                background: "rgba(255,255,255,0.97)",
+                border: "1px solid rgba(148,163,184,0.16)",
+                boxShadow: "0 12px 40px rgba(166,180,200,0.40), 0 4px 12px rgba(166,180,200,0.22), -4px -4px 16px rgba(255,255,255,0.90)",
+                borderRadius: 16,
               }}
             >
               {([
@@ -417,8 +419,8 @@ export function DesktopShell() {
                   key={action}
                   onClick={() => { setShowPowerMenu(false); if (isTauri) void systemPower(action); }}
                   className="w-full flex items-center gap-3 px-4 py-2.5 transition-colors"
-                  style={{ color: "hsl(218, 27%, 78%)" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(220, 16%, 28%)")}
+                  style={{ color: "#334155" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(99,102,241,0.07)")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "")}
                 >
                   <Icon style={{ width: "0.8125rem", height: "0.8125rem" }} className="flex-shrink-0" />
@@ -450,10 +452,10 @@ export function DesktopShell() {
                   width: win.width,
                   height: win.height,
                   zIndex: win.zIndex,
-                  borderRadius: 14,
-                  background: "white",
-                  border: "1px solid rgba(0,0,0,0.09)",
-                  boxShadow: "0 40px 100px rgba(0,0,0,0.90), 0 16px 48px rgba(0,0,0,0.65)",
+                  borderRadius: 20,
+                  background: "rgba(255,255,255,0.96)",
+                  border: "1px solid rgba(148,163,184,0.13)",
+                  boxShadow: "0 20px 60px rgba(148,163,184,0.38), 0 6px 20px rgba(148,163,184,0.22), -6px -6px 24px rgba(255,255,255,0.90)",
                 }}
                 onClick={() => focusWindow(win.id)}
               >
@@ -461,9 +463,9 @@ export function DesktopShell() {
                 <div
                   className="flex items-center h-10 px-3 gap-3 flex-shrink-0 cursor-move select-none"
                   style={{
-                    borderBottom: "1px solid rgba(0,0,0,0.08)",
-                    borderRadius: "14px 14px 0 0",
-                    background: "#f7f7f8",
+                    borderBottom: "1px solid rgba(148,163,184,0.12)",
+                    borderRadius: "20px 20px 0 0",
+                    background: "linear-gradient(180deg, #ffffff 0%, #f8f9fc 100%)",
                   }}
                   onMouseDown={(e) => startDrag(win.id, e)}
                 >
@@ -471,7 +473,7 @@ export function DesktopShell() {
                   <div className="flex-1 flex items-center gap-2 pointer-events-none min-w-0">
                     <span
                       className="text-[11px] font-semibold tracking-widest uppercase truncate"
-                      style={{ color: "#1a1a2e", letterSpacing: "0.12em" }}
+                      style={{ color: "#334155", letterSpacing: "0.12em" }}
                     >
                       {appMeta[win.appId].title}
                     </span>
@@ -483,20 +485,20 @@ export function DesktopShell() {
                       onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => { e.stopPropagation(); minimizeWindow(win.id); }}
                       title="Minimize"
-                      className="group flex items-center justify-center rounded transition-colors"
-                      style={{ width: 26, height: 22, background: "#e2e2e4" }}
+                      className="group flex items-center justify-center rounded-lg transition-all"
+                      style={{ width: 26, height: 22, background: "linear-gradient(145deg, #f0f2f7, #ffffff)", boxShadow: "2px 2px 6px rgba(166,180,200,0.38), -1px -1px 4px rgba(255,255,255,0.90)" }}
                     >
                       <Minus
                         style={{ width: "0.6rem", height: "0.6rem" }}
-                        className="text-gray-500 group-hover:text-gray-800 transition-colors"
+                        className="text-slate-400 group-hover:text-slate-700 transition-colors"
                       />
                     </button>
                     <button
                       onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }}
                       title="Close"
-                      className="group flex items-center justify-center rounded transition-colors"
-                      style={{ width: 26, height: 22, background: "#e2e2e4" }}
+                      className="group flex items-center justify-center rounded-lg transition-all"
+                      style={{ width: 26, height: 22, background: "linear-gradient(145deg, #f0f2f7, #ffffff)", boxShadow: "2px 2px 6px rgba(166,180,200,0.38), -1px -1px 4px rgba(255,255,255,0.90)" }}
                     >
                       <X
                         style={{ width: "0.6rem", height: "0.6rem" }}
@@ -509,14 +511,14 @@ export function DesktopShell() {
                 {/* Content — light background inside window */}
                 <div
                   className="flex-1 overflow-hidden min-h-0 zaraos-window-body"
-                  style={{ borderRadius: "0 0 14px 14px" }}
+                  style={{ borderRadius: "0 0 20px 20px" }}
                 >
                   <Suspense
                     fallback={
                       <div className="flex items-center justify-center h-full w-full bg-white">
                         <div
                           className="w-5 h-5 rounded-full animate-spin"
-                          style={{ border: "2px solid #e2e2e4", borderTopColor: "#0ea5e9" }}
+                          style={{ border: "2px solid rgba(166,180,200,0.4)", borderTopColor: "#6366f1" }}
                         />
                       </div>
                     }
@@ -538,21 +540,24 @@ export function DesktopShell() {
                 fontSize: "clamp(4.5rem, 11vw, 9rem)",
                 fontWeight: 200,
                 letterSpacing: "-0.025em",
-                color: "rgba(255,255,255,0.82)",
-                textShadow: "0 2px 40px rgba(0,240,255,0.18)",
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                filter: "drop-shadow(0 2px 24px rgba(99,102,241,0.18))",
               }}
             >
               {clock.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </div>
             <div
               className="font-mono tracking-widest uppercase mt-3"
-              style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.30)" }}
+              style={{ fontSize: "0.75rem", color: "rgba(100,116,135,0.55)" }}
             >
               {clock.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}
             </div>
             <div
               className="mt-10 text-xs font-mono tracking-widest"
-              style={{ color: "rgba(255,255,255,0.18)" }}
+              style={{ color: "rgba(148,163,184,0.55)" }}
             >
               Type a command or ask Zara anything
             </div>
@@ -574,10 +579,10 @@ export function DesktopShell() {
                 onClick={() => restoreWindow(win.id)}
                 className="px-3 py-1 rounded-lg text-[10px] font-semibold tracking-wide uppercase transition-all hover:brightness-110"
                 style={{
-                  color: "hsl(197, 45%, 67%)",
-                  background: "hsl(222, 16%, 22%)",
-                  border: "1px solid hsl(220, 16%, 32%)",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.50)",
+                  color: "#6366f1",
+                  background: "linear-gradient(145deg, #ffffff, #f0f2f8)",
+                  border: "1px solid rgba(148,163,184,0.18)",
+                  boxShadow: "3px 3px 10px rgba(166,180,200,0.38), -2px -2px 8px rgba(255,255,255,0.92)",
                 }}
               >
                 {appMeta[win.appId].title}
@@ -596,9 +601,9 @@ export function DesktopShell() {
               transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
               className="w-full rounded-2xl overflow-hidden"
               style={{
-                background: "white",
-                border: "1px solid rgba(0,0,0,0.09)",
-                boxShadow: "0 -8px 40px rgba(0,0,0,0.55), 0 8px 32px rgba(0,0,0,0.35)",
+                background: "rgba(255,255,255,0.97)",
+                border: "1px solid rgba(148,163,184,0.14)",
+                boxShadow: "0 12px 40px rgba(148,163,184,0.34), 0 4px 12px rgba(148,163,184,0.18), -4px -4px 16px rgba(255,255,255,0.88)",
               }}
             >
               {/* User query */}
@@ -609,19 +614,19 @@ export function DesktopShell() {
 
               {/* Zara reply */}
               <div className="px-5 pt-3 pb-3 overflow-y-auto" style={{ maxHeight: 240 }}>
-                <p className="text-[10px] font-mono tracking-widest uppercase mb-1.5" style={{ color: "#0891b2" }}>Zara</p>
+                <p className="text-[10px] font-mono tracking-widest uppercase mb-1.5 text-gradient-accent">Zara</p>
                 {zaraInline.reply ? (
                   <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
                     {zaraInline.reply}
                     {zaraInline.streaming && (
-                      <span className="inline-block w-0.5 h-3.5 ml-0.5 bg-cyan-500/70 animate-pulse align-middle" />
+                      <span className="inline-block w-0.5 h-3.5 ml-0.5 animate-pulse align-middle" style={{ background: "linear-gradient(to bottom, #6366f1, #8b5cf6)", borderRadius: 2, opacity: 0.7 }} />
                     )}
                   </p>
                 ) : zaraInline.streaming ? (
                   <div className="flex items-center gap-1.5 mt-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "linear-gradient(135deg,#8b5cf6,#a78bfa)", animationDelay: "150ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "linear-gradient(135deg,#a78bfa,#06b6d4)", animationDelay: "300ms" }} />
                   </div>
                 ) : (
                   <p className="text-sm text-gray-400 italic">No response. Check that Ollama is running.</p>
@@ -636,8 +641,8 @@ export function DesktopShell() {
                     setZaraInline(null);
                     openWindow("assistant");
                   }}
-                  className="text-[11px] font-mono hover:underline transition-colors"
-                  style={{ color: "#0891b2" }}
+                  className="text-[11px] font-mono hover:underline transition-colors text-gradient-accent"
+                  style={{ opacity: 0.85 }}
                 >
                   Open full assistant
                 </button>
@@ -656,12 +661,12 @@ export function DesktopShell() {
         <div
           className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl"
           style={{
-            background: "hsl(222, 16%, 20%)",
-            border: "1px solid hsl(220, 16%, 32%)",
-            boxShadow: "0 20px 56px rgba(0,0,0,0.65), 0 6px 16px rgba(0,0,0,0.50), 0 0 0 1px rgba(136,192,208,0.06)",
+            background: "rgba(248,249,254,0.94)",
+            border: "1px solid rgba(148,163,184,0.16)",
+            boxShadow: "0 10px 36px rgba(148,163,184,0.30), 0 3px 10px rgba(148,163,184,0.16), -4px -4px 16px rgba(255,255,255,0.88)",
           }}
         >
-          <Search style={{ width: "1rem", height: "1rem", color: "hsl(210,35%,50%)", flexShrink: 0 }} />
+          <Search style={{ width: "1rem", height: "1rem", color: "rgba(148,163,184,0.70)", flexShrink: 0 }} />
 
           <input
             ref={inputRef}
@@ -674,7 +679,7 @@ export function DesktopShell() {
             placeholder='Ask Zara or say "open files", "browser", "settings"...'
             className="flex-1 bg-transparent text-sm outline-none font-sans"
             style={{
-              color: interimText ? "hsl(197,45%,60%)" : "hsl(218,27%,90%)",
+              color: interimText ? "#8b5cf6" : "#334155",
               fontStyle: interimText ? "italic" : "normal",
             }}
             data-testid="input-command-bar"
@@ -685,7 +690,7 @@ export function DesktopShell() {
             <button
               onClick={() => setCommand("")}
               className="flex-shrink-0 transition-colors"
-              style={{ color: "hsl(210,35%,45%)" }}
+              style={{ color: "rgba(148,163,184,0.70)" }}
             >
               <X style={{ width: "0.875rem", height: "0.875rem" }} />
             </button>
@@ -697,8 +702,9 @@ export function DesktopShell() {
             title={voiceActive ? "Voice on — click to disable" : "Voice off — click to enable"}
             className="flex-shrink-0 p-1.5 rounded-lg transition-all"
             style={{
-              color: voiceActive ? "hsl(197,45%,67%)" : "hsl(210,35%,45%)",
-              background: voiceActive ? "hsl(220,16%,30%)" : "transparent",
+              color: voiceActive ? "#6366f1" : "rgba(148,163,184,0.65)",
+              background: voiceActive ? "linear-gradient(145deg,#f0f1fb,#e8eaf8)" : "transparent",
+              boxShadow: voiceActive ? "inset 2px 2px 5px rgba(166,180,200,0.35), inset -2px -2px 5px rgba(255,255,255,0.80)" : "none",
             }}
           >
             {voiceActive
@@ -712,9 +718,10 @@ export function DesktopShell() {
               onClick={() => handleCommand(command)}
               className="flex-shrink-0 px-3 py-1 rounded-lg text-xs font-semibold transition-all"
               style={{
-                color: "hsl(197,45%,67%)",
-                background: "hsl(220,16%,30%)",
-                border: "1px solid hsl(220,16%,36%)",
+                color: "#ffffff",
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                border: "none",
+                boxShadow: "0 2px 10px rgba(99,102,241,0.35)",
               }}
             >
               Open

@@ -32,12 +32,12 @@ function SkillPillList({ skills, max = 4 }: { skills: ReturnType<typeof skillRun
   return (
     <div className="flex flex-wrap gap-1.5 mt-2">
       {shown.map((s) => (
-        <span key={s.id} className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/8 text-muted-foreground">
+        <span key={s.id} className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200 text-muted-foreground">
           {s.name}
         </span>
       ))}
       {rest > 0 && (
-        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/8 text-muted-foreground/50">
+        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200 text-muted-foreground/50">
           +{rest} more
         </span>
       )}
@@ -52,7 +52,7 @@ export default function Privacy() {
     <Layout>
       <div className="max-w-4xl mx-auto flex flex-col gap-8 pb-8">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
+          <h1 className="text-4xl font-bold text-slate-800 mb-2 flex items-center gap-3">
             <ShieldCheck className="w-10 h-10 text-green-400" />
             Privacy & Security
           </h1>
@@ -63,7 +63,7 @@ export default function Privacy() {
 
         {/* ── Hardware Sensors + Inference ─────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="bg-card/40 border-white/5 backdrop-blur">
+          <Card className="bg-white border-slate-100 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Mic className="w-5 h-5 text-primary" /> Hardware Sensors
@@ -72,7 +72,7 @@ export default function Privacy() {
             <CardContent className="flex flex-col gap-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-bold text-white">Microphone</div>
+                  <div className="font-bold text-slate-800">Microphone</div>
                   <div className="text-sm text-muted-foreground">Allow Zara to listen for voice commands</div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -82,7 +82,7 @@ export default function Privacy() {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-bold text-white">Camera</div>
+                  <div className="font-bold text-slate-800">Camera</div>
                   <div className="text-sm text-muted-foreground">Allow gesture tracking</div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -93,7 +93,7 @@ export default function Privacy() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/40 border-white/5 backdrop-blur">
+          <Card className="bg-white border-slate-100 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Cpu className="w-5 h-5 text-purple-400" /> Inference Engine
@@ -102,14 +102,14 @@ export default function Privacy() {
             <CardContent className="flex flex-col gap-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-bold text-white">Local AI (Ollama/Llama.cpp)</div>
+                  <div className="font-bold text-slate-800">Local AI (Ollama/Llama.cpp)</div>
                   <div className="text-sm text-muted-foreground">Process data on-device (maximum privacy)</div>
                 </div>
                 <Switch checked={privacy.localAIRunning} onCheckedChange={privacy.setLocalAIRunning} data-testid="switch-local-ai" />
               </div>
               <div className="flex items-center justify-between opacity-50">
                 <div>
-                  <div className="font-bold text-white flex items-center gap-2">
+                  <div className="font-bold text-slate-800 flex items-center gap-2">
                     Cloud AI
                     <span className="text-[10px] bg-red-500/20 text-red-400 px-1 rounded border border-red-500/30">RISK</span>
                   </div>
@@ -122,7 +122,7 @@ export default function Privacy() {
         </div>
 
         {/* ── Connected Services ───────────────────────────────── */}
-        <Card className="bg-card/40 border-white/5 backdrop-blur">
+        <Card className="bg-white border-slate-100 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Network className="w-5 h-5 text-blue-400" /> Connected Services
@@ -141,10 +141,10 @@ export default function Privacy() {
                 { name: "OpenAI",             icon: <Cloud className="w-4 h-4 text-emerald-400" />, status: "Disconnected" },
                 { name: "Contacts Sync",      icon: <Network className="w-4 h-4 text-amber-400" />, status: "Disconnected" },
               ].map((svc) => (
-                <div key={svc.name} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-white/3 border border-white/5">
+                <div key={svc.name} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-100">
                   <div className="flex items-center gap-2">
                     {svc.icon}
-                    <span className="text-sm font-medium text-white">{svc.name}</span>
+                    <span className="text-sm font-medium text-slate-800">{svc.name}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <XCircle className="w-3.5 h-3.5 text-muted-foreground/40" />
@@ -159,7 +159,7 @@ export default function Privacy() {
         {/* ── Skill Privacy Breakdown ──────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          <Card className="bg-card/40 border-white/5 backdrop-blur">
+          <Card className="bg-white border-slate-100 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mic className="w-4 h-4 text-amber-400" />
@@ -172,7 +172,7 @@ export default function Privacy() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/40 border-white/5 backdrop-blur">
+          <Card className="bg-white border-slate-100 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Camera className="w-4 h-4 text-purple-400" />
@@ -185,7 +185,7 @@ export default function Privacy() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/40 border-white/5 backdrop-blur">
+          <Card className="bg-white border-slate-100 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
                 <FolderOpen className="w-4 h-4 text-green-400" />
@@ -198,7 +198,7 @@ export default function Privacy() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/40 border-white/5 backdrop-blur">
+          <Card className="bg-white border-slate-100 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Network className="w-4 h-4 text-blue-400" />
@@ -211,7 +211,7 @@ export default function Privacy() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/40 border-white/5 backdrop-blur">
+          <Card className="bg-white border-slate-100 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Cloud className="w-4 h-4 text-red-400" />
@@ -227,7 +227,7 @@ export default function Privacy() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/40 border-white/5 backdrop-blur">
+          <Card className="bg-white border-slate-100 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
                 <AlertTriangle className="w-4 h-4 text-amber-400" />
