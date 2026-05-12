@@ -13,6 +13,27 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
+        .setup(|app| {
+            // ── Auto-grant camera + microphone permissions on Linux ────────────
+            // In a minimal Openbox session (no GNOME/KDE portal), WebKitGTK
+            // silently denies getUserMedia() because no system permission dialog
+            // is available. We intercept the WebKit permission-request signal and
+            // allow it so gesture detection and voice input work in Tauri dev mode.
+            #[cfg(target_os = "linux")]
+            {
+                use tauri::Manager;
+                if let Some(win) = app.get_webview_window("main") {
+                    let _ = win.with_webview(|wv| {
+                        use webkit2gtk::prelude::*;
+                        wv.inner().connect_permission_request(|_view, req| {
+                            req.allow();
+                            true
+                        });
+                    });
+                }
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             // ── File system ──────────────────────────────────
             commands::fs::fs_read_text,
