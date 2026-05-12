@@ -36,6 +36,15 @@ interface ZaraMsg {
   error?: boolean;
 }
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const SUGGESTIONS = [
+  "What's happening in tech today",
+  "Best mechanical keyboards 2025",
+  "How to learn Rust",
+  "youtube.com",
+];
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function isDirectUrl(q: string): boolean {
@@ -53,7 +62,6 @@ function normalizeUrl(raw: string): string {
   return "https://" + s;
 }
 
-// Transform YouTube watch URLs → embed so they load inside the viewer
 function toViewableUrl(url: string): string {
   try {
     const u = new URL(url);
@@ -70,7 +78,6 @@ function toViewableUrl(url: string): string {
   return url;
 }
 
-// Detect "open result N" / "pull up the second one" etc.
 function detectResultSelection(text: string): number | null {
   const q = text.toLowerCase().trim();
   const wordMap: Record<string, number> = {
@@ -81,23 +88,13 @@ function detectResultSelection(text: string): number | null {
     fifth: 5, "5th": 5, five: 5, "5": 5,
     sixth: 6, "6th": 6, six: 6, "6": 6,
   };
-
-  // "open/pull up/go to/show/visit [the] <number> [result/one/option]"
   const pattern =
     /\b(open|pull up|go to|show|visit|load|navigate to|take me to)\b.{0,12}?\b(first|second|third|fourth|fifth|sixth|1st|2nd|3rd|4th|5th|6th|one|two|three|four|five|six|[1-6])\b/i;
-
-  // Also plain "result 2" or "#2"
   const plain = /\b(result|number|#)\s*([1-6])\b/i;
-
   const m = q.match(pattern);
-  if (m) {
-    const word = m[2].toLowerCase();
-    return wordMap[word] ?? null;
-  }
-
+  if (m) return wordMap[m[2].toLowerCase()] ?? null;
   const m2 = q.match(plain);
   if (m2) return parseInt(m2[2], 10);
-
   return null;
 }
 
@@ -116,13 +113,8 @@ function uid() {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ZaraBrowser() {
-  const [messages, setMessages] = useState<ZaraMsg[]>([
-    {
-      id: uid(),
-      role: "zara",
-      text: 'I\'m Zara. Tell me what you want to find, or give me a URL to open.\n\nTry: "find me a coffee shop nearby", "what\'s the best way to learn Rust", or "youtube.com"',
-    },
-  ]);
+  const [messages, setMessages] = useState<ZaraMsg[]>([]);
+  const [hasStarted, setHasStarted] = useState(false);
   const [input, setInput] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [activeUrl, setActiveUrl] = useState("");
@@ -131,8 +123,6 @@ export default function ZaraBrowser() {
   const [lastResults, setLastResults] = useState<SearchResult[]>([]);
   const [voiceActive, setVoiceActive] = useState(false);
   const [iframeError, setIframeError] = useState(false);
-
-  // nav history
   const [navHistory, setNavHistory] = useState<string[]>([]);
   const [navIndex, setNavIndex] = useState(-1);
 
@@ -153,22 +143,16 @@ export default function ZaraBrowser() {
       setUrlBarInput(url);
       setIframeLoading(true);
       setIframeError(false);
-
       setNavHistory((h) => {
         const next = h.slice(0, navIndex + 1);
         next.push(url);
         setNavIndex(next.length - 1);
         return next;
       });
-
       if (fromChat) {
         setMessages((prev) => [
           ...prev,
-          {
-            id: uid(),
-            role: "zara",
-            text: `Opening ${domainOf(url)}...`,
-          },
+          { id: uid(), role: "zara", text: `Opening ${domainOf(url)}...` },
         ]);
       }
     },
@@ -211,14 +195,11 @@ export default function ZaraBrowser() {
 
   const runSearch = useCallback(async (query: string) => {
     setIsSearching(true);
-
-    // Optimistic loading bubble
     const loadId = uid();
     setMessages((prev) => [
       ...prev,
       { id: loadId, role: "zara", text: "", loading: true },
     ]);
-
     try {
       const res = await fetch(
         `/api/search?q=${encodeURIComponent(query)}&count=6`
@@ -228,7 +209,6 @@ export default function ZaraBrowser() {
         error?: string;
         setup?: boolean;
       };
-
       if (data.setup) {
         setMessages((prev) =>
           prev.map((m) =>
@@ -244,7 +224,6 @@ export default function ZaraBrowser() {
         );
         return;
       }
-
       if (!data.results?.length) {
         setMessages((prev) =>
           prev.map((m) =>
@@ -255,9 +234,7 @@ export default function ZaraBrowser() {
         );
         return;
       }
-
       setLastResults(data.results);
-
       setMessages((prev) =>
         prev.map((m) =>
           m.id === loadId
@@ -290,19 +267,13 @@ export default function ZaraBrowser() {
       const q = text.trim();
       if (!q) return;
       setInput("");
+      setHasStarted(true);
+      setMessages((prev) => [...prev, { id: uid(), role: "user", text: q }]);
 
-      setMessages((prev) => [
-        ...prev,
-        { id: uid(), role: "user", text: q },
-      ]);
-
-      // 1. Direct URL
       if (isDirectUrl(q)) {
         navigateTo(q, true);
         return;
       }
-
-      // 2. Result selection
       const sel = detectResultSelection(q);
       if (sel !== null && lastResults.length > 0) {
         const result = lastResults[sel - 1];
@@ -316,8 +287,6 @@ export default function ZaraBrowser() {
         }
         return;
       }
-
-      // 3. Web search
       void runSearch(q);
     },
     [input, lastResults, navigateTo, runSearch]
@@ -340,112 +309,210 @@ export default function ZaraBrowser() {
             transition: "width 0.3s ease",
           }}
         >
-          {/* Header */}
-          <div
-            className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
-            style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}
-          >
-            <div className="w-5 h-5 rounded-full flex items-center justify-center bg-black/8 flex-shrink-0">
-              <span className="text-[9px] font-bold text-black/50">Z</span>
-            </div>
-            <span className="text-xs font-semibold text-black/50 tracking-wide">Zara Browser</span>
-            {isSearching && <Loader2 className="w-3 h-3 text-black/30 animate-spin ml-auto" />}
-          </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
-            <AnimatePresence initial={false}>
-              {messages.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+          {/* Header — only shown after conversation starts */}
+          <AnimatePresence>
+            {hasStarted && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-2 px-4 py-2.5 flex-shrink-0"
+                style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}
+              >
+                <div
+                  className="rounded-lg overflow-hidden flex-shrink-0"
+                  style={{ background: "#080808", padding: "2px 6px" }}
                 >
-                  {msg.role === "user" ? (
-                    <div
-                      className="max-w-[80%] px-3 py-2 rounded-2xl rounded-tr-sm text-sm text-black/75"
-                      style={{
-                        background: "rgba(0,0,0,0.07)",
-                        border: "1px solid rgba(0,0,0,0.08)",
-                      }}
-                    >
-                      {msg.text}
-                    </div>
-                  ) : (
-                    <div className="max-w-full w-full space-y-2">
-                      {msg.loading ? (
-                        <div className="flex items-center gap-2 text-xs text-black/35 font-mono">
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          Searching the web...
-                        </div>
-                      ) : msg.error ? (
-                        <div
-                          className="flex items-start gap-2 px-3 py-2.5 rounded-xl text-xs text-black/60"
-                          style={{ background: "rgba(220,50,50,0.06)", border: "1px solid rgba(220,50,50,0.12)" }}
-                        >
-                          <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
-                          <span>{msg.text}</span>
-                        </div>
-                      ) : (
-                        <>
-                          <p className="text-xs text-black/55 leading-relaxed whitespace-pre-line">
-                            {msg.text}
-                          </p>
-                          {msg.results && msg.results.length > 0 && (
-                            <div className="space-y-1.5 mt-2">
-                              {msg.results.map((r) => (
-                                <button
-                                  key={r.index}
-                                  onClick={() => navigateTo(r.url, true)}
-                                  className="w-full text-left group"
-                                >
-                                  <div
-                                    className="px-3 py-2.5 rounded-xl transition-all duration-150 group-hover:shadow-sm"
-                                    style={{
-                                      background: "rgba(255,255,255,0.65)",
-                                      border: "1px solid rgba(0,0,0,0.07)",
-                                      boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                                    }}
-                                  >
-                                    <div className="flex items-start gap-2">
-                                      <span
-                                        className="text-[9px] font-mono font-bold mt-0.5 flex-shrink-0 w-4 text-center"
-                                        style={{ color: "rgba(0,0,0,0.28)" }}
-                                      >
-                                        {r.index}
-                                      </span>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="text-[11px] font-semibold text-black/70 leading-tight truncate group-hover:text-black/85 transition-colors">
-                                          {r.title}
-                                        </div>
-                                        <div className="text-[10px] text-black/38 mt-0.5 leading-snug line-clamp-2">
-                                          {r.description}
-                                        </div>
-                                        <div className="flex items-center gap-1 mt-1">
-                                          <Globe className="w-2.5 h-2.5 text-black/22 flex-shrink-0" />
-                                          <span className="text-[9px] font-mono text-black/25 truncate">
-                                            {domainOf(r.url)}
-                                          </span>
-                                        </div>
-                                      </div>
-                                      <ChevronRight className="w-3 h-3 text-black/20 flex-shrink-0 mt-0.5 group-hover:text-black/40 transition-colors" />
-                                    </div>
-                                  </div>
-                                </button>
-                              ))}
-                              <p className="text-[9px] text-black/18 font-mono px-1">Search by Brave</p>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  )}
+                  <img
+                    src="/zara-browser-logo.png"
+                    alt="Zara Browser"
+                    className="h-4 w-auto object-contain"
+                    draggable={false}
+                  />
+                </div>
+                {isSearching && (
+                  <Loader2 className="w-3 h-3 text-black/28 animate-spin ml-auto" />
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Body — home screen OR messages */}
+          <div className="flex-1 min-h-0 relative overflow-hidden">
+
+            {/* HOME SCREEN */}
+            <AnimatePresence>
+              {!hasStarted && (
+                <motion.div
+                  key="home"
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0, y: -16 }}
+                  transition={{ duration: 0.25 }}
+                  className="absolute inset-0 flex flex-col items-center justify-center px-10"
+                >
+                  {/* Logo card */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.94 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="rounded-2xl overflow-hidden mb-6 shadow-xl"
+                    style={{
+                      background: "#080808",
+                      padding: "20px 36px",
+                      boxShadow: "0 24px 64px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.10)",
+                    }}
+                  >
+                    <img
+                      src="/zara-browser-logo.png"
+                      alt="Zara Browser"
+                      className="h-14 w-auto object-contain"
+                      draggable={false}
+                    />
+                  </motion.div>
+
+                  {/* Tagline */}
+                  <motion.p
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: 0.1 }}
+                    className="text-sm text-black/35 mb-8 text-center font-light tracking-wide"
+                  >
+                    Search, navigate, explore — just ask.
+                  </motion.p>
+
+                  {/* Suggestion chips */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: 0.18 }}
+                    className="flex flex-wrap justify-center gap-2 max-w-xs"
+                  >
+                    {SUGGESTIONS.map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => handleSend(s)}
+                        className="px-3 py-1.5 rounded-full text-xs text-black/45 hover:text-black/70 transition-all duration-150 hover:shadow-sm"
+                        style={{
+                          background: "rgba(255,255,255,0.72)",
+                          border: "1px solid rgba(0,0,0,0.08)",
+                          boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                        }}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </motion.div>
                 </motion.div>
-              ))}
+              )}
             </AnimatePresence>
-            <div ref={messagesEndRef} />
+
+            {/* CHAT MESSAGES */}
+            <AnimatePresence>
+              {hasStarted && (
+                <motion.div
+                  key="chat"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute inset-0 overflow-y-auto px-4 py-3 space-y-3"
+                >
+                  <AnimatePresence initial={false}>
+                    {messages.map((msg) => (
+                      <motion.div
+                        key={msg.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                      >
+                        {msg.role === "user" ? (
+                          <div
+                            className="max-w-[80%] px-3 py-2 rounded-2xl rounded-tr-sm text-sm text-black/75"
+                            style={{
+                              background: "rgba(0,0,0,0.07)",
+                              border: "1px solid rgba(0,0,0,0.08)",
+                            }}
+                          >
+                            {msg.text}
+                          </div>
+                        ) : (
+                          <div className="max-w-full w-full space-y-2">
+                            {msg.loading ? (
+                              <div className="flex items-center gap-2 text-xs text-black/35 font-mono">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                Searching the web...
+                              </div>
+                            ) : msg.error ? (
+                              <div
+                                className="flex items-start gap-2 px-3 py-2.5 rounded-xl text-xs text-black/60"
+                                style={{ background: "rgba(220,50,50,0.06)", border: "1px solid rgba(220,50,50,0.12)" }}
+                              >
+                                <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
+                                <span>{msg.text}</span>
+                              </div>
+                            ) : (
+                              <>
+                                <p className="text-xs text-black/55 leading-relaxed whitespace-pre-line">
+                                  {msg.text}
+                                </p>
+                                {msg.results && msg.results.length > 0 && (
+                                  <div className="space-y-1.5 mt-2">
+                                    {msg.results.map((r) => (
+                                      <button
+                                        key={r.index}
+                                        onClick={() => navigateTo(r.url, true)}
+                                        className="w-full text-left group"
+                                      >
+                                        <div
+                                          className="px-3 py-2.5 rounded-xl transition-all duration-150 group-hover:shadow-sm"
+                                          style={{
+                                            background: "rgba(255,255,255,0.65)",
+                                            border: "1px solid rgba(0,0,0,0.07)",
+                                            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                                          }}
+                                        >
+                                          <div className="flex items-start gap-2">
+                                            <span
+                                              className="text-[9px] font-mono font-bold mt-0.5 flex-shrink-0 w-4 text-center"
+                                              style={{ color: "rgba(0,0,0,0.28)" }}
+                                            >
+                                              {r.index}
+                                            </span>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="text-[11px] font-semibold text-black/70 leading-tight truncate group-hover:text-black/85 transition-colors">
+                                                {r.title}
+                                              </div>
+                                              <div className="text-[10px] text-black/38 mt-0.5 leading-snug line-clamp-2">
+                                                {r.description}
+                                              </div>
+                                              <div className="flex items-center gap-1 mt-1">
+                                                <Globe className="w-2.5 h-2.5 text-black/22 flex-shrink-0" />
+                                                <span className="text-[9px] font-mono text-black/25 truncate">
+                                                  {domainOf(r.url)}
+                                                </span>
+                                              </div>
+                                            </div>
+                                            <ChevronRight className="w-3 h-3 text-black/20 flex-shrink-0 mt-0.5 group-hover:text-black/40 transition-colors" />
+                                          </div>
+                                        </div>
+                                      </button>
+                                    ))}
+                                    <p className="text-[9px] text-black/18 font-mono px-1">Search by Brave</p>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  <div ref={messagesEndRef} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Input bar */}
@@ -470,7 +537,7 @@ export default function ZaraBrowser() {
                   if (e.key === "Enter" && !e.shiftKey) handleSend();
                   if (e.key === "Escape") setInput("");
                 }}
-                placeholder="Ask Zara or enter a URL..."
+                placeholder={hasStarted ? "Ask Zara or enter a URL..." : "Search the web or enter a URL..."}
                 className="flex-1 bg-transparent text-xs text-black/70 outline-none placeholder:text-black/22"
                 autoFocus
               />
@@ -551,7 +618,9 @@ export default function ZaraBrowser() {
                     placeholder="Enter a URL..."
                     className="flex-1 bg-transparent text-xs text-black/60 placeholder:text-black/22 outline-none font-mono"
                   />
-                  {iframeLoading && <Loader2 className="w-3 h-3 text-black/25 animate-spin flex-shrink-0" />}
+                  {iframeLoading && (
+                    <Loader2 className="w-3 h-3 text-black/25 animate-spin flex-shrink-0" />
+                  )}
                 </div>
 
                 <button
@@ -571,15 +640,15 @@ export default function ZaraBrowser() {
                 </button>
               </div>
 
-              {/* iframe — no sandbox, full scripts */}
+              {/* iframe */}
               <div className="flex-1 relative overflow-hidden bg-white">
                 {iframeError ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                     <AlertCircle className="w-8 h-8 text-black/20" />
                     <div className="text-center">
                       <p className="text-sm font-medium text-black/45">This site can't be embedded</p>
                       <p className="text-xs text-black/28 mt-1 max-w-xs">
-                        {domainOf(activeUrl)} blocks iframe embedding for security. Open it in your system browser instead.
+                        {domainOf(activeUrl)} blocks iframe embedding. Open it in your system browser instead.
                       </p>
                     </div>
                     <button
@@ -598,9 +667,12 @@ export default function ZaraBrowser() {
                         className="absolute top-0 left-0 right-0 h-0.5 z-10 overflow-hidden"
                         style={{ background: "rgba(0,0,0,0.06)" }}
                       >
-                        <div
-                          className="h-full animate-[progress_1.5s_ease-in-out_infinite]"
-                          style={{ background: "rgba(0,0,0,0.35)", width: "40%", marginLeft: "30%" }}
+                        <motion.div
+                          className="h-full"
+                          style={{ background: "rgba(0,0,0,0.35)" }}
+                          initial={{ width: "0%", x: "0%" }}
+                          animate={{ width: "60%", x: "70%" }}
+                          transition={{ duration: 1.4, ease: "easeInOut", repeat: Infinity, repeatType: "reverse" }}
                         />
                       </div>
                     )}
