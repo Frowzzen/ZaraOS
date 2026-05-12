@@ -83,8 +83,10 @@ ok "Node.js: $(node --version)"
 
 # ── pnpm ──────────────────────────────────────────────────────
 if ! command -v pnpm &>/dev/null; then
-  log "Installing pnpm..."
-  npm install -g pnpm 2>&1 | tail -2
+  log "Installing pnpm (standalone installer)..."
+  curl -fsSL https://get.pnpm.io/install.sh | sh -
+  export PNPM_HOME="$HOME/.local/share/pnpm"
+  export PATH="$PNPM_HOME:$PATH"
 fi
 ok "pnpm: $(pnpm --version)"
 
