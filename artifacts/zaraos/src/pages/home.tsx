@@ -83,16 +83,24 @@ export default function Home() {
       <div className="flex flex-col gap-8 h-full max-w-6xl mx-auto">
 
         {/* ── Header ── */}
-        <div className="flex justify-between items-end">
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">System Overview</h1>
-            <p className="text-xl text-primary font-mono bg-primary/10 px-3 py-1 rounded-md border border-primary/20 inline-block shadow-[0_0_15px_rgba(0,240,255,0.1)]">
-              Welcome back. I am Zara, running locally.
-            </p>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-5">
+            {/* Wordmark — cropped from official logo sheet */}
+            <img
+              src="/zaraos-wordmark.png"
+              alt="ZaraOS"
+              className="h-10 w-auto object-contain object-left select-none hidden sm:block"
+              draggable={false}
+            />
+            <div>
+              <p className="text-sm text-primary font-mono bg-primary/10 px-3 py-1 rounded-md border border-primary/20 inline-block shadow-[0_0_12px_rgba(0,240,255,0.08)]">
+                Welcome back. I am Zara, running locally.
+              </p>
+            </div>
           </div>
-          <div className="text-right font-mono hidden md:block">
+          <div className="text-right font-mono flex-shrink-0 hidden md:block">
             <div className="text-3xl text-white font-light">{time.toLocaleTimeString()}</div>
-            <div className="text-muted-foreground">{time.toLocaleDateString()}</div>
+            <div className="text-sm text-muted-foreground">{time.toLocaleDateString()}</div>
           </div>
         </div>
 

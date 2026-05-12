@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { systemPower } from "@/core/tauri/tauri-system-controls";
 import { isTauriRuntime } from "@/core/tauri/tauri-bridge";
+import { ZaraOSIcon } from "@/components/zaraos-logo";
 import { GlobalCommandBox } from "@/components/global-command-box";
 import { GestureOverlay } from "@/components/gesture-overlay";
 import { InputModeIndicator } from "@/components/input-mode-indicator";
@@ -95,12 +96,12 @@ export function Layout({ children }: LayoutProps) {
 
           {/* Logo */}
           <div className="flex items-center gap-3 px-1 md:px-0">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/25 flex-shrink-0">
-              <span className="font-mono font-bold text-primary-foreground text-lg">Z</span>
+            <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/20 flex-shrink-0">
+              <ZaraOSIcon size={22} className="text-primary drop-shadow-[0_0_6px_rgba(0,240,255,0.7)]" />
             </div>
             <div className="hidden md:block">
               <h1 className="font-bold text-lg tracking-tight text-white leading-none">ZaraOS</h1>
-              <p className="text-[10px] text-primary/70 font-mono tracking-widest uppercase mt-0.5">Alpha 0.5</p>
+              <p className="text-[10px] text-primary/70 font-mono tracking-widest uppercase mt-0.5">Alpha 0.6</p>
             </div>
           </div>
 
