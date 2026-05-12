@@ -95,6 +95,18 @@ class ZaraRuntime {
     return this.zaraStatus;
   }
 
+  // Called by the TTS layer so the orb reflects real speech state,
+  // not just the 2-second timeout fallback.
+  public setSpeakingState(speaking: boolean): void {
+    const current = this.zaraStatus;
+    if (speaking) {
+      this.setZaraStatus("speaking");
+    } else if (current === "speaking") {
+      // Only go back to idle — don't clobber "listening" or "thinking"
+      this.setZaraStatus("idle");
+    }
+  }
+
   public onStatusChange(listener: StatusListener): () => void {
     this.statusListeners.add(listener);
     return () => this.statusListeners.delete(listener);

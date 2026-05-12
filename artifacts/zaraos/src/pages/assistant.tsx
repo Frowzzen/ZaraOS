@@ -17,6 +17,8 @@ import { VoiceWaveform } from "@/components/voice-waveform";
 import { useRuntime } from "@/core/runtime-context";
 import { voiceEngine } from "@/lib/voice-engine";
 import { usePrivacy } from "@/lib/privacy-store";
+import { parseAndRoute } from "@/lib/command-router";
+import { useLocation } from "wouter";
 import {
   Mic,
   MicOff,
@@ -76,13 +78,24 @@ const SUGGESTED_COMMANDS = [
   "play music",
 ];
 
+// Intents handled by executeCommand (action + navigation) — NOT routed to AI
+const ACTION_INTENTS = new Set([
+  "open_app", "close_app", "navigation_action", "scroll_action",
+  "file_action", "media_action", "privacy_action", "settings_action",
+  "developer_action", "skill_action", "system_control",
+  "launch_native_app", "close_native_app", "focus_native_app",
+  "minimize_native_app", "cycle_apps",
+]);
+
 export default function Assistant() {
   const {
     zaraStatus,
     streamAssistantMessage,
     clearAIConversation,
     aiRuntimeStatus,
+    executeCommand,
   } = useRuntime();
+  const [, navigate] = useLocation();
   const { setMicActive, localAIRunning, cloudAIRunning } = usePrivacy();
 
   const [showConnectPanel, setShowConnectPanel] = useState(false);
@@ -98,9 +111,34 @@ export default function Assistant() {
   ]);
   const [streamingContent, setStreamingContent] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState("");
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const greetingSpoken = useRef(false);
+
+  // Boot greeting — spoken once after TTS voices load
+  useEffect(() => {
+    if (greetingSpoken.current) return;
+    greetingSpoken.current = true;
+    const speak = () => {
+      voiceEngine.speak(
+        "Hello. I am Zara. I am online and running locally on this device. How can I help you today?",
+        { rate: 0.97, pitch: 1.05 }
+      );
+    };
+    // Voices may not be loaded instantly; wait for them
+    if (window.speechSynthesis?.getVoices().length > 0) {
+      setTimeout(speak, 800);
+    } else {
+      window.speechSynthesis?.addEventListener("voiceschanged", () => setTimeout(speak, 400), { once: true });
+    }
+  }, []);
+
+  // Track TTS speaking state for visual feedback and stop button
+  useEffect(() => {
+    return voiceEngine.onSpeakingChange(setIsSpeaking);
+  }, []);
 
   // Keep a ref to handleSend so voice callbacks always see the latest version
   // without needing it in the subscription useEffect dependency array.
@@ -129,6 +167,44 @@ export default function Assistant() {
       timestamp: Date.now(),
     };
     setMessages((prev) => [...prev, userMsg]);
+
+    // ── Route: action commands (navigation, system control, app launch, etc.) ──
+    // These get an instant spoken confirmation + immediate action, no AI wait.
+    const parsed = parseAndRoute(userInput, source);
+    if (ACTION_INTENTS.has(parsed.intent)) {
+      // Acknowledge voice input immediately so the user knows Zara heard them
+      if (source === "voice") voiceEngine.speak("On it.", { rate: 1.1, pitch: 1.05 });
+
+      try {
+        const result = await executeCommand(userInput, source);
+        const reply = result.response || "Done.";
+
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: reply, source: "system", timestamp: Date.now() },
+        ]);
+
+        // Speak the confirmation response
+        voiceEngine.speak(reply, { rate: 0.98, pitch: 1.05 });
+
+        // Execute navigation after a brief moment so Zara can start speaking first
+        if (result.action === "navigate" && result.payload) {
+          setTimeout(() => navigate(result.payload!), 900);
+        }
+      } catch {
+        const errMsg = "I couldn't complete that action. Please try again.";
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: errMsg, source: "system", timestamp: Date.now() },
+        ]);
+        voiceEngine.speak(errMsg);
+      }
+      return;
+    }
+
+    // ── Route: AI questions — stream the response then speak it ──
+    // Acknowledge voice input immediately
+    if (source === "voice") voiceEngine.speak("Let me think about that.", { rate: 1.05, pitch: 1.05 });
 
     let accumulated = "";
     setStreamingContent("");
@@ -159,19 +235,18 @@ export default function Assistant() {
           streamed: true,
         },
       ]);
+      // Speak the full AI response
+      if (accumulated) voiceEngine.speak(accumulated);
     } catch {
       setStreamingContent(null);
+      const errMsg = "Something went wrong. Make sure an AI provider is connected.";
       setMessages((prev) => [
         ...prev,
-        {
-          role: "assistant",
-          content: "AI runtime encountered an error. Ensure a local provider is running.",
-          source: "system",
-          timestamp: Date.now(),
-        },
+        { role: "assistant", content: errMsg, source: "system", timestamp: Date.now() },
       ]);
+      voiceEngine.speak(errMsg);
     }
-  }, [input, streamAssistantMessage, aiRuntimeStatus.providerId, aiRuntimeStatus.modelId, aiRuntimeStatus.latencyMs]);
+  }, [input, streamAssistantMessage, executeCommand, navigate, aiRuntimeStatus.providerId, aiRuntimeStatus.modelId, aiRuntimeStatus.latencyMs]);
 
   // Keep ref in sync
   useEffect(() => {
@@ -244,6 +319,7 @@ export default function Assistant() {
   const isStreaming = streamingContent !== null;
   const isBusy = zaraStatus === "thinking" || isStreaming;
   const voiceSupported = voiceEngine.isSupported;
+  const ttsSupportted = voiceEngine.isTTSSupported;
 
   return (
     <Layout>
@@ -441,8 +517,24 @@ export default function Assistant() {
           {/* ── Input Bar ── */}
           <div className="p-4 bg-black/40 border-t border-white/5 backdrop-blur-xl">
 
+            {/* Zara speaking indicator */}
+            {isSpeaking && (
+              <div className="flex items-center gap-2 mb-3 px-1">
+                <VoiceWaveform active={true} color="cyan" size="sm" />
+                <span className="text-xs font-mono text-cyan-400 tracking-wider">
+                  ZARA IS SPEAKING
+                </span>
+                <button
+                  className="ml-auto text-[10px] font-mono px-2.5 py-1 rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors"
+                  onClick={() => voiceEngine.stopSpeaking()}
+                >
+                  stop
+                </button>
+              </div>
+            )}
+
             {/* Voice listening indicator */}
-            {isListening && (
+            {isListening && !isSpeaking && (
               <div className="flex items-center gap-2 mb-3 px-1">
                 <VoiceWaveform active={isListening} color="amber" size="sm" />
                 <span className="text-xs font-mono text-amber-400">

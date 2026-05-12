@@ -100,8 +100,9 @@ class VoiceEngine {
   private _isSupported: boolean;
   private _simInterval: ReturnType<typeof setInterval> | null = null;
 
-  private resultSubs:  Set<VoiceResultCallback> = new Set();
-  private stateSubs:   Set<VoiceStateCallback>  = new Set();
+  private resultSubs:   Set<VoiceResultCallback> = new Set();
+  private stateSubs:    Set<VoiceStateCallback>  = new Set();
+  private speakingSubs: Set<(speaking: boolean) => void> = new Set();
 
   constructor() {
     this._isSupported =
@@ -272,6 +273,65 @@ class VoiceEngine {
         this.setState("idle");
       }
     }, 60);
+  }
+
+  // ── Text-to-Speech ─────────────────────────────────────
+  // Uses the browser's built-in SpeechSynthesis API.
+  // Supported in WebKit2GTK (Tauri on Linux) — no network needed.
+
+  get isTTSSupported(): boolean {
+    return typeof window !== "undefined" && "speechSynthesis" in window;
+  }
+
+  get isSpeaking(): boolean {
+    return typeof window !== "undefined" && window.speechSynthesis?.speaking === true;
+  }
+
+  speak(text: string, options?: { rate?: number; pitch?: number; volume?: number }): void {
+    if (!this.isTTSSupported) return;
+    // Cancel any in-progress speech before starting new
+    window.speechSynthesis.cancel();
+
+    // Strip markdown and trim to a reasonable length for TTS
+    const clean = text
+      .replace(/```[\s\S]*?```/g, "code block omitted")
+      .replace(/`[^`]+`/g, "")
+      .replace(/[*_#~>]/g, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 800); // cap at ~800 chars so long replies don't drone on
+
+    if (!clean) return;
+
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.rate   = options?.rate   ?? 1.05;
+    utterance.pitch  = options?.pitch  ?? 1.0;
+    utterance.volume = options?.volume ?? 1.0;
+    utterance.lang   = "en-US";
+
+    // Prefer a female English voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find((v) =>
+      v.lang.startsWith("en") && /female|woman|zira|hazel|samantha|karen|victoria|moira|tessa|fiona/i.test(v.name)
+    ) ?? voices.find((v) => v.lang.startsWith("en")) ?? null;
+    if (preferred) utterance.voice = preferred;
+
+    this.speakingSubs.forEach((cb) => cb(true));
+    utterance.onend   = () => this.speakingSubs.forEach((cb) => cb(false));
+    utterance.onerror = () => this.speakingSubs.forEach((cb) => cb(false));
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  stopSpeaking(): void {
+    if (this.isTTSSupported) window.speechSynthesis.cancel();
+    this.speakingSubs.forEach((cb) => cb(false));
+  }
+
+  onSpeakingChange(cb: (speaking: boolean) => void): () => void {
+    this.speakingSubs.add(cb);
+    return () => this.speakingSubs.delete(cb);
   }
 
   // ── Internal ───────────────────────────────────────────

@@ -18,6 +18,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { zaraRuntime } from "./zara-runtime";
 import { aiRuntime } from "./ai/ai-runtime";
+import { autoConnectLocalProviders } from "./ai/providers/provider-registry";
+import { voiceEngine } from "@/lib/voice-engine";
 import type { ZaraStatus } from "./types";
 import type { AIRuntimeStatus } from "./ai/ai-runtime";
 import type { AIStreamCallback } from "./ai/providers/provider-adapter";
@@ -100,11 +102,18 @@ export function RuntimeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     zaraRuntime.initialize();
+    // Silently ping Ollama — if running, switch from simulated to real AI automatically
+    void autoConnectLocalProviders();
     const unsubZara = zaraRuntime.onStatusChange(setZaraStatus);
-    const unsubAI = zaraRuntime.onAIStatusChange(setAIRuntimeStatus);
+    const unsubAI  = zaraRuntime.onAIStatusChange(setAIRuntimeStatus);
+    // Drive the orb's "speaking" state from real TTS events
+    const unsubTTS = voiceEngine.onSpeakingChange((speaking) => {
+      zaraRuntime.setSpeakingState(speaking);
+    });
     return () => {
       unsubZara();
       unsubAI();
+      unsubTTS();
     };
   }, []);
 

@@ -302,6 +302,39 @@ export function setCloudAIAllowed(allowed: boolean): void {
   providerRouter.setCloudAIEnabled(allowed);
 }
 
+// ── Auto-connect local providers on startup ───────────────────
+// Silently pings Ollama. If it responds with at least one model,
+// immediately switches the preferred provider from "local" (simulated)
+// to "ollama" — no user action required.
+//
+// Called once from RuntimeProvider after zaraRuntime.initialize().
+// Safe to call multiple times — exits early if provider is already set.
+export async function autoConnectLocalProviders(): Promise<void> {
+  // Don't override an explicit user choice
+  const saved = localStorage.getItem(SK_PREFERRED);
+  if (saved && saved !== "local" && saved !== null) return;
+
+  const endpoints = loadJson<Record<string, string>>(SK_ENDPOINTS, {});
+  const ollamaUrl = endpoints["ollama"] ?? "http://localhost:11434";
+
+  try {
+    const res = await fetch(`${ollamaUrl}/api/tags`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return;
+
+    const data = (await res.json()) as { models?: { name: string }[] };
+    const models = data.models ?? [];
+    if (models.length === 0) return;
+
+    // Ollama is running and has at least one model — switch to it
+    providerRouter.setPreferredProvider("ollama");
+    localStorage.setItem(SK_PREFERRED, "ollama");
+  } catch {
+    // Ollama not reachable — stay on simulated provider, no error surfaced
+  }
+}
+
 // ── Auto-initialization ───────────────────────────────────────
 // Providers are initialized synchronously the moment this module is
 // imported. This guarantees they are registered before any React

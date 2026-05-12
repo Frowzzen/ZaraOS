@@ -32,7 +32,10 @@ fi
 xsetroot -solid "#000000"
 
 # ── 4. Ensure Ollama user service is running ─────────────────
-systemctl --user start ollama.service 2>/dev/null || true
+# OLLAMA_ORIGINS=* allows the Tauri WebView to connect to Ollama
+export OLLAMA_ORIGINS="*"
+systemctl --user enable --now ollama.service 2>/dev/null || \
+  OLLAMA_ORIGINS="*" /usr/local/bin/ollama serve &
 
 # ── 5. Launch ZaraOS Tauri binary ────────────────────────────
 # The binary is installed by the .deb package to /usr/bin/zaraos
