@@ -9,7 +9,6 @@ import { useInputMode } from "@/core/input-mode";
 import { gestureEngine } from "@/lib/gesture-engine";
 import { voiceEngine } from "@/lib/voice-engine";
 import { zaraRuntime } from "@/core/zara-runtime";
-import { useRuntime } from "@/core/runtime-context";
 import {
   Mic,
   MicOff,
@@ -130,7 +129,6 @@ export function DesktopShell() {
 
   const isTauri = isTauriRuntime();
   const { voiceActive, gestureActive, toggleVoice, toggleGesture, setVoice } = useInputMode();
-  const { streamAssistantMessage } = useRuntime();
   const inputRef = useRef<HTMLInputElement>(null);
   const windowsRef = useRef<WinState[]>([]);
 
@@ -311,7 +309,7 @@ export function DesktopShell() {
       setZaraInline({ query: q, reply: "", streaming: true });
       let accumulated = "";
       try {
-        await streamAssistantMessage(
+        await zaraRuntime.streamAssistantMessage(
           q,
           (chunk) => {
             if (!chunk.done) {
@@ -328,7 +326,7 @@ export function DesktopShell() {
         setZaraInline((prev) => prev ? { ...prev, reply: err, streaming: false } : null);
       }
     },
-    [openWindow, streamAssistantMessage]
+    [openWindow]
   );
 
   // ── Clock ────────────────────────────────────────────────────────────────────
