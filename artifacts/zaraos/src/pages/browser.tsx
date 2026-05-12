@@ -1,156 +1,625 @@
-import { useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/layout";
-import { ArrowLeft, ArrowRight, RotateCcw, X, Globe } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  RotateCcw,
+  X,
+  Globe,
+  Mic,
+  MicOff,
+  Search,
+  ExternalLink,
+  Loader2,
+  AlertCircle,
+  ChevronRight,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-export default function Browser() {
-  const [inputUrl, setInputUrl] = useState("");
-  const [activeUrl, setActiveUrl] = useState("");
-  const [history, setHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [loading, setLoading] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-  const navigate = (raw: string) => {
-    let url = raw.trim();
-    if (!url) return;
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      if (url.includes(".") && !url.includes(" ")) {
-        url = "https://" + url;
-      } else {
-        url = "https://www.google.com/search?q=" + encodeURIComponent(url);
-      }
+interface SearchResult {
+  index: number;
+  title: string;
+  url: string;
+  description: string;
+  age?: string;
+  favicon?: string;
+}
+
+interface ZaraMsg {
+  id: string;
+  role: "user" | "zara";
+  text: string;
+  results?: SearchResult[];
+  loading?: boolean;
+  error?: boolean;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function isDirectUrl(q: string): boolean {
+  const s = q.trim();
+  return (
+    /^https?:\/\//i.test(s) ||
+    /^www\./i.test(s) ||
+    (/^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/|$)/.test(s) && !s.includes(" "))
+  );
+}
+
+function normalizeUrl(raw: string): string {
+  const s = raw.trim();
+  if (/^https?:\/\//i.test(s)) return s;
+  return "https://" + s;
+}
+
+// Transform YouTube watch URLs → embed so they load inside the viewer
+function toViewableUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtube.com") && u.searchParams.get("v")) {
+      return `https://www.youtube.com/embed/${u.searchParams.get("v")}?autoplay=0`;
     }
-    setActiveUrl(url);
-    setInputUrl(url);
-    setLoading(true);
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(url);
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
+    if (u.hostname === "youtu.be") {
+      const id = u.pathname.slice(1);
+      return `https://www.youtube.com/embed/${id}?autoplay=0`;
+    }
+  } catch {
+    /* not a URL */
+  }
+  return url;
+}
+
+// Detect "open result N" / "pull up the second one" etc.
+function detectResultSelection(text: string): number | null {
+  const q = text.toLowerCase().trim();
+  const wordMap: Record<string, number> = {
+    first: 1, "1st": 1, one: 1, "1": 1,
+    second: 2, "2nd": 2, two: 2, "2": 2,
+    third: 3, "3rd": 3, three: 3, "3": 3,
+    fourth: 4, "4th": 4, four: 4, "4": 4,
+    fifth: 5, "5th": 5, five: 5, "5": 5,
+    sixth: 6, "6th": 6, six: 6, "6": 6,
   };
 
+  // "open/pull up/go to/show/visit [the] <number> [result/one/option]"
+  const pattern =
+    /\b(open|pull up|go to|show|visit|load|navigate to|take me to)\b.{0,12}?\b(first|second|third|fourth|fifth|sixth|1st|2nd|3rd|4th|5th|6th|one|two|three|four|five|six|[1-6])\b/i;
+
+  // Also plain "result 2" or "#2"
+  const plain = /\b(result|number|#)\s*([1-6])\b/i;
+
+  const m = q.match(pattern);
+  if (m) {
+    const word = m[2].toLowerCase();
+    return wordMap[word] ?? null;
+  }
+
+  const m2 = q.match(plain);
+  if (m2) return parseInt(m2[2], 10);
+
+  return null;
+}
+
+function domainOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+function uid() {
+  return Math.random().toString(36).slice(2);
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export default function ZaraBrowser() {
+  const [messages, setMessages] = useState<ZaraMsg[]>([
+    {
+      id: uid(),
+      role: "zara",
+      text: 'I\'m Zara. Tell me what you want to find, or give me a URL to open.\n\nTry: "find me a coffee shop nearby", "what\'s the best way to learn Rust", or "youtube.com"',
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [activeUrl, setActiveUrl] = useState("");
+  const [urlBarInput, setUrlBarInput] = useState("");
+  const [iframeLoading, setIframeLoading] = useState(false);
+  const [lastResults, setLastResults] = useState<SearchResult[]>([]);
+  const [voiceActive, setVoiceActive] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
+
+  // nav history
+  const [navHistory, setNavHistory] = useState<string[]>([]);
+  const [navIndex, setNavIndex] = useState(-1);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // ── Navigation ─────────────────────────────────────────────────────────────
+
+  const navigateTo = useCallback(
+    (raw: string, fromChat = false) => {
+      const url = toViewableUrl(normalizeUrl(raw));
+      setActiveUrl(url);
+      setUrlBarInput(url);
+      setIframeLoading(true);
+      setIframeError(false);
+
+      setNavHistory((h) => {
+        const next = h.slice(0, navIndex + 1);
+        next.push(url);
+        setNavIndex(next.length - 1);
+        return next;
+      });
+
+      if (fromChat) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: uid(),
+            role: "zara",
+            text: `Opening ${domainOf(url)}...`,
+          },
+        ]);
+      }
+    },
+    [navIndex]
+  );
+
   const goBack = () => {
-    if (historyIndex > 0) {
-      const newIndex = historyIndex - 1;
-      setHistoryIndex(newIndex);
-      setActiveUrl(history[newIndex]);
-      setInputUrl(history[newIndex]);
+    if (navIndex > 0) {
+      const newIdx = navIndex - 1;
+      setNavIndex(newIdx);
+      const url = navHistory[newIdx];
+      setActiveUrl(url);
+      setUrlBarInput(url);
+      setIframeLoading(true);
+      setIframeError(false);
     }
   };
 
   const goForward = () => {
-    if (historyIndex < history.length - 1) {
-      const newIndex = historyIndex + 1;
-      setHistoryIndex(newIndex);
-      setActiveUrl(history[newIndex]);
-      setInputUrl(history[newIndex]);
+    if (navIndex < navHistory.length - 1) {
+      const newIdx = navIndex + 1;
+      setNavIndex(newIdx);
+      const url = navHistory[newIdx];
+      setActiveUrl(url);
+      setUrlBarInput(url);
+      setIframeLoading(true);
+      setIframeError(false);
     }
   };
 
   const reload = () => {
     if (iframeRef.current && activeUrl) {
       iframeRef.current.src = activeUrl;
-      setLoading(true);
+      setIframeLoading(true);
+      setIframeError(false);
     }
   };
 
+  // ── Search ─────────────────────────────────────────────────────────────────
+
+  const runSearch = useCallback(async (query: string) => {
+    setIsSearching(true);
+
+    // Optimistic loading bubble
+    const loadId = uid();
+    setMessages((prev) => [
+      ...prev,
+      { id: loadId, role: "zara", text: "", loading: true },
+    ]);
+
+    try {
+      const res = await fetch(
+        `/api/search?q=${encodeURIComponent(query)}&count=6`
+      );
+      const data = (await res.json()) as {
+        results?: SearchResult[];
+        error?: string;
+        setup?: boolean;
+      };
+
+      if (data.setup) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === loadId
+              ? {
+                  ...m,
+                  loading: false,
+                  error: true,
+                  text: "Brave Search isn't configured yet. Add your BRAVE_SEARCH_API_KEY in the Secrets panel — get a free key at brave.com/search/api",
+                }
+              : m
+          )
+        );
+        return;
+      }
+
+      if (!data.results?.length) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === loadId
+              ? { ...m, loading: false, text: "I didn't find any results for that. Try rephrasing?" }
+              : m
+          )
+        );
+        return;
+      }
+
+      setLastResults(data.results);
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === loadId
+            ? {
+                ...m,
+                loading: false,
+                text: `Here's what I found for "${query}". Say "open result 1" or tap any card to visit the site.`,
+                results: data.results,
+              }
+            : m
+        )
+      );
+    } catch {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === loadId
+            ? { ...m, loading: false, error: true, text: "Search failed — check your connection and try again." }
+            : m
+        )
+      );
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // ── Send ───────────────────────────────────────────────────────────────────
+
+  const handleSend = useCallback(
+    (text = input) => {
+      const q = text.trim();
+      if (!q) return;
+      setInput("");
+
+      setMessages((prev) => [
+        ...prev,
+        { id: uid(), role: "user", text: q },
+      ]);
+
+      // 1. Direct URL
+      if (isDirectUrl(q)) {
+        navigateTo(q, true);
+        return;
+      }
+
+      // 2. Result selection
+      const sel = detectResultSelection(q);
+      if (sel !== null && lastResults.length > 0) {
+        const result = lastResults[sel - 1];
+        if (result) {
+          navigateTo(result.url, true);
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            { id: uid(), role: "zara", text: `I only have ${lastResults.length} results. Which one did you mean?` },
+          ]);
+        }
+        return;
+      }
+
+      // 3. Web search
+      void runSearch(q);
+    },
+    [input, lastResults, navigateTo, runSearch]
+  );
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  const showViewer = !!activeUrl;
+
   return (
     <Layout>
-      <div className="h-full flex flex-col bg-background">
-        {/* Address bar */}
-        <div
-          className="flex items-center gap-2 px-3 py-2 flex-shrink-0"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
-        >
-          <button
-            onClick={goBack}
-            disabled={historyIndex <= 0}
-            className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/8 transition-all disabled:opacity-20 disabled:cursor-default"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={goForward}
-            disabled={historyIndex >= history.length - 1}
-            className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/8 transition-all disabled:opacity-20 disabled:cursor-default"
-          >
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={reload}
-            disabled={!activeUrl}
-            className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/8 transition-all disabled:opacity-20 disabled:cursor-default"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
+      <div className="h-full flex overflow-hidden bg-transparent">
 
-          <div className="flex-1 flex items-center gap-2 rounded-lg px-3 py-1.5" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
-            <Globe className="w-3 h-3 text-white/25 flex-shrink-0" />
-            <input
-              value={inputUrl}
-              onChange={(e) => setInputUrl(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && navigate(inputUrl)}
-              placeholder="Enter a URL or search the web..."
-              className="flex-1 bg-transparent text-sm text-white/75 placeholder:text-white/22 outline-none font-mono"
-            />
-            {inputUrl && (
-              <button onClick={() => setInputUrl("")} className="text-white/25 hover:text-white/60 transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            )}
+        {/* ── Conversation panel ── */}
+        <div
+          className="flex flex-col flex-shrink-0 overflow-hidden"
+          style={{
+            width: showViewer ? "340px" : "100%",
+            borderRight: showViewer ? "1px solid rgba(0,0,0,0.07)" : "none",
+            transition: "width 0.3s ease",
+          }}
+        >
+          {/* Header */}
+          <div
+            className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
+            style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}
+          >
+            <div className="w-5 h-5 rounded-full flex items-center justify-center bg-black/8 flex-shrink-0">
+              <span className="text-[9px] font-bold text-black/50">Z</span>
+            </div>
+            <span className="text-xs font-semibold text-black/50 tracking-wide">Zara Browser</span>
+            {isSearching && <Loader2 className="w-3 h-3 text-black/30 animate-spin ml-auto" />}
           </div>
 
-          <button
-            onClick={() => navigate(inputUrl)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-white/50 hover:text-white hover:bg-white/8 transition-all border border-white/10"
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
+            <AnimatePresence initial={false}>
+              {messages.map((msg) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {msg.role === "user" ? (
+                    <div
+                      className="max-w-[80%] px-3 py-2 rounded-2xl rounded-tr-sm text-sm text-black/75"
+                      style={{
+                        background: "rgba(0,0,0,0.07)",
+                        border: "1px solid rgba(0,0,0,0.08)",
+                      }}
+                    >
+                      {msg.text}
+                    </div>
+                  ) : (
+                    <div className="max-w-full w-full space-y-2">
+                      {msg.loading ? (
+                        <div className="flex items-center gap-2 text-xs text-black/35 font-mono">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Searching the web...
+                        </div>
+                      ) : msg.error ? (
+                        <div
+                          className="flex items-start gap-2 px-3 py-2.5 rounded-xl text-xs text-black/60"
+                          style={{ background: "rgba(220,50,50,0.06)", border: "1px solid rgba(220,50,50,0.12)" }}
+                        >
+                          <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
+                          <span>{msg.text}</span>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-xs text-black/55 leading-relaxed whitespace-pre-line">
+                            {msg.text}
+                          </p>
+                          {msg.results && msg.results.length > 0 && (
+                            <div className="space-y-1.5 mt-2">
+                              {msg.results.map((r) => (
+                                <button
+                                  key={r.index}
+                                  onClick={() => navigateTo(r.url, true)}
+                                  className="w-full text-left group"
+                                >
+                                  <div
+                                    className="px-3 py-2.5 rounded-xl transition-all duration-150 group-hover:shadow-sm"
+                                    style={{
+                                      background: "rgba(255,255,255,0.65)",
+                                      border: "1px solid rgba(0,0,0,0.07)",
+                                      boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                                    }}
+                                  >
+                                    <div className="flex items-start gap-2">
+                                      <span
+                                        className="text-[9px] font-mono font-bold mt-0.5 flex-shrink-0 w-4 text-center"
+                                        style={{ color: "rgba(0,0,0,0.28)" }}
+                                      >
+                                        {r.index}
+                                      </span>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-[11px] font-semibold text-black/70 leading-tight truncate group-hover:text-black/85 transition-colors">
+                                          {r.title}
+                                        </div>
+                                        <div className="text-[10px] text-black/38 mt-0.5 leading-snug line-clamp-2">
+                                          {r.description}
+                                        </div>
+                                        <div className="flex items-center gap-1 mt-1">
+                                          <Globe className="w-2.5 h-2.5 text-black/22 flex-shrink-0" />
+                                          <span className="text-[9px] font-mono text-black/25 truncate">
+                                            {domainOf(r.url)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <ChevronRight className="w-3 h-3 text-black/20 flex-shrink-0 mt-0.5 group-hover:text-black/40 transition-colors" />
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                              <p className="text-[9px] text-black/18 font-mono px-1">Search by Brave</p>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input bar */}
+          <div
+            className="flex-shrink-0 p-3"
+            style={{ borderTop: "1px solid rgba(0,0,0,0.06)" }}
           >
-            Go
-          </button>
+            <div
+              className="flex items-center gap-2 px-3 py-2 rounded-xl"
+              style={{
+                background: "rgba(255,255,255,0.70)",
+                border: "1px solid rgba(0,0,0,0.09)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              }}
+            >
+              <Search className="w-3.5 h-3.5 text-black/22 flex-shrink-0" />
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) handleSend();
+                  if (e.key === "Escape") setInput("");
+                }}
+                placeholder="Ask Zara or enter a URL..."
+                className="flex-1 bg-transparent text-xs text-black/70 outline-none placeholder:text-black/22"
+                autoFocus
+              />
+              {input && (
+                <button onClick={() => setInput("")} className="text-black/20 hover:text-black/45 transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+              <button
+                onClick={() => setVoiceActive((v) => !v)}
+                className={`flex-shrink-0 transition-colors ${voiceActive ? "text-black/60" : "text-black/22 hover:text-black/45"}`}
+              >
+                {voiceActive ? <Mic className="w-3.5 h-3.5" /> : <MicOff className="w-3.5 h-3.5" />}
+              </button>
+              {input.trim() && (
+                <button
+                  onClick={() => handleSend()}
+                  className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-black/50 hover:text-black/75 transition-colors"
+                  style={{ background: "rgba(0,0,0,0.06)", border: "1px solid rgba(0,0,0,0.08)" }}
+                >
+                  Send
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Iframe area */}
-        <div className="flex-1 relative overflow-hidden">
-          {!activeUrl ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-              <Globe className="w-10 h-10 text-white/10" />
-              <div className="text-center">
-                <p className="text-sm font-medium text-white/30">No page loaded</p>
-                <p className="text-xs text-white/18 font-mono mt-1">Type a URL or search term above</p>
-              </div>
-              <div className="flex flex-wrap gap-2 justify-center mt-2">
-                {["google.com", "wikipedia.org", "news.ycombinator.com"].map((site) => (
-                  <button
-                    key={site}
-                    onClick={() => navigate(site)}
-                    className="px-3 py-1.5 rounded-lg text-xs text-white/35 hover:text-white/60 transition-colors font-mono"
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
-                  >
-                    {site}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <>
-              {loading && (
-                <div className="absolute top-0 left-0 right-0 h-0.5 z-10 overflow-hidden">
-                  <div
-                    className="h-full animate-pulse"
-                    style={{ background: "rgba(255,255,255,0.4)", width: "60%" }}
+        {/* ── Website viewer panel ── */}
+        <AnimatePresence>
+          {showViewer && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 flex flex-col overflow-hidden min-w-0"
+            >
+              {/* Viewer toolbar */}
+              <div
+                className="flex items-center gap-2 px-3 py-2 flex-shrink-0"
+                style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}
+              >
+                <button
+                  onClick={goBack}
+                  disabled={navIndex <= 0}
+                  className="p-1.5 rounded-lg text-black/30 hover:text-black/60 hover:bg-black/5 transition-all disabled:opacity-20 disabled:cursor-default"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={goForward}
+                  disabled={navIndex >= navHistory.length - 1}
+                  className="p-1.5 rounded-lg text-black/30 hover:text-black/60 hover:bg-black/5 transition-all disabled:opacity-20 disabled:cursor-default"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={reload}
+                  className="p-1.5 rounded-lg text-black/30 hover:text-black/60 hover:bg-black/5 transition-all"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+
+                <div
+                  className="flex-1 flex items-center gap-2 rounded-lg px-3 py-1.5"
+                  style={{
+                    background: "rgba(0,0,0,0.04)",
+                    border: "1px solid rgba(0,0,0,0.08)",
+                  }}
+                >
+                  <Globe className="w-3 h-3 text-black/22 flex-shrink-0" />
+                  <input
+                    value={urlBarInput}
+                    onChange={(e) => setUrlBarInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") navigateTo(urlBarInput);
+                    }}
+                    placeholder="Enter a URL..."
+                    className="flex-1 bg-transparent text-xs text-black/60 placeholder:text-black/22 outline-none font-mono"
                   />
+                  {iframeLoading && <Loader2 className="w-3 h-3 text-black/25 animate-spin flex-shrink-0" />}
                 </div>
-              )}
-              <iframe
-                ref={iframeRef}
-                src={activeUrl}
-                className="w-full h-full border-0"
-                onLoad={() => setLoading(false)}
-                title="Browser"
-                sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"
-              />
-            </>
+
+                <button
+                  onClick={() => window.open(activeUrl, "_blank")}
+                  title="Open in system browser"
+                  className="p-1.5 rounded-lg text-black/25 hover:text-black/55 hover:bg-black/5 transition-all"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  onClick={() => { setActiveUrl(""); setUrlBarInput(""); }}
+                  className="p-1.5 rounded-lg text-black/25 hover:text-black/55 hover:bg-black/5 transition-all"
+                  title="Close viewer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* iframe — no sandbox, full scripts */}
+              <div className="flex-1 relative overflow-hidden bg-white">
+                {iframeError ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background">
+                    <AlertCircle className="w-8 h-8 text-black/20" />
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-black/45">This site can't be embedded</p>
+                      <p className="text-xs text-black/28 mt-1 max-w-xs">
+                        {domainOf(activeUrl)} blocks iframe embedding for security. Open it in your system browser instead.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => window.open(activeUrl, "_blank")}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium text-black/55 hover:text-black/75 transition-colors"
+                      style={{ background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.08)" }}
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Open in system browser
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {iframeLoading && (
+                      <div
+                        className="absolute top-0 left-0 right-0 h-0.5 z-10 overflow-hidden"
+                        style={{ background: "rgba(0,0,0,0.06)" }}
+                      >
+                        <div
+                          className="h-full animate-[progress_1.5s_ease-in-out_infinite]"
+                          style={{ background: "rgba(0,0,0,0.35)", width: "40%", marginLeft: "30%" }}
+                        />
+                      </div>
+                    )}
+                    <iframe
+                      ref={iframeRef}
+                      key={activeUrl}
+                      src={activeUrl}
+                      className="w-full h-full border-0"
+                      onLoad={() => setIframeLoading(false)}
+                      onError={() => { setIframeLoading(false); setIframeError(true); }}
+                      title="Zara Browser"
+                      allow="autoplay; fullscreen; camera; microphone; geolocation; payment; encrypted-media"
+                    />
+                  </>
+                )}
+              </div>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </div>
     </Layout>
   );
