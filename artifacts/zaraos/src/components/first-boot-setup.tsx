@@ -1,23 +1,16 @@
 // ============================================================
 // ZaraOS — First Boot Setup Wizard
 //
-// Shown on first launch of the native app to let the user
-// choose an Ollama model to pull. Detected via the 'zaraos:first-boot'
-// key in the Tauri KV store.
-//
-// Skipped in browser mode (isTauriRuntime() === false).
-// Skipped if the key already exists (setup already completed).
-//
-// Pulls the selected model via shell_exec("ollama pull <model>")
-// and streams output to a log area. On completion, marks the
-// first-boot key as done and dismisses.
+// Shown on first launch of the native app.
+// Does NOT run `ollama pull` in-process (that blocks WebKit).
+// Instead, shows the terminal command and marks setup done.
+// The user runs the pull in a separate terminal.
 // ============================================================
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { isTauriRuntime } from "@/core/tauri/tauri-bridge";
 import { keychainGet, keychainSet } from "@/core/tauri/tauri-keychain";
-import { shellExec } from "@/core/tauri/tauri-fs";
-import { Loader2, CheckCircle2, Download, Zap, Server, Cpu } from "lucide-react";
+import { CheckCircle2, Copy, Zap, Server, Cpu, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // ── Model options ─────────────────────────────────────────────
@@ -29,7 +22,7 @@ const MODELS = [
     ram: "~1 GB RAM",
     description: "Fastest. Good for low-end hardware or quick responses.",
     badge: "Fastest",
-    badgeColor: "text-green-400 border-green-500/30 bg-green-500/10",
+    badgeColor: "text-green-600 border-green-500/30 bg-green-500/10",
   },
   {
     id: "llama3.2:3b",
@@ -38,7 +31,7 @@ const MODELS = [
     ram: "~4 GB RAM",
     description: "Balanced. Solid reasoning, runs on 8 GB RAM comfortably.",
     badge: "Recommended",
-    badgeColor: "text-primary border-primary/30 bg-primary/10",
+    badgeColor: "text-indigo-600 border-indigo-500/30 bg-indigo-500/10",
     recommended: true,
   },
   {
@@ -48,82 +41,44 @@ const MODELS = [
     ram: "~10 GB RAM",
     description: "Best quality. Requires 16 GB RAM for smooth performance.",
     badge: "Best Quality",
-    badgeColor: "text-purple-400 border-purple-500/30 bg-purple-500/10",
+    badgeColor: "text-purple-600 border-purple-500/30 bg-purple-500/10",
   },
   {
     id: "skip",
     name: "Skip for now",
     size: "—",
     ram: "—",
-    description: "Continue without pulling a model. You can do this later in AI Providers.",
+    description: "Continue without a model. Set one up later in AI Providers.",
     badge: "Later",
-    badgeColor: "text-muted-foreground border-slate-200 bg-slate-50",
+    badgeColor: "text-slate-500 border-slate-200 bg-slate-50",
   },
 ] as const;
 
 type ModelId = typeof MODELS[number]["id"];
 const FIRST_BOOT_KEY = "zaraos:first-boot-done";
 
-// ── Component ─────────────────────────────────────────────────
-
 interface FirstBootSetupProps {
   onComplete: () => void;
 }
 
 export function FirstBootSetup({ onComplete }: FirstBootSetupProps) {
-  const [checked, setChecked] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const [checked, setChecked]   = useState(false);
+  const [visible, setVisible]   = useState(false);
   const [selected, setSelected] = useState<ModelId>("llama3.2:3b");
-  const [phase, setPhase] = useState<"select" | "pulling" | "done">("select");
-  const [log, setLog] = useState<string[]>([]);
-  const logRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied]     = useState(false);
+  const [phase, setPhase]       = useState<"select" | "command">("select");
 
-  // Check KV store to decide if we should show the wizard
+  // Check KV store — show only on first native launch
   useEffect(() => {
     if (!isTauriRuntime()) {
       setChecked(true);
       return;
     }
     keychainGet(FIRST_BOOT_KEY)
-      .then((val: string | null) => {
-        if (!val) setVisible(true);
-      })
-      .catch(() => {}) // if KV fails, don't block startup
+      .then((val: string | null) => { if (!val) setVisible(true); })
+      .catch(() => {})
       .finally(() => setChecked(true));
   }, []);
-
-  // Auto-scroll log
-  useEffect(() => {
-    if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight;
-    }
-  }, [log]);
-
-  async function handleStart() {
-    if (selected === "skip") {
-      await finalize();
-      return;
-    }
-
-    setPhase("pulling");
-    setLog([`Pulling ${selected} from Ollama registry...`, ""]);
-
-    try {
-      const result = await shellExec("ollama", ["pull", selected]);
-      const lines = (result.stdout + result.stderr).split("\n").filter(Boolean);
-      setLog(lines.length ? lines : ["Done."]);
-      setPhase("done");
-    } catch (e) {
-      setLog((prev) => [
-        ...prev,
-        "",
-        `Error: ${e instanceof Error ? e.message : String(e)}`,
-        "",
-        'Make sure Ollama is installed: curl -fsSL https://ollama.com/install.sh | sh',
-      ]);
-      setPhase("done"); // still let them continue
-    }
-  }
 
   async function finalize() {
     await keychainSet(FIRST_BOOT_KEY, "done").catch(() => {});
@@ -131,12 +86,39 @@ export function FirstBootSetup({ onComplete }: FirstBootSetupProps) {
     onComplete();
   }
 
+  function handleNext() {
+    if (selected === "skip") {
+      void finalize();
+    } else {
+      setPhase("command");
+    }
+  }
+
+  function handleCopy() {
+    void navigator.clipboard.writeText(`ollama pull ${selected}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   if (!checked || !visible) return null;
 
-  return (
-    <div className="fixed inset-0 backdrop-blur-sm z-[200] flex items-center justify-center p-4" style={{ background: "rgba(100,116,139,0.30)" }}>
-      <div className="w-full max-w-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300" style={{ background: "linear-gradient(145deg,#ffffff,#f0f2f8)", border: "1px solid rgba(148,163,184,0.22)", borderRadius: 24, boxShadow: "8px 8px 30px rgba(166,180,200,0.45), -6px -6px 20px rgba(255,255,255,0.95)" }}>
+  const pullCmd = `ollama pull ${selected}`;
 
+  return (
+    <div
+      className="fixed inset-0 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+      style={{ background: "rgba(100,116,139,0.30)" }}
+    >
+      <div
+        className="w-full max-w-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300"
+        style={{
+          background: "linear-gradient(145deg,#ffffff,#f0f2f8)",
+          border: "1px solid rgba(148,163,184,0.22)",
+          borderRadius: 24,
+          boxShadow:
+            "8px 8px 30px rgba(166,180,200,0.45), -6px -6px 20px rgba(255,255,255,0.95)",
+        }}
+      >
         {/* Header */}
         <div className="px-8 pt-8 pb-6 border-b border-slate-100">
           <div className="flex items-center gap-3 mb-3">
@@ -150,14 +132,14 @@ export function FirstBootSetup({ onComplete }: FirstBootSetupProps) {
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">
             ZaraOS runs AI locally on your machine — no cloud required.
-            Choose a model to download. You can change this anytime in AI Providers.
+            Choose a model below, then run the command in a terminal to download it.
           </p>
         </div>
 
         {/* Body */}
         <div className="px-8 py-6">
 
-          {/* Model selection */}
+          {/* Phase 1 — model selection */}
           {phase === "select" && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 mb-1">
@@ -173,15 +155,19 @@ export function FirstBootSetup({ onComplete }: FirstBootSetupProps) {
                   onClick={() => setSelected(model.id)}
                   className={`w-full text-left p-4 rounded-xl border transition-all duration-150 ${
                     selected === model.id
-                      ? "border-primary/40 bg-primary/8"
+                      ? "border-primary/40 bg-primary/5"
                       : "border-slate-200 bg-white hover:border-indigo-200"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
-                        selected === model.id ? "border-primary bg-primary" : "border-slate-300"
-                      }`} />
+                      <div
+                        className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
+                          selected === model.id
+                            ? "border-primary bg-primary"
+                            : "border-slate-300"
+                        }`}
+                      />
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-slate-800 text-sm">{model.name}</span>
@@ -204,32 +190,46 @@ export function FirstBootSetup({ onComplete }: FirstBootSetupProps) {
             </div>
           )}
 
-          {/* Pull log */}
-          {(phase === "pulling" || phase === "done") && (
-            <div className="flex flex-col gap-4">
+          {/* Phase 2 — show terminal command */}
+          {phase === "command" && (
+            <div className="flex flex-col gap-5">
               <div className="flex items-center gap-2">
-                {phase === "pulling" ? (
-                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4 text-green-400" />
-                )}
-                <span className="text-sm font-mono text-muted-foreground">
-                  {phase === "pulling" ? `Pulling ${selected}...` : "Complete"}
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <span className="text-sm text-slate-700 font-medium">
+                  Run this command in a terminal to download the model:
                 </span>
               </div>
+
+              {/* Command box */}
               <div
-                ref={logRef}
-                className="rounded-xl p-4 h-48 overflow-y-auto font-mono text-xs text-green-700" style={{ background: "linear-gradient(145deg,#1a2a1a,#111a11)", border: "1px solid rgba(34,197,94,0.15)" }}
+                className="flex items-center justify-between gap-3 rounded-xl px-5 py-4"
+                style={{
+                  background: "linear-gradient(145deg,#1a1e2e,#111520)",
+                  border: "1px solid rgba(99,102,241,0.20)",
+                }}
               >
-                {log.map((line, i) => (
-                  <div key={i} className="text-xs font-mono text-green-400/80 leading-relaxed">
-                    {line || "\u00A0"}
-                  </div>
-                ))}
-                {phase === "pulling" && (
-                  <span className="text-xs font-mono text-primary animate-pulse">_</span>
-                )}
+                <code className="font-mono text-sm text-indigo-300 select-all">{pullCmd}</code>
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono transition-all"
+                  style={{
+                    background: copied
+                      ? "rgba(34,197,94,0.15)"
+                      : "rgba(99,102,241,0.15)",
+                    color: copied ? "#22c55e" : "#818cf8",
+                    border: `1px solid ${copied ? "rgba(34,197,94,0.3)" : "rgba(99,102,241,0.3)"}`,
+                  }}
+                >
+                  {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  {copied ? "Copied" : "Copy"}
+                </button>
               </div>
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Open a new terminal window, paste the command, and let it download.
+                You can continue using ZaraOS now — the model downloads in the background.
+                Once done, Zara will automatically use it for AI responses.
+              </p>
             </div>
           )}
         </div>
@@ -242,31 +242,33 @@ export function FirstBootSetup({ onComplete }: FirstBootSetupProps) {
           </div>
           <div className="flex items-center gap-3">
             {phase === "select" && (
-              <Button
-                variant="ghost"
-                className="text-muted-foreground/50 hover:text-slate-700"
-                onClick={finalize}
-              >
-                Skip
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground/50 hover:text-slate-700"
+                  onClick={() => void finalize()}
+                >
+                  Skip
+                </Button>
+                <Button onClick={handleNext} className="gap-2">
+                  {selected === "skip" ? "Continue" : "Next"}
+                </Button>
+              </>
             )}
-            {phase === "select" && (
-              <Button onClick={() => void handleStart()} className="gap-2">
-                <Download className="w-4 h-4" />
-                {selected === "skip" ? "Continue" : "Download Model"}
-              </Button>
-            )}
-            {phase === "pulling" && (
-              <Button disabled className="gap-2 opacity-50">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Downloading...
-              </Button>
-            )}
-            {phase === "done" && (
-              <Button onClick={() => void finalize()} className="gap-2">
-                <Zap className="w-4 h-4" />
-                Launch ZaraOS
-              </Button>
+            {phase === "command" && (
+              <>
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground/50 hover:text-slate-700"
+                  onClick={() => setPhase("select")}
+                >
+                  Back
+                </Button>
+                <Button onClick={() => void finalize()} className="gap-2">
+                  <Zap className="w-4 h-4" />
+                  Launch ZaraOS
+                </Button>
+              </>
             )}
           </div>
         </div>
