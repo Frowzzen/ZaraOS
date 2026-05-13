@@ -1,0 +1,588 @@
+================================================================
+ZaraOS Debug Log — 2026-05-13T03:04:13.692Z
+User agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/60.5 Safari/605.1.15
+================================================================
+[INIT] Debug logger ready.
+[2026-05-13T03:04:13.600Z] [GESTURE ] startTracking() called
+[2026-05-13T03:04:13.601Z] [GESTURE ] startTracking() called
+[2026-05-13T03:04:13.601Z] [VOICE   ] startWakeWordListening() — loop starting
+[2026-05-13T03:04:13.854Z] [GESTURE ] getUserMedia OK — tracks: Integrated Webcam_HD (V4L2)
+[2026-05-13T03:04:14.012Z] [GESTURE ] getUserMedia OK — tracks: Integrated Webcam_HD (V4L2)
+[2026-05-13T03:04:14.359Z] [VOICE   ] mic test chunk: 6317b
+[2026-05-13T03:04:14.981Z] [GESTURE ] video.play() called — readyState=4
+[2026-05-13T03:04:14.983Z] [GESTURE ] video.play() called — readyState=4
+[2026-05-13T03:04:17.442Z] [VOICE   ] iter 1: chunk 67858b, type=audio/webm;codecs=opus
+[2026-05-13T03:04:21.336Z] [VOICE   ] iter 1: whisper → "NO_SPEECH"
+[2026-05-13T03:04:24.356Z] [VOICE   ] iter 2: chunk 72542b, type=audio/webm;codecs=opus
+[2026-05-13T03:04:28.852Z] [VOICE   ] iter 2: whisper → "NO_SPEECH"
+[2026-05-13T03:04:31.908Z] [VOICE   ] iter 3: chunk 73253b, type=audio/webm;codecs=opus
+[2026-05-13T03:04:36.359Z] [VOICE   ] iter 3: whisper → "NO_SPEECH"
+[2026-05-13T03:04:39.373Z] [VOICE   ] iter 4: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:04:43.968Z] [VOICE   ] iter 4: whisper → "NO_SPEECH"
+[2026-05-13T03:04:46.981Z] [VOICE   ] iter 5: chunk 72125b, type=audio/webm;codecs=opus
+[2026-05-13T03:04:51.342Z] [VOICE   ] iter 5: whisper → "NO_SPEECH"
+[2026-05-13T03:04:54.361Z] [VOICE   ] iter 6: chunk 72750b, type=audio/webm;codecs=opus
+[2026-05-13T03:04:57.956Z] [VOICE   ] iter 6: whisper → "NO_SPEECH"
+[2026-05-13T03:05:00.966Z] [VOICE   ] iter 7: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:05:04.863Z] [VOICE   ] iter 7: whisper → "Go forlaugh at first, you know."
+[2026-05-13T03:05:04.863Z] [VOICE   ] iter 7: no wake word in "go forlaugh at first, you know."
+[2026-05-13T03:05:07.884Z] [VOICE   ] iter 8: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:05:10.527Z] [VOICE   ] iter 8: whisper → "NO_SPEECH"
+[2026-05-13T03:05:12.297Z] [GESTURE ] ensureHandLandmarker() → ready=true
+[2026-05-13T03:05:12.306Z] [GESTURE ] detect() ERROR #1: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:12.307Z] [GESTURE ] ensureHandLandmarker() → ready=true
+[2026-05-13T03:05:12.322Z] [GESTURE ] detect() ERROR #1: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:12.373Z] [GESTURE ] detect() ERROR #2: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:12.389Z] [GESTURE ] detect() ERROR #2: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:12.439Z] [GESTURE ] detect() ERROR #3: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:12.458Z] [GESTURE ] detect() ERROR #3: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:12.506Z] [GESTURE ] detect() ERROR #4: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:12.539Z] [GESTURE ] detect() ERROR #4: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:12.589Z] [GESTURE ] detect() ERROR #5: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:12.606Z] [GESTURE ] detect() ERROR #5: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:12.923Z] [GESTURE ] detect() ERROR #10: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:12.938Z] [GESTURE ] detect() ERROR #10: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:13.542Z] [VOICE   ] iter 9: chunk 72286b, type=audio/webm;codecs=opus
+[2026-05-13T03:05:13.606Z] [GESTURE ] detect() ERROR #20: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:13.606Z] [GESTURE ] detect() ERROR #20: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:14.374Z] [GESTURE ] detect() ERROR #30: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:14.374Z] [GESTURE ] STOPPING after 30 consecutive errors. Last: undefined is not an object (evaluating 'GLctx.activeTexture')
+[2026-05-13T03:05:17.290Z] [VOICE   ] iter 9: whisper → "Might be a cent on the steering skire!"
+[2026-05-13T03:05:17.290Z] [VOICE   ] iter 9: no wake word in "might be a cent on the steering skire!"
+[2026-05-13T03:05:20.308Z] [VOICE   ] iter 10: chunk 72699b, type=audio/webm;codecs=opus
+[2026-05-13T03:05:22.906Z] [VOICE   ] iter 10: whisper → "NO_SPEECH"
+[2026-05-13T03:05:25.916Z] [VOICE   ] iter 11: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:05:28.523Z] [VOICE   ] iter 11: whisper → "NO_SPEECH"
+[2026-05-13T03:05:31.533Z] [VOICE   ] iter 12: chunk 72317b, type=audio/webm;codecs=opus
+[2026-05-13T03:05:34.191Z] [VOICE   ] iter 12: whisper → "NO_SPEECH"
+[2026-05-13T03:05:37.210Z] [VOICE   ] iter 13: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:05:44.496Z] [VOICE   ] iter 13: whisper → "NO_SPEECH"
+[2026-05-13T03:05:47.509Z] [VOICE   ] iter 14: chunk 71287b, type=audio/webm;codecs=opus
+[2026-05-13T03:05:50.125Z] [VOICE   ] iter 14: whisper → "NO_SPEECH"
+[2026-05-13T03:05:53.136Z] [VOICE   ] iter 15: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:05:55.773Z] [VOICE   ] iter 15: whisper → "NO_SPEECH"
+[2026-05-13T03:05:58.783Z] [VOICE   ] iter 16: chunk 72629b, type=audio/webm;codecs=opus
+[2026-05-13T03:06:01.412Z] [VOICE   ] iter 16: whisper → "NO_SPEECH"
+[2026-05-13T03:06:04.426Z] [VOICE   ] iter 17: chunk 72346b, type=audio/webm;codecs=opus
+[2026-05-13T03:06:07.041Z] [VOICE   ] iter 17: whisper → "NO_SPEECH"
+[2026-05-13T03:06:10.052Z] [VOICE   ] iter 18: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:06:12.857Z] [VOICE   ] iter 18: whisper → "NO_SPEECH"
+[2026-05-13T03:06:15.869Z] [VOICE   ] iter 19: chunk 72788b, type=audio/webm;codecs=opus
+[2026-05-13T03:06:18.925Z] [VOICE   ] iter 19: whisper → "NO_SPEECH"
+[2026-05-13T03:06:21.935Z] [VOICE   ] iter 20: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:06:24.524Z] [VOICE   ] iter 20: whisper → "NO_SPEECH"
+[2026-05-13T03:06:27.534Z] [VOICE   ] iter 21: chunk 72762b, type=audio/webm;codecs=opus
+[2026-05-13T03:06:30.090Z] [VOICE   ] iter 21: whisper → "NO_SPEECH"
+[2026-05-13T03:06:33.100Z] [VOICE   ] iter 22: chunk 72783b, type=audio/webm;codecs=opus
+[2026-05-13T03:06:35.746Z] [VOICE   ] iter 22: whisper → "NO_SPEECH"
+[2026-05-13T03:06:38.760Z] [VOICE   ] iter 23: chunk 72307b, type=audio/webm;codecs=opus
+[2026-05-13T03:06:41.473Z] [VOICE   ] iter 23: whisper → "Why am I here? What's up with the camera?"
+[2026-05-13T03:06:41.473Z] [VOICE   ] iter 23: no wake word in "why am i here? what's up with the camera?"
+[2026-05-13T03:06:44.486Z] [VOICE   ] iter 24: chunk 72729b, type=audio/webm;codecs=opus
+[2026-05-13T03:06:47.309Z] [VOICE   ] iter 24: whisper → "NO_SPEECH"
+[2026-05-13T03:06:50.320Z] [VOICE   ] iter 25: chunk 72453b, type=audio/webm;codecs=opus
+[2026-05-13T03:06:52.908Z] [VOICE   ] iter 25: whisper → "NO_SPEECH"
+[2026-05-13T03:06:55.918Z] [VOICE   ] iter 26: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:06:59.695Z] [VOICE   ] iter 26: whisper → "Ministry of Access eXC Pays"
+[2026-05-13T03:06:59.695Z] [VOICE   ] iter 26: no wake word in "ministry of access exc pays"
+[2026-05-13T03:07:02.710Z] [VOICE   ] iter 27: chunk 72488b, type=audio/webm;codecs=opus
+[2026-05-13T03:07:05.414Z] [VOICE   ] iter 27: whisper → "NO_SPEECH"
+[2026-05-13T03:07:08.428Z] [VOICE   ] iter 28: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:07:11.178Z] [VOICE   ] iter 28: whisper → "NO_SPEECH"
+[2026-05-13T03:07:14.202Z] [VOICE   ] iter 29: chunk 72420b, type=audio/webm;codecs=opus
+[2026-05-13T03:07:16.860Z] [VOICE   ] iter 29: whisper → "NO_SPEECH"
+[2026-05-13T03:07:19.870Z] [VOICE   ] iter 30: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:07:22.533Z] [VOICE   ] iter 30: whisper → "NO_SPEECH"
+[2026-05-13T03:07:25.545Z] [VOICE   ] iter 31: chunk 72557b, type=audio/webm;codecs=opus
+[2026-05-13T03:07:28.250Z] [VOICE   ] iter 31: whisper → "NO_SPEECH"
+[2026-05-13T03:07:31.261Z] [VOICE   ] iter 32: chunk 72706b, type=audio/webm;codecs=opus
+[2026-05-13T03:07:33.931Z] [VOICE   ] iter 32: whisper → "NO_SPEECH"
+[2026-05-13T03:07:36.944Z] [VOICE   ] iter 33: chunk 72735b, type=audio/webm;codecs=opus
+[2026-05-13T03:07:39.643Z] [VOICE   ] iter 33: whisper → "NO_SPEECH"
+[2026-05-13T03:07:42.652Z] [VOICE   ] iter 34: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:07:45.367Z] [VOICE   ] iter 34: whisper → "NO_SPEECH"
+[2026-05-13T03:07:48.386Z] [VOICE   ] iter 35: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:07:51.033Z] [VOICE   ] iter 35: whisper → "NO_SPEECH"
+[2026-05-13T03:07:54.044Z] [VOICE   ] iter 36: chunk 72475b, type=audio/webm;codecs=opus
+[2026-05-13T03:07:56.817Z] [VOICE   ] iter 36: whisper → "NO_SPEECH"
+[2026-05-13T03:07:59.831Z] [VOICE   ] iter 37: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:08:02.565Z] [VOICE   ] iter 37: whisper → "NO_SPEECH"
+[2026-05-13T03:08:05.579Z] [VOICE   ] iter 38: chunk 72606b, type=audio/webm;codecs=opus
+[2026-05-13T03:08:08.411Z] [VOICE   ] iter 38: whisper → "NO_SPEECH"
+[2026-05-13T03:08:11.421Z] [VOICE   ] iter 39: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:08:14.068Z] [VOICE   ] iter 39: whisper → "NO_SPEECH"
+[2026-05-13T03:08:17.086Z] [VOICE   ] iter 40: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:08:19.811Z] [VOICE   ] iter 40: whisper → "NO_SPEECH"
+[2026-05-13T03:08:22.822Z] [VOICE   ] iter 41: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:08:25.543Z] [VOICE   ] iter 41: whisper → "NO_SPEECH"
+[2026-05-13T03:08:28.554Z] [VOICE   ] iter 42: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:08:31.365Z] [VOICE   ] iter 42: whisper → "NO_SPEECH"
+[2026-05-13T03:08:34.379Z] [VOICE   ] iter 43: chunk 72390b, type=audio/webm;codecs=opus
+[2026-05-13T03:08:37.031Z] [VOICE   ] iter 43: whisper → "NO_SPEECH"
+[2026-05-13T03:08:40.046Z] [VOICE   ] iter 44: chunk 72728b, type=audio/webm;codecs=opus
+[2026-05-13T03:08:42.714Z] [VOICE   ] iter 44: whisper → "NO_SPEECH"
+[2026-05-13T03:08:45.732Z] [VOICE   ] iter 45: chunk 72735b, type=audio/webm;codecs=opus
+[2026-05-13T03:08:48.462Z] [VOICE   ] iter 45: whisper → "NO_SPEECH"
+[2026-05-13T03:08:51.472Z] [VOICE   ] iter 46: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:08:54.293Z] [VOICE   ] iter 46: whisper → "NO_SPEECH"
+[2026-05-13T03:08:57.304Z] [VOICE   ] iter 47: chunk 72362b, type=audio/webm;codecs=opus
+[2026-05-13T03:09:00.210Z] [VOICE   ] iter 47: whisper → "NO_SPEECH"
+[2026-05-13T03:09:03.221Z] [VOICE   ] iter 48: chunk 72442b, type=audio/webm;codecs=opus
+[2026-05-13T03:09:05.978Z] [VOICE   ] iter 48: whisper → "NO_SPEECH"
+[2026-05-13T03:09:08.998Z] [VOICE   ] iter 49: chunk 72764b, type=audio/webm;codecs=opus
+[2026-05-13T03:09:11.787Z] [VOICE   ] iter 49: whisper → "NO_SPEECH"
+[2026-05-13T03:09:14.805Z] [VOICE   ] iter 50: chunk 72580b, type=audio/webm;codecs=opus
+[2026-05-13T03:09:17.485Z] [VOICE   ] iter 50: whisper → "NO_SPEECH"
+[2026-05-13T03:09:20.497Z] [VOICE   ] iter 51: chunk 72637b, type=audio/webm;codecs=opus
+[2026-05-13T03:09:23.133Z] [VOICE   ] iter 51: whisper → "NO_SPEECH"
+[2026-05-13T03:09:26.152Z] [VOICE   ] iter 52: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:09:28.848Z] [VOICE   ] iter 52: whisper → "NO_SPEECH"
+[2026-05-13T03:09:31.868Z] [VOICE   ] iter 53: chunk 72413b, type=audio/webm;codecs=opus
+[2026-05-13T03:09:34.526Z] [VOICE   ] iter 53: whisper → "NO_SPEECH"
+[2026-05-13T03:09:37.537Z] [VOICE   ] iter 54: chunk 72649b, type=audio/webm;codecs=opus
+[2026-05-13T03:09:40.262Z] [VOICE   ] iter 54: whisper → "NO_SPEECH"
+[2026-05-13T03:09:43.272Z] [VOICE   ] iter 55: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:09:45.928Z] [VOICE   ] iter 55: whisper → "NO_SPEECH"
+[2026-05-13T03:09:48.938Z] [VOICE   ] iter 56: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:09:51.594Z] [VOICE   ] iter 56: whisper → "NO_SPEECH"
+[2026-05-13T03:09:54.604Z] [VOICE   ] iter 57: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:09:57.749Z] [VOICE   ] iter 57: whisper → "NO_SPEECH"
+[2026-05-13T03:10:00.763Z] [VOICE   ] iter 58: chunk 72509b, type=audio/webm;codecs=opus
+[2026-05-13T03:10:03.550Z] [VOICE   ] iter 58: whisper → "NO_SPEECH"
+[2026-05-13T03:10:06.566Z] [VOICE   ] iter 59: chunk 72506b, type=audio/webm;codecs=opus
+[2026-05-13T03:10:09.227Z] [VOICE   ] iter 59: whisper → "NO_SPEECH"
+[2026-05-13T03:10:12.237Z] [VOICE   ] iter 60: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:10:14.885Z] [VOICE   ] iter 60: whisper → "NO_SPEECH"
+[2026-05-13T03:10:17.898Z] [VOICE   ] iter 61: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:10:20.610Z] [VOICE   ] iter 61: whisper → "NO_SPEECH"
+[2026-05-13T03:10:23.621Z] [VOICE   ] iter 62: chunk 72499b, type=audio/webm;codecs=opus
+[2026-05-13T03:10:27.784Z] [VOICE   ] iter 62: whisper → "yeah"
+[2026-05-13T03:10:27.784Z] [VOICE   ] iter 62: no wake word in "yeah"
+[2026-05-13T03:10:30.797Z] [VOICE   ] iter 63: chunk 72681b, type=audio/webm;codecs=opus
+[2026-05-13T03:10:33.581Z] [VOICE   ] iter 63: whisper → "NO_SPEECH"
+[2026-05-13T03:10:36.597Z] [VOICE   ] iter 64: chunk 72710b, type=audio/webm;codecs=opus
+[2026-05-13T03:10:39.295Z] [VOICE   ] iter 64: whisper → "NO_SPEECH"
+[2026-05-13T03:10:42.305Z] [VOICE   ] iter 65: chunk 72397b, type=audio/webm;codecs=opus
+[2026-05-13T03:10:44.981Z] [VOICE   ] iter 65: whisper → "NO_SPEECH"
+[2026-05-13T03:10:47.997Z] [VOICE   ] iter 66: chunk 72334b, type=audio/webm;codecs=opus
+[2026-05-13T03:10:50.668Z] [VOICE   ] iter 66: whisper → "NO_SPEECH"
+[2026-05-13T03:10:53.681Z] [VOICE   ] iter 67: chunk 72620b, type=audio/webm;codecs=opus
+[2026-05-13T03:10:56.347Z] [VOICE   ] iter 67: whisper → "NO_SPEECH"
+[2026-05-13T03:10:59.364Z] [VOICE   ] iter 68: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:11:02.014Z] [VOICE   ] iter 68: whisper → "NO_SPEECH"
+[2026-05-13T03:11:05.031Z] [VOICE   ] iter 69: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:11:07.746Z] [VOICE   ] iter 69: whisper → "NO_SPEECH"
+[2026-05-13T03:11:10.757Z] [VOICE   ] iter 70: chunk 72657b, type=audio/webm;codecs=opus
+[2026-05-13T03:11:13.532Z] [VOICE   ] iter 70: whisper → "NO_SPEECH"
+[2026-05-13T03:11:16.547Z] [VOICE   ] iter 71: chunk 72624b, type=audio/webm;codecs=opus
+[2026-05-13T03:11:19.214Z] [VOICE   ] iter 71: whisper → "NO_SPEECH"
+[2026-05-13T03:11:22.231Z] [VOICE   ] iter 72: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:11:24.964Z] [VOICE   ] iter 72: whisper → "NO_SPEECH"
+[2026-05-13T03:11:27.981Z] [VOICE   ] iter 73: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:11:30.745Z] [VOICE   ] iter 73: whisper → "NO_SPEECH"
+[2026-05-13T03:11:33.756Z] [VOICE   ] iter 74: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:11:36.596Z] [VOICE   ] iter 74: whisper → "NO_SPEECH"
+[2026-05-13T03:11:39.605Z] [VOICE   ] iter 75: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:11:42.389Z] [VOICE   ] iter 75: whisper → "NO_SPEECH"
+[2026-05-13T03:11:45.405Z] [VOICE   ] iter 76: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:11:48.206Z] [VOICE   ] iter 76: whisper → "NO_SPEECH"
+[2026-05-13T03:11:51.222Z] [VOICE   ] iter 77: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:11:54.001Z] [VOICE   ] iter 77: whisper → "NO_SPEECH"
+[2026-05-13T03:11:57.020Z] [VOICE   ] iter 78: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:11:59.746Z] [VOICE   ] iter 78: whisper → "NO_SPEECH"
+[2026-05-13T03:12:02.756Z] [VOICE   ] iter 79: chunk 72404b, type=audio/webm;codecs=opus
+[2026-05-13T03:12:07.705Z] [VOICE   ] iter 79: whisper → "NO_SPEECH"
+[2026-05-13T03:12:10.731Z] [VOICE   ] iter 80: chunk 72337b, type=audio/webm;codecs=opus
+[2026-05-13T03:12:13.463Z] [VOICE   ] iter 80: whisper → "NO_SPEECH"
+[2026-05-13T03:12:16.472Z] [VOICE   ] iter 81: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:12:20.432Z] [VOICE   ] iter 81: whisper → "Hand in cross"
+[2026-05-13T03:12:20.432Z] [VOICE   ] iter 81: no wake word in "hand in cross"
+[2026-05-13T03:12:23.449Z] [VOICE   ] iter 82: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:12:26.683Z] [VOICE   ] iter 82: whisper → "We're going to the end of the day, we're going to the end of the day."
+[2026-05-13T03:12:26.683Z] [VOICE   ] iter 82: no wake word in "we're going to the end of the day, we're going to the end of the day."
+[2026-05-13T03:12:29.702Z] [VOICE   ] iter 83: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:12:32.434Z] [VOICE   ] iter 83: whisper → "NO_SPEECH"
+[2026-05-13T03:12:35.449Z] [VOICE   ] iter 84: chunk 72526b, type=audio/webm;codecs=opus
+[2026-05-13T03:12:38.134Z] [VOICE   ] iter 84: whisper → "NO_SPEECH"
+[2026-05-13T03:12:41.149Z] [VOICE   ] iter 85: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:12:51.213Z] [VOICE   ] iter 85: whisper → "NO_SPEECH"
+[2026-05-13T03:12:54.223Z] [VOICE   ] iter 86: chunk 71331b, type=audio/webm;codecs=opus
+[2026-05-13T03:12:56.965Z] [VOICE   ] iter 86: whisper → "NO_SPEECH"
+[2026-05-13T03:12:59.976Z] [VOICE   ] iter 87: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:13:02.700Z] [VOICE   ] iter 87: whisper → "NO_SPEECH"
+[2026-05-13T03:13:05.717Z] [VOICE   ] iter 88: chunk 72380b, type=audio/webm;codecs=opus
+[2026-05-13T03:13:08.481Z] [VOICE   ] iter 88: whisper → "NO_SPEECH"
+[2026-05-13T03:13:11.490Z] [VOICE   ] iter 89: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:13:14.198Z] [VOICE   ] iter 89: whisper → "NO_SPEECH"
+[2026-05-13T03:13:17.208Z] [VOICE   ] iter 90: chunk 72728b, type=audio/webm;codecs=opus
+[2026-05-13T03:13:19.983Z] [VOICE   ] iter 90: whisper → "NO_SPEECH"
+[2026-05-13T03:13:22.992Z] [VOICE   ] iter 91: chunk 72699b, type=audio/webm;codecs=opus
+[2026-05-13T03:13:25.765Z] [VOICE   ] iter 91: whisper → "NO_SPEECH"
+[2026-05-13T03:13:28.775Z] [VOICE   ] iter 92: chunk 72426b, type=audio/webm;codecs=opus
+[2026-05-13T03:13:31.543Z] [VOICE   ] iter 92: whisper → "NO_SPEECH"
+[2026-05-13T03:13:34.554Z] [VOICE   ] iter 93: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:13:38.531Z] [VOICE   ] iter 93: whisper → "You are a loud nasty girl"
+[2026-05-13T03:13:38.531Z] [VOICE   ] iter 93: no wake word in "you are a loud nasty girl"
+[2026-05-13T03:13:41.555Z] [VOICE   ] iter 94: chunk 72709b, type=audio/webm;codecs=opus
+[2026-05-13T03:13:46.098Z] [VOICE   ] iter 94: whisper → "Just save me now, I'm gonna face you to my throne"
+[2026-05-13T03:13:46.098Z] [VOICE   ] iter 94: no wake word in "just save me now, i'm gonna face you to my throne"
+[2026-05-13T03:13:49.109Z] [VOICE   ] iter 95: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:13:51.848Z] [VOICE   ] iter 95: whisper → "Thanks for watching!"
+[2026-05-13T03:13:51.849Z] [VOICE   ] iter 95: no wake word in "thanks for watching!"
+[2026-05-13T03:13:54.860Z] [VOICE   ] iter 96: chunk 72440b, type=audio/webm;codecs=opus
+[2026-05-13T03:13:57.632Z] [VOICE   ] iter 96: whisper → "NO_SPEECH"
+[2026-05-13T03:14:00.643Z] [VOICE   ] iter 97: chunk 72516b, type=audio/webm;codecs=opus
+[2026-05-13T03:14:03.371Z] [VOICE   ] iter 97: whisper → "NO_SPEECH"
+[2026-05-13T03:14:06.385Z] [VOICE   ] iter 98: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:14:09.173Z] [VOICE   ] iter 98: whisper → "NO_SPEECH"
+[2026-05-13T03:14:12.184Z] [VOICE   ] iter 99: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:14:14.999Z] [VOICE   ] iter 99: whisper → "NO_SPEECH"
+[2026-05-13T03:14:18.010Z] [VOICE   ] iter 100: chunk 72768b, type=audio/webm;codecs=opus
+[2026-05-13T03:14:20.856Z] [VOICE   ] iter 100: whisper → "NO_SPEECH"
+[2026-05-13T03:14:23.874Z] [VOICE   ] iter 101: chunk 72454b, type=audio/webm;codecs=opus
+[2026-05-13T03:14:26.658Z] [VOICE   ] iter 101: whisper → "NO_SPEECH"
+[2026-05-13T03:14:29.677Z] [VOICE   ] iter 102: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:14:32.416Z] [VOICE   ] iter 102: whisper → "NO_SPEECH"
+[2026-05-13T03:14:35.426Z] [VOICE   ] iter 103: chunk 72528b, type=audio/webm;codecs=opus
+[2026-05-13T03:14:39.748Z] [VOICE   ] iter 103: whisper → "Something is pointing out. Was itGA of thousands?"
+[2026-05-13T03:14:39.748Z] [VOICE   ] iter 103: no wake word in "something is pointing out. was itga of thousands?"
+[2026-05-13T03:14:42.760Z] [VOICE   ] iter 104: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:14:45.509Z] [VOICE   ] iter 104: whisper → "NO_SPEECH"
+[2026-05-13T03:14:48.526Z] [VOICE   ] iter 105: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:14:51.300Z] [VOICE   ] iter 105: whisper → "NO_SPEECH"
+[2026-05-13T03:14:54.310Z] [VOICE   ] iter 106: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:15:01.807Z] [VOICE   ] iter 106: whisper → "NO_SPEECH"
+[2026-05-13T03:15:04.825Z] [VOICE   ] iter 107: chunk 71331b, type=audio/webm;codecs=opus
+[2026-05-13T03:15:07.543Z] [VOICE   ] iter 107: whisper → "NO_SPEECH"
+[2026-05-13T03:15:10.561Z] [VOICE   ] iter 108: chunk 72693b, type=audio/webm;codecs=opus
+[2026-05-13T03:15:13.273Z] [VOICE   ] iter 108: whisper → "NO_SPEECH"
+[2026-05-13T03:15:16.286Z] [VOICE   ] iter 109: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:15:19.044Z] [VOICE   ] iter 109: whisper → "NO_SPEECH"
+[2026-05-13T03:15:22.060Z] [VOICE   ] iter 110: chunk 72316b, type=audio/webm;codecs=opus
+[2026-05-13T03:15:26.109Z] [VOICE   ] iter 110: whisper → "ydw"
+[2026-05-13T03:15:26.109Z] [VOICE   ] iter 110: no wake word in "ydw"
+[2026-05-13T03:15:29.128Z] [VOICE   ] iter 111: chunk 72790b, type=audio/webm;codecs=opus
+[2026-05-13T03:15:31.919Z] [VOICE   ] iter 111: whisper → "NO_SPEECH"
+[2026-05-13T03:15:34.929Z] [VOICE   ] iter 112: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:15:37.769Z] [VOICE   ] iter 112: whisper → "NO_SPEECH"
+[2026-05-13T03:15:40.780Z] [VOICE   ] iter 113: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:15:45.287Z] [VOICE   ] iter 113: whisper → "��"
+[2026-05-13T03:15:45.287Z] [VOICE   ] iter 113: no wake word in "��"
+[2026-05-13T03:15:48.309Z] [VOICE   ] iter 114: chunk 72012b, type=audio/webm;codecs=opus
+[2026-05-13T03:15:52.419Z] [VOICE   ] iter 114: whisper → "Ouch, wheezing."
+[2026-05-13T03:15:52.419Z] [VOICE   ] iter 114: no wake word in "ouch, wheezing."
+[2026-05-13T03:15:55.435Z] [VOICE   ] iter 115: chunk 72624b, type=audio/webm;codecs=opus
+[2026-05-13T03:15:58.274Z] [VOICE   ] iter 115: whisper → "NO_SPEECH"
+[2026-05-13T03:16:01.287Z] [VOICE   ] iter 116: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:16:04.105Z] [VOICE   ] iter 116: whisper → "NO_SPEECH"
+[2026-05-13T03:16:07.124Z] [VOICE   ] iter 117: chunk 72404b, type=audio/webm;codecs=opus
+[2026-05-13T03:16:09.884Z] [VOICE   ] iter 117: whisper → "NO_SPEECH"
+[2026-05-13T03:16:12.894Z] [VOICE   ] iter 118: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:16:15.676Z] [VOICE   ] iter 118: whisper → "NO_SPEECH"
+[2026-05-13T03:16:18.690Z] [VOICE   ] iter 119: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:16:21.395Z] [VOICE   ] iter 119: whisper → "NO_SPEECH"
+[2026-05-13T03:16:24.406Z] [VOICE   ] iter 120: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:16:34.408Z] [VOICE   ] iter 120: whisper → "NO_SPEECH"
+[2026-05-13T03:16:37.426Z] [VOICE   ] iter 121: chunk 71208b, type=audio/webm;codecs=opus
+[2026-05-13T03:16:40.205Z] [VOICE   ] iter 121: whisper → "NO_SPEECH"
+[2026-05-13T03:16:43.224Z] [VOICE   ] iter 122: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:16:46.043Z] [VOICE   ] iter 122: whisper → "Thank you. Thank you. Thank you."
+[2026-05-13T03:16:46.043Z] [VOICE   ] iter 122: no wake word in "thank you. thank you. thank you."
+[2026-05-13T03:16:49.063Z] [VOICE   ] iter 123: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:16:51.739Z] [VOICE   ] iter 123: whisper → "NO_SPEECH"
+[2026-05-13T03:16:54.756Z] [VOICE   ] iter 124: chunk 72690b, type=audio/webm;codecs=opus
+[2026-05-13T03:16:59.243Z] [VOICE   ] iter 124: whisper → "Thank you for your rush! Come here, bye!"
+[2026-05-13T03:16:59.243Z] [VOICE   ] iter 124: no wake word in "thank you for your rush! come here, bye!"
+[2026-05-13T03:17:02.263Z] [VOICE   ] iter 125: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:17:04.924Z] [VOICE   ] iter 125: whisper → "NO_SPEECH"
+[2026-05-13T03:17:07.944Z] [VOICE   ] iter 126: chunk 73283b, type=audio/webm;codecs=opus
+[2026-05-13T03:17:12.390Z] [VOICE   ] iter 126: whisper → "Yummy, good mood!"
+[2026-05-13T03:17:12.390Z] [VOICE   ] iter 126: no wake word in "yummy, good mood!"
+[2026-05-13T03:17:15.405Z] [VOICE   ] iter 127: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:17:19.625Z] [VOICE   ] iter 127: whisper → "The bike is walking through the"
+[2026-05-13T03:17:19.625Z] [VOICE   ] iter 127: no wake word in "the bike is walking through the"
+[2026-05-13T03:17:22.642Z] [VOICE   ] iter 128: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:17:25.505Z] [VOICE   ] iter 128: whisper → "NO_SPEECH"
+[2026-05-13T03:17:28.525Z] [VOICE   ] iter 129: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:17:33.406Z] [VOICE   ] iter 129: whisper → "NO_SPEECH"
+[2026-05-13T03:17:36.422Z] [VOICE   ] iter 130: chunk 72529b, type=audio/webm;codecs=opus
+[2026-05-13T03:17:39.157Z] [VOICE   ] iter 130: whisper → "NO_SPEECH"
+[2026-05-13T03:17:42.172Z] [VOICE   ] iter 131: chunk 72599b, type=audio/webm;codecs=opus
+[2026-05-13T03:17:44.803Z] [VOICE   ] iter 131: whisper → "NO_SPEECH"
+[2026-05-13T03:17:47.813Z] [VOICE   ] iter 132: chunk 72754b, type=audio/webm;codecs=opus
+[2026-05-13T03:17:50.539Z] [VOICE   ] iter 132: whisper → "I'm so sorry. I'm so sorry. I'm sorry."
+[2026-05-13T03:17:50.539Z] [VOICE   ] iter 132: no wake word in "i'm so sorry. i'm so sorry. i'm sorry."
+[2026-05-13T03:17:53.559Z] [VOICE   ] iter 133: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:17:56.103Z] [VOICE   ] iter 133: whisper → "NO_SPEECH"
+[2026-05-13T03:17:59.113Z] [VOICE   ] iter 134: chunk 72410b, type=audio/webm;codecs=opus
+[2026-05-13T03:18:01.771Z] [VOICE   ] iter 134: whisper → "NO_SPEECH"
+[2026-05-13T03:18:04.780Z] [VOICE   ] iter 135: chunk 72533b, type=audio/webm;codecs=opus
+[2026-05-13T03:18:07.387Z] [VOICE   ] iter 135: whisper → "NO_SPEECH"
+[2026-05-13T03:18:10.397Z] [VOICE   ] iter 136: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:18:14.920Z] [VOICE   ] iter 136: whisper → "NO_SPEECH"
+[2026-05-13T03:18:17.930Z] [VOICE   ] iter 137: chunk 72688b, type=audio/webm;codecs=opus
+[2026-05-13T03:18:20.510Z] [VOICE   ] iter 137: whisper → "NO_SPEECH"
+[2026-05-13T03:18:23.523Z] [VOICE   ] iter 138: chunk 72672b, type=audio/webm;codecs=opus
+[2026-05-13T03:18:26.077Z] [VOICE   ] iter 138: whisper → "NO_SPEECH"
+[2026-05-13T03:18:29.090Z] [VOICE   ] iter 139: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:18:31.740Z] [VOICE   ] iter 139: whisper → "NO_SPEECH"
+[2026-05-13T03:18:34.757Z] [VOICE   ] iter 140: chunk 72345b, type=audio/webm;codecs=opus
+[2026-05-13T03:18:37.320Z] [VOICE   ] iter 140: whisper → "NO_SPEECH"
+[2026-05-13T03:18:40.329Z] [VOICE   ] iter 141: chunk 72756b, type=audio/webm;codecs=opus
+[2026-05-13T03:18:45.609Z] [VOICE   ] iter 141: whisper → "Dont tell me when I am doing this"
+[2026-05-13T03:18:45.609Z] [VOICE   ] iter 141: no wake word in "dont tell me when i am doing this"
+[2026-05-13T03:18:48.623Z] [VOICE   ] iter 142: chunk 72697b, type=audio/webm;codecs=opus
+[2026-05-13T03:18:53.146Z] [VOICE   ] iter 142: whisper → "NO_SPEECH"
+[2026-05-13T03:18:56.164Z] [VOICE   ] iter 143: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:19:03.221Z] [VOICE   ] iter 143: whisper → "NO_SPEECH"
+[2026-05-13T03:19:06.231Z] [VOICE   ] iter 144: chunk 70695b, type=audio/webm;codecs=opus
+[2026-05-13T03:19:08.796Z] [VOICE   ] iter 144: whisper → "NO_SPEECH"
+[2026-05-13T03:19:11.807Z] [VOICE   ] iter 145: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:19:14.426Z] [VOICE   ] iter 145: whisper → "NO_SPEECH"
+[2026-05-13T03:19:17.440Z] [VOICE   ] iter 146: chunk 72479b, type=audio/webm;codecs=opus
+[2026-05-13T03:19:20.099Z] [VOICE   ] iter 146: whisper → "NO_SPEECH"
+[2026-05-13T03:19:23.115Z] [VOICE   ] iter 147: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:19:25.714Z] [VOICE   ] iter 147: whisper → "NO_SPEECH"
+[2026-05-13T03:19:28.730Z] [VOICE   ] iter 148: chunk 72734b, type=audio/webm;codecs=opus
+[2026-05-13T03:19:31.326Z] [VOICE   ] iter 148: whisper → "NO_SPEECH"
+[2026-05-13T03:19:34.341Z] [VOICE   ] iter 149: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:19:36.943Z] [VOICE   ] iter 149: whisper → "NO_SPEECH"
+[2026-05-13T03:19:39.958Z] [VOICE   ] iter 150: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:19:42.538Z] [VOICE   ] iter 150: whisper → "NO_SPEECH"
+[2026-05-13T03:19:45.549Z] [VOICE   ] iter 151: chunk 72692b, type=audio/webm;codecs=opus
+[2026-05-13T03:19:48.139Z] [VOICE   ] iter 151: whisper → "NO_SPEECH"
+[2026-05-13T03:19:51.148Z] [VOICE   ] iter 152: chunk 72424b, type=audio/webm;codecs=opus
+[2026-05-13T03:19:53.728Z] [VOICE   ] iter 152: whisper → "NO_SPEECH"
+[2026-05-13T03:19:56.742Z] [VOICE   ] iter 153: chunk 72530b, type=audio/webm;codecs=opus
+[2026-05-13T03:19:59.321Z] [VOICE   ] iter 153: whisper → "NO_SPEECH"
+[2026-05-13T03:20:02.331Z] [VOICE   ] iter 154: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:20:04.963Z] [VOICE   ] iter 154: whisper → "NO_SPEECH"
+[2026-05-13T03:20:07.974Z] [VOICE   ] iter 155: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:20:10.616Z] [VOICE   ] iter 155: whisper → "NO_SPEECH"
+[2026-05-13T03:20:13.626Z] [VOICE   ] iter 156: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:20:16.182Z] [VOICE   ] iter 156: whisper → "NO_SPEECH"
+[2026-05-13T03:20:19.200Z] [VOICE   ] iter 157: chunk 72386b, type=audio/webm;codecs=opus
+[2026-05-13T03:20:21.789Z] [VOICE   ] iter 157: whisper → "NO_SPEECH"
+[2026-05-13T03:20:24.799Z] [VOICE   ] iter 158: chunk 72453b, type=audio/webm;codecs=opus
+[2026-05-13T03:20:27.392Z] [VOICE   ] iter 158: whisper → "NO_SPEECH"
+[2026-05-13T03:20:30.402Z] [VOICE   ] iter 159: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:20:33.089Z] [VOICE   ] iter 159: whisper → "NO_SPEECH"
+[2026-05-13T03:20:36.099Z] [VOICE   ] iter 160: chunk 72793b, type=audio/webm;codecs=opus
+[2026-05-13T03:20:44.096Z] [VOICE   ] iter 160: whisper → "Thank you!"
+[2026-05-13T03:20:44.096Z] [VOICE   ] iter 160: no wake word in "thank you!"
+[2026-05-13T03:20:47.110Z] [VOICE   ] iter 161: chunk 71014b, type=audio/webm;codecs=opus
+[2026-05-13T03:20:49.699Z] [VOICE   ] iter 161: whisper → "NO_SPEECH"
+[2026-05-13T03:20:52.716Z] [VOICE   ] iter 162: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:20:55.342Z] [VOICE   ] iter 162: whisper → "NO_SPEECH"
+[2026-05-13T03:20:58.352Z] [VOICE   ] iter 163: chunk 72449b, type=audio/webm;codecs=opus
+[2026-05-13T03:21:00.935Z] [VOICE   ] iter 163: whisper → "NO_SPEECH"
+[2026-05-13T03:21:03.945Z] [VOICE   ] iter 164: chunk 72782b, type=audio/webm;codecs=opus
+[2026-05-13T03:21:06.666Z] [VOICE   ] iter 164: whisper → "NO_SPEECH"
+[2026-05-13T03:21:09.681Z] [VOICE   ] iter 165: chunk 72429b, type=audio/webm;codecs=opus
+[2026-05-13T03:21:16.900Z] [VOICE   ] iter 165: whisper → "NO_SPEECH"
+[2026-05-13T03:21:19.916Z] [VOICE   ] iter 166: chunk 71030b, type=audio/webm;codecs=opus
+[2026-05-13T03:21:22.548Z] [VOICE   ] iter 166: whisper → "NO_SPEECH"
+[2026-05-13T03:21:25.559Z] [VOICE   ] iter 167: chunk 72489b, type=audio/webm;codecs=opus
+[2026-05-13T03:21:28.231Z] [VOICE   ] iter 167: whisper → "NO_SPEECH"
+[2026-05-13T03:21:31.248Z] [VOICE   ] iter 168: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:21:33.834Z] [VOICE   ] iter 168: whisper → "NO_SPEECH"
+[2026-05-13T03:21:36.861Z] [VOICE   ] iter 169: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:21:41.474Z] [VOICE   ] iter 169: whisper → "NO_SPEECH"
+[2026-05-13T03:21:44.484Z] [VOICE   ] iter 170: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:21:49.058Z] [VOICE   ] iter 170: whisper → "NO_SPEECH"
+[2026-05-13T03:21:52.068Z] [VOICE   ] iter 171: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:21:54.616Z] [VOICE   ] iter 171: whisper → "NO_SPEECH"
+[2026-05-13T03:21:57.627Z] [VOICE   ] iter 172: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:22:00.308Z] [VOICE   ] iter 172: whisper → "NO_SPEECH"
+[2026-05-13T03:22:03.319Z] [VOICE   ] iter 173: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:22:06.016Z] [VOICE   ] iter 173: whisper → "NO_SPEECH"
+[2026-05-13T03:22:09.028Z] [VOICE   ] iter 174: chunk 72543b, type=audio/webm;codecs=opus
+[2026-05-13T03:22:11.597Z] [VOICE   ] iter 174: whisper → "NO_SPEECH"
+[2026-05-13T03:22:14.611Z] [VOICE   ] iter 175: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:22:17.146Z] [VOICE   ] iter 175: whisper → "NO_SPEECH"
+[2026-05-13T03:22:20.165Z] [VOICE   ] iter 176: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:22:22.866Z] [VOICE   ] iter 176: whisper → "NO_SPEECH"
+[2026-05-13T03:22:25.878Z] [VOICE   ] iter 177: chunk 72666b, type=audio/webm;codecs=opus
+[2026-05-13T03:22:30.452Z] [VOICE   ] iter 177: whisper → "NO_SPEECH"
+[2026-05-13T03:22:33.469Z] [VOICE   ] iter 178: chunk 72370b, type=audio/webm;codecs=opus
+[2026-05-13T03:22:36.082Z] [VOICE   ] iter 178: whisper → "NO_SPEECH"
+[2026-05-13T03:22:39.094Z] [VOICE   ] iter 179: chunk 72665b, type=audio/webm;codecs=opus
+[2026-05-13T03:22:41.659Z] [VOICE   ] iter 179: whisper → "NO_SPEECH"
+[2026-05-13T03:22:44.671Z] [VOICE   ] iter 180: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:22:47.263Z] [VOICE   ] iter 180: whisper → "NO_SPEECH"
+[2026-05-13T03:22:50.283Z] [VOICE   ] iter 181: chunk 72803b, type=audio/webm;codecs=opus
+[2026-05-13T03:22:52.832Z] [VOICE   ] iter 181: whisper → "NO_SPEECH"
+[2026-05-13T03:22:55.845Z] [VOICE   ] iter 182: chunk 72319b, type=audio/webm;codecs=opus
+[2026-05-13T03:22:58.486Z] [VOICE   ] iter 182: whisper → "NO_SPEECH"
+[2026-05-13T03:23:01.501Z] [VOICE   ] iter 183: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:23:04.098Z] [VOICE   ] iter 183: whisper → "NO_SPEECH"
+[2026-05-13T03:23:07.112Z] [VOICE   ] iter 184: chunk 72459b, type=audio/webm;codecs=opus
+[2026-05-13T03:23:09.697Z] [VOICE   ] iter 184: whisper → "NO_SPEECH"
+[2026-05-13T03:23:12.712Z] [VOICE   ] iter 185: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:23:15.251Z] [VOICE   ] iter 185: whisper → "NO_SPEECH"
+[2026-05-13T03:23:18.262Z] [VOICE   ] iter 186: chunk 72444b, type=audio/webm;codecs=opus
+[2026-05-13T03:23:20.820Z] [VOICE   ] iter 186: whisper → "NO_SPEECH"
+[2026-05-13T03:23:23.835Z] [VOICE   ] iter 187: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:23:26.427Z] [VOICE   ] iter 187: whisper → "NO_SPEECH"
+[2026-05-13T03:23:29.437Z] [VOICE   ] iter 188: chunk 72743b, type=audio/webm;codecs=opus
+[2026-05-13T03:23:33.384Z] [VOICE   ] iter 188: whisper → "ILL counsel"
+[2026-05-13T03:23:33.384Z] [VOICE   ] iter 188: no wake word in "ill counsel"
+[2026-05-13T03:23:36.399Z] [VOICE   ] iter 189: chunk 72437b, type=audio/webm;codecs=opus
+[2026-05-13T03:23:39.009Z] [VOICE   ] iter 189: whisper → "NO_SPEECH"
+[2026-05-13T03:23:42.019Z] [VOICE   ] iter 190: chunk 72671b, type=audio/webm;codecs=opus
+[2026-05-13T03:23:44.661Z] [VOICE   ] iter 190: whisper → "NO_SPEECH"
+[2026-05-13T03:23:47.671Z] [VOICE   ] iter 191: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:23:50.231Z] [VOICE   ] iter 191: whisper → "NO_SPEECH"
+[2026-05-13T03:23:53.246Z] [VOICE   ] iter 192: chunk 72607b, type=audio/webm;codecs=opus
+[2026-05-13T03:23:55.931Z] [VOICE   ] iter 192: whisper → "NO_SPEECH"
+[2026-05-13T03:23:58.946Z] [VOICE   ] iter 193: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:24:01.544Z] [VOICE   ] iter 193: whisper → "NO_SPEECH"
+[2026-05-13T03:24:04.554Z] [VOICE   ] iter 194: chunk 72525b, type=audio/webm;codecs=opus
+[2026-05-13T03:24:07.099Z] [VOICE   ] iter 194: whisper → "NO_SPEECH"
+[2026-05-13T03:24:10.119Z] [VOICE   ] iter 195: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:24:12.715Z] [VOICE   ] iter 195: whisper → "NO_SPEECH"
+[2026-05-13T03:24:15.730Z] [VOICE   ] iter 196: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:24:18.301Z] [VOICE   ] iter 196: whisper → "NO_SPEECH"
+[2026-05-13T03:24:21.318Z] [VOICE   ] iter 197: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:24:27.316Z] [VOICE   ] iter 197: whisper → "enemies"
+[2026-05-13T03:24:27.317Z] [VOICE   ] iter 197: no wake word in "enemies"
+[2026-05-13T03:24:30.331Z] [VOICE   ] iter 198: chunk 72770b, type=audio/webm;codecs=opus
+[2026-05-13T03:24:33.031Z] [VOICE   ] iter 198: whisper → "NO_SPEECH"
+[2026-05-13T03:24:36.041Z] [VOICE   ] iter 199: chunk 72712b, type=audio/webm;codecs=opus
+[2026-05-13T03:24:38.653Z] [VOICE   ] iter 199: whisper → "NO_SPEECH"
+[2026-05-13T03:24:41.664Z] [VOICE   ] iter 200: chunk 72333b, type=audio/webm;codecs=opus
+[2026-05-13T03:24:44.202Z] [VOICE   ] iter 200: whisper → "NO_SPEECH"
+[2026-05-13T03:24:47.214Z] [VOICE   ] iter 201: chunk 72351b, type=audio/webm;codecs=opus
+[2026-05-13T03:24:49.831Z] [VOICE   ] iter 201: whisper → "NO_SPEECH"
+[2026-05-13T03:24:52.848Z] [VOICE   ] iter 202: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:24:55.432Z] [VOICE   ] iter 202: whisper → "NO_SPEECH"
+[2026-05-13T03:24:58.446Z] [VOICE   ] iter 203: chunk 72629b, type=audio/webm;codecs=opus
+[2026-05-13T03:25:01.036Z] [VOICE   ] iter 203: whisper → "NO_SPEECH"
+[2026-05-13T03:25:04.047Z] [VOICE   ] iter 204: chunk 72405b, type=audio/webm;codecs=opus
+[2026-05-13T03:25:06.674Z] [VOICE   ] iter 204: whisper → "NO_SPEECH"
+[2026-05-13T03:25:09.697Z] [VOICE   ] iter 205: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:25:12.402Z] [VOICE   ] iter 205: whisper → "NO_SPEECH"
+[2026-05-13T03:25:15.415Z] [VOICE   ] iter 206: chunk 72355b, type=audio/webm;codecs=opus
+[2026-05-13T03:25:18.086Z] [VOICE   ] iter 206: whisper → "Go through the sand, go through the sand, go through the sand."
+[2026-05-13T03:25:18.086Z] [VOICE   ] iter 206: no wake word in "go through the sand, go through the sand, go through the sand."
+[2026-05-13T03:25:21.098Z] [VOICE   ] iter 207: chunk 72636b, type=audio/webm;codecs=opus
+[2026-05-13T03:25:23.695Z] [VOICE   ] iter 207: whisper → "NO_SPEECH"
+[2026-05-13T03:25:26.705Z] [VOICE   ] iter 208: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:25:29.313Z] [VOICE   ] iter 208: whisper → "NO_SPEECH"
+[2026-05-13T03:25:32.323Z] [VOICE   ] iter 209: chunk 72763b, type=audio/webm;codecs=opus
+[2026-05-13T03:25:36.321Z] [VOICE   ] iter 209: whisper → "want me out spiritually."
+[2026-05-13T03:25:36.321Z] [VOICE   ] iter 209: no wake word in "want me out spiritually."
+[2026-05-13T03:25:39.340Z] [VOICE   ] iter 210: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:25:42.038Z] [VOICE   ] iter 210: whisper → "NO_SPEECH"
+[2026-05-13T03:25:45.053Z] [VOICE   ] iter 211: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:25:47.614Z] [VOICE   ] iter 211: whisper → "Thank you for watching"
+[2026-05-13T03:25:47.614Z] [VOICE   ] iter 211: no wake word in "thank you for watching"
+[2026-05-13T03:25:50.632Z] [VOICE   ] iter 212: chunk 72488b, type=audio/webm;codecs=opus
+[2026-05-13T03:25:54.565Z] [VOICE   ] iter 212: whisper → "suck at a n Scroll"
+[2026-05-13T03:25:54.565Z] [VOICE   ] iter 212: no wake word in "suck at a n scroll"
+[2026-05-13T03:25:57.582Z] [VOICE   ] iter 213: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:26:00.199Z] [VOICE   ] iter 213: whisper → "NO_SPEECH"
+[2026-05-13T03:26:03.216Z] [VOICE   ] iter 214: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:26:05.889Z] [VOICE   ] iter 214: whisper → "NO_SPEECH"
+[2026-05-13T03:26:08.905Z] [VOICE   ] iter 215: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:26:11.585Z] [VOICE   ] iter 215: whisper → "NO_SPEECH"
+[2026-05-13T03:26:14.599Z] [VOICE   ] iter 216: chunk 72498b, type=audio/webm;codecs=opus
+[2026-05-13T03:26:17.203Z] [VOICE   ] iter 216: whisper → "NO_SPEECH"
+[2026-05-13T03:26:20.216Z] [VOICE   ] iter 217: chunk 72386b, type=audio/webm;codecs=opus
+[2026-05-13T03:26:24.267Z] [VOICE   ] iter 217: whisper → "住ing me now."
+[2026-05-13T03:26:24.267Z] [VOICE   ] iter 217: no wake word in "住ing me now."
+[2026-05-13T03:26:27.282Z] [VOICE   ] iter 218: chunk 72505b, type=audio/webm;codecs=opus
+[2026-05-13T03:26:29.935Z] [VOICE   ] iter 218: whisper → "NO_SPEECH"
+[2026-05-13T03:26:32.949Z] [VOICE   ] iter 219: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:26:39.031Z] [VOICE   ] iter 219: whisper → "más"
+[2026-05-13T03:26:39.031Z] [VOICE   ] iter 219: no wake word in "más"
+[2026-05-13T03:26:42.042Z] [VOICE   ] iter 220: chunk 71827b, type=audio/webm;codecs=opus
+[2026-05-13T03:26:44.814Z] [VOICE   ] iter 220: whisper → "NO_SPEECH"
+[2026-05-13T03:26:47.824Z] [VOICE   ] iter 221: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:26:54.930Z] [VOICE   ] iter 221: whisper → "NO_SPEECH"
+[2026-05-13T03:26:57.940Z] [VOICE   ] iter 222: chunk 70689b, type=audio/webm;codecs=opus
+[2026-05-13T03:27:00.523Z] [VOICE   ] iter 222: whisper → "NO_SPEECH"
+[2026-05-13T03:27:03.540Z] [VOICE   ] iter 223: chunk 72524b, type=audio/webm;codecs=opus
+[2026-05-13T03:27:06.152Z] [VOICE   ] iter 223: whisper → "NO_SPEECH"
+[2026-05-13T03:27:09.168Z] [VOICE   ] iter 224: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:27:11.785Z] [VOICE   ] iter 224: whisper → "NO_SPEECH"
+[2026-05-13T03:27:14.801Z] [VOICE   ] iter 225: chunk 72612b, type=audio/webm;codecs=opus
+[2026-05-13T03:27:17.424Z] [VOICE   ] iter 225: whisper → "NO_SPEECH"
+[2026-05-13T03:27:20.436Z] [VOICE   ] iter 226: chunk 72318b, type=audio/webm;codecs=opus
+[2026-05-13T03:27:24.052Z] [VOICE   ] iter 226: whisper → "Easy, easy, easy, easy Scary music"
+[2026-05-13T03:27:24.052Z] [VOICE   ] iter 226: no wake word in "easy, easy, easy, easy scary music"
+[2026-05-13T03:27:27.067Z] [VOICE   ] iter 227: chunk 72466b, type=audio/webm;codecs=opus
+[2026-05-13T03:27:29.702Z] [VOICE   ] iter 227: whisper → "NO_SPEECH"
+[2026-05-13T03:27:32.717Z] [VOICE   ] iter 228: chunk 72396b, type=audio/webm;codecs=opus
+[2026-05-13T03:27:35.337Z] [VOICE   ] iter 228: whisper → "NO_SPEECH"
+[2026-05-13T03:27:38.352Z] [VOICE   ] iter 229: chunk 72451b, type=audio/webm;codecs=opus
+[2026-05-13T03:27:41.052Z] [VOICE   ] iter 229: whisper → "NO_SPEECH"
+[2026-05-13T03:27:44.062Z] [VOICE   ] iter 230: chunk 72728b, type=audio/webm;codecs=opus
+[2026-05-13T03:27:48.822Z] [VOICE   ] iter 230: whisper → "NO_SPEECH"
+[2026-05-13T03:27:51.839Z] [VOICE   ] iter 231: chunk 72759b, type=audio/webm;codecs=opus
+[2026-05-13T03:27:54.640Z] [VOICE   ] iter 231: whisper → "NO_SPEECH"
+[2026-05-13T03:27:57.654Z] [VOICE   ] iter 232: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:28:00.369Z] [VOICE   ] iter 232: whisper → "NO_SPEECH"
+[2026-05-13T03:28:03.380Z] [VOICE   ] iter 233: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:28:05.994Z] [VOICE   ] iter 233: whisper → "Thanks for watching!"
+[2026-05-13T03:28:05.994Z] [VOICE   ] iter 233: no wake word in "thanks for watching!"
+[2026-05-13T03:28:09.022Z] [VOICE   ] iter 234: chunk 72516b, type=audio/webm;codecs=opus
+[2026-05-13T03:28:11.645Z] [VOICE   ] iter 234: whisper → "NO_SPEECH"
+[2026-05-13T03:28:14.661Z] [VOICE   ] iter 235: chunk 72642b, type=audio/webm;codecs=opus
+[2026-05-13T03:28:17.387Z] [VOICE   ] iter 235: whisper → "NO_SPEECH"
+[2026-05-13T03:28:20.397Z] [VOICE   ] iter 236: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:28:23.038Z] [VOICE   ] iter 236: whisper → "NO_SPEECH"
+[2026-05-13T03:28:26.047Z] [VOICE   ] iter 237: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:28:28.704Z] [VOICE   ] iter 237: whisper → "NO_SPEECH"
+[2026-05-13T03:28:31.714Z] [VOICE   ] iter 238: chunk 72776b, type=audio/webm;codecs=opus
+[2026-05-13T03:28:34.324Z] [VOICE   ] iter 238: whisper → "NO_SPEECH"
+[2026-05-13T03:28:37.340Z] [VOICE   ] iter 239: chunk 72316b, type=audio/webm;codecs=opus
+[2026-05-13T03:28:44.087Z] [VOICE   ] iter 239: whisper → "Put the other volume off and slow down!! It keeps improving!!"
+[2026-05-13T03:28:44.087Z] [VOICE   ] iter 239: no wake word in "put the other volume off and slow down!! it keeps improving!!"
+[2026-05-13T03:28:47.098Z] [VOICE   ] iter 240: chunk 70363b, type=audio/webm;codecs=opus
+[2026-05-13T03:28:49.877Z] [VOICE   ] iter 240: whisper → "NO_SPEECH"
+[2026-05-13T03:28:52.892Z] [VOICE   ] iter 241: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:29:00.304Z] [VOICE   ] iter 241: whisper → "NO_SPEECH"
+[2026-05-13T03:29:03.315Z] [VOICE   ] iter 242: chunk 70992b, type=audio/webm;codecs=opus
+[2026-05-13T03:29:06.137Z] [VOICE   ] iter 242: whisper → "NO_SPEECH"
+[2026-05-13T03:29:09.147Z] [VOICE   ] iter 243: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:29:11.871Z] [VOICE   ] iter 243: whisper → "NO_SPEECH"
+[2026-05-13T03:29:14.882Z] [VOICE   ] iter 244: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:29:17.687Z] [VOICE   ] iter 244: whisper → "NO_SPEECH"
+[2026-05-13T03:29:20.697Z] [VOICE   ] iter 245: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:29:23.598Z] [VOICE   ] iter 245: whisper → "NO_SPEECH"
+[2026-05-13T03:29:26.623Z] [VOICE   ] iter 246: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:29:30.761Z] [VOICE   ] iter 246: whisper → "Alright, what that fish's gonna do is run! Go by!"
+[2026-05-13T03:29:30.761Z] [VOICE   ] iter 246: no wake word in "alright, what that fish's gonna do is run! go by!"
+[2026-05-13T03:29:33.773Z] [VOICE   ] iter 247: chunk 72786b, type=audio/webm;codecs=opus
+[2026-05-13T03:29:36.445Z] [VOICE   ] iter 247: whisper → "NO_SPEECH"
+[2026-05-13T03:29:39.458Z] [VOICE   ] iter 248: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:29:42.221Z] [VOICE   ] iter 248: whisper → "NO_SPEECH"
+[2026-05-13T03:29:45.232Z] [VOICE   ] iter 249: chunk 72339b, type=audio/webm;codecs=opus
+[2026-05-13T03:29:48.007Z] [VOICE   ] iter 249: whisper → "NO_SPEECH"
+[2026-05-13T03:29:51.017Z] [VOICE   ] iter 250: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:29:53.595Z] [VOICE   ] iter 250: whisper → "NO_SPEECH"
+[2026-05-13T03:29:56.608Z] [VOICE   ] iter 251: chunk 72374b, type=audio/webm;codecs=opus
+[2026-05-13T03:29:59.338Z] [VOICE   ] iter 251: whisper → "NO_SPEECH"
+[2026-05-13T03:30:02.347Z] [VOICE   ] iter 252: chunk 72315b, type=audio/webm;codecs=opus
+[2026-05-13T03:30:05.079Z] [VOICE   ] iter 252: whisper → "NO_SPEECH"
+[2026-05-13T03:30:08.090Z] [VOICE   ] iter 253: chunk 72340b, type=audio/webm;codecs=opus
+[2026-05-13T03:30:10.759Z] [VOICE   ] iter 253: whisper → "NO_SPEECH"
+[2026-05-13T03:30:13.774Z] [VOICE   ] iter 254: chunk 72449b, type=audio/webm;codecs=opus
+[2026-05-13T03:30:16.561Z] [VOICE   ] iter 254: whisper → "NO_SPEECH"
+[2026-05-13T03:30:19.575Z] [VOICE   ] iter 255: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:30:22.510Z] [VOICE   ] iter 255: whisper → "NO_SPEECH"
+[2026-05-13T03:30:25.528Z] [VOICE   ] iter 256: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:30:28.541Z] [VOICE   ] iter 256: whisper → "NO_SPEECH"
+[2026-05-13T03:30:31.559Z] [VOICE   ] iter 257: chunk 72748b, type=audio/webm;codecs=opus
+[2026-05-13T03:30:34.546Z] [VOICE   ] iter 257: whisper → "How are you, man?"
+[2026-05-13T03:30:34.546Z] [VOICE   ] iter 257: no wake word in "how are you, man?"
+[2026-05-13T03:30:37.560Z] [VOICE   ] iter 258: chunk 72631b, type=audio/webm;codecs=opus
+[2026-05-13T03:30:40.389Z] [VOICE   ] iter 258: whisper → "NO_SPEECH"
+[2026-05-13T03:30:43.400Z] [VOICE   ] iter 259: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:30:46.113Z] [VOICE   ] iter 259: whisper → "I'm here, I'm here, I'm just like driving here."
+[2026-05-13T03:30:46.113Z] [VOICE   ] iter 259: no wake word in "i'm here, i'm here, i'm just like driving here."
+[2026-05-13T03:30:49.125Z] [VOICE   ] iter 260: chunk 72751b, type=audio/webm;codecs=opus
+[2026-05-13T03:30:51.857Z] [VOICE   ] iter 260: whisper → "NO_SPEECH"
+[2026-05-13T03:30:54.869Z] [VOICE   ] iter 261: chunk 72795b, type=audio/webm;codecs=opus
+[2026-05-13T03:30:59.688Z] [VOICE   ] iter 261: whisper → "NO_SPEECH"
