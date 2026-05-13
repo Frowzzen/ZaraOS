@@ -188,6 +188,8 @@ class GestureEngine {
   }
 
   private runDetectionLoop(): void {
+    let consecutiveErrors = 0;
+
     const loop = () => {
       if (!this.isTracking) return;
 
@@ -200,16 +202,30 @@ class GestureEngine {
         return;
       }
 
-      const now = performance.now();
-      const results = detector.detectForVideo(video, now);
+      try {
+        const now = performance.now();
+        const results = detector.detectForVideo(video, now);
+        consecutiveErrors = 0; // reset on success
 
-      if (results.landmarks && results.landmarks.length > 0) {
-        const rawLandmarks = results.landmarks as Landmark[][];
-        this.landmarksSubs.forEach((cb) => cb(rawLandmarks));
-        const gesture = classifyGesture(rawLandmarks[0]);
-        if (gesture) this.dispatchGesture(gesture);
-      } else {
-        this.landmarksSubs.forEach((cb) => cb(null));
+        if (results.landmarks && results.landmarks.length > 0) {
+          const rawLandmarks = results.landmarks as Landmark[][];
+          this.landmarksSubs.forEach((cb) => cb(rawLandmarks));
+          const gesture = classifyGesture(rawLandmarks[0]);
+          if (gesture) this.dispatchGesture(gesture);
+        } else {
+          this.landmarksSubs.forEach((cb) => cb(null));
+        }
+      } catch (err) {
+        consecutiveErrors++;
+        // Tolerate transient WebKit2GTK frame glitches — stop only after 30 consecutive failures
+        if (consecutiveErrors >= 30) {
+          this.errorSubs.forEach((cb) =>
+            cb(`Gesture detection stopped: ${err instanceof Error ? err.message : "unknown error"}`)
+          );
+          this.isTracking = false;
+          this.statusSubs.forEach((cb) => cb(false));
+          return;
+        }
       }
 
       this.rafId = requestAnimationFrame(loop);

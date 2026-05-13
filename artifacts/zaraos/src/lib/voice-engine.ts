@@ -360,6 +360,11 @@ class VoiceEngine {
     });
   }
 
+  // Whisper tiny often mishears "Zara" as "Sara", "Sarah", "Zarah", etc.
+  // This regex covers all known phonetic variants so the wake word fires reliably.
+  private static readonly WAKE_WORD_RE =
+    /\b(zar[ao]h?|z[aeiou]r[aeiou]h?|sara+h?|czar[ao]?|sora|zahara|xara)\b[,.]?\s*/i;
+
   // Continuous loop: record short chunks, check each for the wake word "Zara".
   // If found in same utterance → dispatch immediately.
   // If just "Zara" → record a follow-up command chunk, then dispatch.
@@ -372,45 +377,60 @@ class VoiceEngine {
     }
 
     while (this._wakeWordActive) {
-      // Record 2.5 s detection window
-      const blob = await this._recordChunk(2500);
-      if (!this._wakeWordActive) break;
-      if (!blob) continue;
+      try {
+        // Record 3 s detection window (longer = more complete phrase in one chunk)
+        const blob = await this._recordChunk(3000);
+        if (!this._wakeWordActive) break;
+        if (!blob) continue;
 
-      const text = await this._transcribeBlob(blob);
-      if (!this._wakeWordActive) break;
+        // Show user what is being processed
+        this.resultSubs.forEach((cb) => cb("", false)); // clears stale interim
 
-      // Skip errors / silence
-      if (!text || text === "NO_SPEECH" || text === "INSTALL_NEEDED"
-          || text.startsWith("WHISPER_ERROR:") || text.startsWith("ERROR:")) continue;
+        const text = await this._transcribeBlob(blob);
+        if (!this._wakeWordActive) break;
 
-      // Check for wake word anywhere in the utterance
-      const lower = text.toLowerCase().trim();
-      const match = lower.match(/\bzara[,.]?\s*/);
-      if (!match) continue;
-
-      // Notify UI of wake word detection (triggers visual flash)
-      this._wakeWordSubs.forEach((cb) => cb());
-
-      const afterWake = text.slice(match.index! + match[0].length).trim();
-
-      if (afterWake.length > 1) {
-        // Command in same utterance: "Zara, open settings"
-        this.resultSubs.forEach((cb) => cb(afterWake, true));
-      } else {
-        // Just "Zara" — record a follow-up command (up to 8 s)
-        this.setState("listening");
-        const cmdBlob = await this._recordChunk(8000);
-        if (!this._wakeWordActive) { this.setState("idle"); break; }
-        if (cmdBlob) {
-          this.setState("transcribing");
-          const cmd = await this._transcribeBlob(cmdBlob);
-          if (cmd && cmd !== "NO_SPEECH"
-              && !cmd.startsWith("WHISPER_ERROR:") && !cmd.startsWith("ERROR:")) {
-            this.resultSubs.forEach((cb) => cb(cmd, true));
-          }
+        // Skip errors / silence — emit interim so UI shows "last heard"
+        if (!text || text === "NO_SPEECH") continue;
+        if (text === "INSTALL_NEEDED") {
+          this.setState("error", "Run: pip3 install openai-whisper && sudo apt install ffmpeg");
+          break;
         }
-        this.setState("idle");
+        if (text.startsWith("WHISPER_ERROR:") || text.startsWith("ERROR:")) continue;
+
+        // Show what was heard as interim text (useful for debugging)
+        this.resultSubs.forEach((cb) => cb(text, false));
+
+        // Check for wake word — covers Whisper's common mishearings of "Zara"
+        const match = VoiceEngine.WAKE_WORD_RE.exec(text);
+        if (!match) continue;
+
+        // Notify UI of wake word detection (triggers visual flash)
+        this._wakeWordSubs.forEach((cb) => cb());
+
+        const afterWake = text.slice(match.index + match[0].length).trim();
+
+        if (afterWake.length > 1) {
+          // Command in same utterance: "Zara, open settings"
+          this.resultSubs.forEach((cb) => cb(afterWake, true));
+        } else {
+          // Just "Zara" — record a follow-up command (up to 8 s)
+          this.setState("listening");
+          const cmdBlob = await this._recordChunk(8000);
+          if (!this._wakeWordActive) { this.setState("idle"); break; }
+          if (cmdBlob) {
+            this.setState("transcribing");
+            const cmd = await this._transcribeBlob(cmdBlob);
+            if (cmd && cmd !== "NO_SPEECH"
+                && !cmd.startsWith("WHISPER_ERROR:") && !cmd.startsWith("ERROR:")) {
+              this.resultSubs.forEach((cb) => cb(cmd, true));
+            }
+          }
+          this.setState("idle");
+        }
+      } catch (err) {
+        // Never let a single iteration crash the whole loop
+        console.warn("[VoiceEngine] wake word loop error:", err);
+        await new Promise((r) => setTimeout(r, 500));
       }
     }
 
