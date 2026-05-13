@@ -44,7 +44,7 @@ sudo apt-get install -y \
   libssl-dev \
   2>&1 | tail -3
 
-log "Installing system utilities (volume, brightness, window management)..."
+log "Installing system utilities (volume, brightness, window management, audio/video)..."
 sudo apt-get install -y \
   brightnessctl \
   network-manager \
@@ -53,8 +53,18 @@ sudo apt-get install -y \
   pipewire-pulse \
   wmctrl \
   xdotool \
+  ffmpeg \
+  python3-pip \
   2>&1 | tail -3
 ok "System packages installed."
+
+# ── Whisper (local voice transcription) ───────────────────────
+log "Installing openai-whisper for local voice transcription..."
+# Ubuntu 26+ enforces PEP 668 (externally-managed-environment).
+# --break-system-packages is the correct flag to install pip packages
+# system-wide on Ubuntu 24+/25+/26+ without a venv.
+pip3 install --break-system-packages --quiet openai-whisper 2>&1 | tail -3
+ok "Whisper installed. First voice use will download the tiny model (~150 MB)."
 
 # ── WiFi fix (Broadcom) ───────────────────────────────────────
 if lspci 2>/dev/null | grep -qi broadcom; then
