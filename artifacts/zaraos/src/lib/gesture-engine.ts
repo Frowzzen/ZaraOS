@@ -148,15 +148,30 @@ class GestureEngine {
       return;
     }
 
-    // 2. Wire stream to an off-screen video element used for detection
+    // 2. Wire stream to a video element used for detection.
+    // WebKitGTK does NOT deliver MediaStream frames to detached video elements —
+    // readyState stays at 0 and no frames ever arrive.  We append the element to
+    // document.body (hidden, 1×1 px, off-screen) so the browser delivers frames,
+    // then remove it in stopTracking().
     this.videoEl = document.createElement("video");
     this.videoEl.srcObject = this.mediaStream;
     this.videoEl.playsInline = true;
     this.videoEl.muted = true;
+    this.videoEl.setAttribute("aria-hidden", "true");
+    Object.assign(this.videoEl.style, {
+      position:      "fixed",
+      top:           "-9999px",
+      left:          "-9999px",
+      width:         "1px",
+      height:        "1px",
+      opacity:       "0",
+      pointerEvents: "none",
+    });
+    document.body.appendChild(this.videoEl);
     try {
       await this.videoEl.play();
     } catch {
-      // play() can fail if the element is not attached to DOM — tolerated
+      // Tolerated — frames will arrive once readyState advances.
     }
 
     // 3. Load MediaPipe (WASM) — may take 2-4 s on first call
@@ -216,8 +231,10 @@ class GestureEngine {
       this.mediaStream = null;
     }
 
+    // Remove the DOM-attached video element (added to satisfy WebKitGTK).
     if (this.videoEl) {
       this.videoEl.srcObject = null;
+      this.videoEl.parentNode?.removeChild(this.videoEl);
       this.videoEl = null;
     }
 
