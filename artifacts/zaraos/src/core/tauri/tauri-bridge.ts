@@ -40,11 +40,15 @@ declare global {
 
 /**
  * Returns true when the frontend is running inside the Tauri desktop shell.
+ * Checks both withGlobalTauri=true (__TAURI__) and Tauri v2's internal
+ * global (__TAURI_INTERNALS__) so detection works regardless of config.
  * Always false in a browser / Replit preview.
  */
 export function isTauriRuntime(): boolean {
   return (
-    typeof window !== "undefined" && window.__TAURI__ !== undefined
+    typeof window !== "undefined" &&
+    (window.__TAURI__ !== undefined ||
+      "__TAURI_INTERNALS__" in window)
   );
 }
 

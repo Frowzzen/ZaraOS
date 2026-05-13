@@ -73,7 +73,7 @@ const WEB_SPEECH_ERRORS: Record<string, string> = {
   "audio-capture":          "Microphone not accessible. Check your device settings.",
   "not-allowed":            "Microphone access denied.",
   "service-not-allowed":    "Speech recognition not allowed in this context.",
-  "network":                "Network error — Web Speech API requires an internet connection.",
+  "network":                "Voice requires the native app for offline use. Run `cargo tauri dev` on the Dell to activate Whisper.",
   "aborted":                "",
   "language-not-supported": "Language not supported by this browser's speech engine.",
 };
