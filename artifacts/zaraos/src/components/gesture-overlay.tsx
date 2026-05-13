@@ -116,14 +116,16 @@ export function GestureOverlay({ onClose }: GestureOverlayProps) {
     return () => { gestureEngine.stopTracking(); };
   }, []);
 
-  // ── Auto-dismiss after 20 s if still stuck loading ────────
+  // ── Auto-dismiss after 90 s if still stuck loading ────────
+  // WebKit2GTK (Tauri on Linux) compiles WASM on first launch — this
+  // takes 30–60 s on some machines. 90 s gives enough headroom.
   useEffect(() => {
     const t = setTimeout(() => {
       if (loading && !error) {
-        setError("MediaPipe could not load. Check your internet connection.");
+        setError("Hand tracking could not start. Try closing and re-enabling gesture mode.");
         setLoading(false);
       }
-    }, 20_000);
+    }, 90_000);
     return () => clearTimeout(t);
   }, [loading, error]);
 
