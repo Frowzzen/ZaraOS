@@ -25,6 +25,8 @@
 //   voiceEngine.onStateChange(cb) — VoiceState transitions
 // ============================================================
 
+import { debugLog } from "@/core/tauri/tauri-logger";
+
 export type VoiceState =
   | "idle"
   | "listening"
@@ -135,6 +137,7 @@ class VoiceEngine {
   startWakeWordListening(): void {
     if (this._wakeWordActive) return;
     this._wakeWordActive = true;
+    debugLog("voice", "startWakeWordListening() — loop starting");
     void this._wakeWordLoop();
   }
 
@@ -377,14 +380,21 @@ class VoiceEngine {
   private async _wakeWordLoop(): Promise<void> {
     // Verify mic access on first chunk — _recordChunk opens a fresh stream each time
     const testBlob = await this._recordChunk(300);
+    debugLog("voice", `mic test chunk: ${testBlob ? `${testBlob.size}b` : "NULL — mic failed"}`);
     if (testBlob === null && !this._wakeWordActive) return;
 
+    let iteration = 0;
     while (this._wakeWordActive) {
+      iteration++;
       try {
         // Record 3 s detection window (longer = more complete phrase in one chunk)
         const blob = await this._recordChunk(3000);
         if (!this._wakeWordActive) break;
-        if (!blob) continue;
+        if (!blob) {
+          debugLog("voice", `iter ${iteration}: _recordChunk returned null (mic problem?)`);
+          continue;
+        }
+        debugLog("voice", `iter ${iteration}: chunk ${blob.size}b, type=${blob.type}`);
 
         // Show user what is being processed
         this.resultSubs.forEach((cb) => cb("", false)); // clears stale interim
@@ -392,13 +402,19 @@ class VoiceEngine {
         const text = await this._transcribeBlob(blob);
         if (!this._wakeWordActive) break;
 
+        debugLog("voice", `iter ${iteration}: whisper → "${text}"`);
+
         // Skip errors / silence — emit interim so UI shows "last heard"
         if (!text || text === "NO_SPEECH") continue;
         if (text === "INSTALL_NEEDED") {
+          debugLog("voice", "INSTALL_NEEDED — whisper not installed");
           this.setState("error", "Run: pip3 install openai-whisper && sudo apt install ffmpeg");
           break;
         }
-        if (text.startsWith("WHISPER_ERROR:") || text.startsWith("ERROR:")) continue;
+        if (text.startsWith("WHISPER_ERROR:") || text.startsWith("ERROR:")) {
+          debugLog("voice", `skipping error result: ${text}`);
+          continue;
+        }
 
         // Show what was heard as interim text (useful for debugging)
         this.resultSubs.forEach((cb) => cb(text, false));
@@ -408,14 +424,20 @@ class VoiceEngine {
         const lower = text.toLowerCase();
         let wakeIdx = -1;
         let wakeLen = 0;
+        let wakeVariant = "";
         for (const v of VoiceEngine.WAKE_VARIANTS) {
           const i = lower.indexOf(v);
           if (i !== -1 && (wakeIdx === -1 || i < wakeIdx)) {
             wakeIdx = i;
             wakeLen = v.length;
+            wakeVariant = v;
           }
         }
-        if (wakeIdx === -1) continue;
+        if (wakeIdx === -1) {
+          debugLog("voice", `iter ${iteration}: no wake word in "${lower}"`);
+          continue;
+        }
+        debugLog("voice", `iter ${iteration}: WAKE WORD matched variant="${wakeVariant}" at idx=${wakeIdx}`);
 
         // Notify UI of wake word detection (triggers visual flash)
         this._wakeWordSubs.forEach((cb) => cb());
@@ -424,18 +446,23 @@ class VoiceEngine {
         let afterWakeRaw = text.slice(wakeIdx + wakeLen);
         afterWakeRaw = afterWakeRaw.replace(/^[,.\s]+/, "").trim();
         const afterWake = afterWakeRaw;
+        debugLog("voice", `iter ${iteration}: afterWake="${afterWake}" (len=${afterWake.length})`);
 
         if (afterWake.length > 1) {
           // Command in same utterance: "Zara, open settings"
+          debugLog("voice", `iter ${iteration}: dispatching inline command "${afterWake}"`);
           this.resultSubs.forEach((cb) => cb(afterWake, true));
         } else {
           // Just "Zara" — record a follow-up command (up to 8 s)
+          debugLog("voice", `iter ${iteration}: just wake word — recording 8s follow-up`);
           this.setState("listening");
           const cmdBlob = await this._recordChunk(8000);
           if (!this._wakeWordActive) { this.setState("idle"); break; }
           if (cmdBlob) {
+            debugLog("voice", `follow-up chunk: ${cmdBlob.size}b`);
             this.setState("transcribing");
             const cmd = await this._transcribeBlob(cmdBlob);
+            debugLog("voice", `follow-up whisper → "${cmd}"`);
             if (cmd && cmd !== "NO_SPEECH"
                 && !cmd.startsWith("WHISPER_ERROR:") && !cmd.startsWith("ERROR:")) {
               this.resultSubs.forEach((cb) => cb(cmd, true));
@@ -445,11 +472,14 @@ class VoiceEngine {
         }
       } catch (err) {
         // Never let a single iteration crash the whole loop
+        const errMsg = err instanceof Error ? err.message : String(err);
+        debugLog("voice", `loop exception iter ${iteration}: ${errMsg}`);
         console.warn("[VoiceEngine] wake word loop error:", err);
         await new Promise((r) => setTimeout(r, 500));
       }
     }
 
+    debugLog("voice", "wake word loop exited");
     // Each chunk opened and closed its own stream — nothing to release here.
   }
 

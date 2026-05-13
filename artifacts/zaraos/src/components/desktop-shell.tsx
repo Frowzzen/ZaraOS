@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { isTauriRuntime } from "@/core/tauri/tauri-bridge";
+import { initDebugLog } from "@/core/tauri/tauri-logger";
 import { systemPower, exitApp } from "@/core/tauri/tauri-system-controls";
 import { ZaraOSIcon } from "@/components/zaraos-logo";
 import { GlobalCommandBox } from "@/components/global-command-box";
@@ -151,6 +152,8 @@ export function DesktopShell() {
   // ── Auto-start mic (wake word) + camera on native launch ─────────────────
   useEffect(() => {
     if (!isTauri) return;
+    // Init debug logger first (clears old log, writes header)
+    void initDebugLog();
     // Start gesture tracking (camera) — default on in native mode
     setGesture(true);
     void gestureEngine.startTracking(window.location.pathname);

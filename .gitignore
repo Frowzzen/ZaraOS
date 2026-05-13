@@ -61,3 +61,4 @@ replit.nix
 
 # Generated assets (not source code)
 zaraos-build-report.pdf
+# logs/debug.log is intentionally NOT ignored — committed by upload-debug-log.sh

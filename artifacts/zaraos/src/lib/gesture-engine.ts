@@ -25,6 +25,7 @@ import type { GestureType } from "@/core/types";
 import { gestureToCommand, GESTURE_LABELS } from "./gesture-mapper";
 import { classifyGesture } from "./gesture-classifier";
 import type { Landmark } from "./gesture-classifier";
+import { debugLog } from "@/core/tauri/tauri-logger";
 
 // ── Types ────────────────────────────────────────────────────
 type GestureCallback     = (gesture: GestureType, command: string) => void;
@@ -127,6 +128,7 @@ class GestureEngine {
   public async startTracking(initialPath = "/"): Promise<void> {
     if (this.isTracking) return;
     this.currentPath = initialPath;
+    debugLog("gesture", "startTracking() called");
 
     // 1. Request camera stream
     try {
@@ -141,15 +143,14 @@ class GestureEngine {
     } catch (err) {
       const isDenied =
         err instanceof DOMException && err.name === "NotAllowedError";
-      this.errorSubs.forEach((cb) =>
-        cb(
-          isDenied
-            ? "Camera permission denied. Enable it in your browser settings, then try again."
-            : `Camera unavailable: ${err instanceof Error ? err.message : "unknown error"}`
-        )
-      );
+      const msg = isDenied
+        ? "Camera permission denied. Enable it in your browser settings, then try again."
+        : `Camera unavailable: ${err instanceof Error ? err.message : "unknown error"}`;
+      debugLog("gesture", `getUserMedia FAILED: ${msg}`);
+      this.errorSubs.forEach((cb) => cb(msg));
       return;
     }
+    debugLog("gesture", `getUserMedia OK — tracks: ${this.mediaStream!.getTracks().map(t => t.label).join(", ")}`);
 
     // 2. Wire stream to a video element used for detection.
     // WebKitGTK does NOT deliver MediaStream frames to detached video elements —
@@ -177,8 +178,11 @@ class GestureEngine {
       // Tolerated — frames will arrive once readyState advances.
     }
 
+    debugLog("gesture", `video.play() called — readyState=${this.videoEl!.readyState}`);
+
     // 3. Load MediaPipe (WASM) — may take 2-4 s on first call
     const ready = await this.ensureHandLandmarker();
+    debugLog("gesture", `ensureHandLandmarker() → ready=${String(ready)}`);
     if (!ready) {
       this.stopTracking();
       return;
@@ -221,14 +225,24 @@ class GestureEngine {
       }
       lastDetectTime = now;
 
+      // Log video state once every ~5 s (every 75 frames at 15 fps)
+      const frameCount = Math.round(now / DETECT_INTERVAL_MS);
+      if (frameCount % 75 === 0) {
+        debugLog("gesture", `loop alive — readyState=${video.readyState} size=${video.videoWidth}x${video.videoHeight} errors=${consecutiveErrors}`);
+      }
+
       try {
         // Pass the video element directly — avoids canvas intermediary issues
         // in WebKit2GTK where detect(canvas) throws due to frame format problems.
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         const results = detector.detect(video) as { landmarks?: Landmark[][] };
+        if (consecutiveErrors > 0) {
+          debugLog("gesture", `detect() recovered after ${consecutiveErrors} errors`);
+        }
         consecutiveErrors = 0;
 
         if (results.landmarks && results.landmarks.length > 0) {
+          debugLog("gesture", `hand detected — ${results.landmarks[0].length} landmarks`);
           this.landmarksSubs.forEach((cb) => cb(results.landmarks as Landmark[][]));
           const gesture = classifyGesture(results.landmarks[0]);
           if (gesture) this.dispatchGesture(gesture);
@@ -237,9 +251,15 @@ class GestureEngine {
         }
       } catch (err) {
         consecutiveErrors++;
+        const errMsg = err instanceof Error ? err.message : String(err);
+        // Log every error (first 5) then every 10th to avoid flooding
+        if (consecutiveErrors <= 5 || consecutiveErrors % 10 === 0) {
+          debugLog("gesture", `detect() ERROR #${consecutiveErrors}: ${errMsg}`);
+        }
         if (consecutiveErrors >= 30) {
+          debugLog("gesture", `STOPPING after 30 consecutive errors. Last: ${errMsg}`);
           this.errorSubs.forEach((cb) =>
-            cb(`Gesture detection stopped: ${err instanceof Error ? err.message : "unknown error"}`)
+            cb(`Gesture detection stopped: ${errMsg}`)
           );
           this.isTracking = false;
           this.statusSubs.forEach((cb) => cb(false));
