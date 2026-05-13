@@ -54,6 +54,7 @@ class GestureEngine {
   private handLandmarkerLoading = false;
   private mediaStream:        MediaStream | null = null;
   private videoEl:            HTMLVideoElement | null = null;
+  private frameCanvas:        HTMLCanvasElement | null = null; // for WebKit2GTK compat
   private rafId:              number | null = null;
 
   // ── Subscriber sets ───────────────────────────────────────
@@ -101,11 +102,13 @@ class GestureEngine {
           modelAssetPath: HAND_MODEL_URL,
           delegate: "CPU",
         },
-        runningMode: "VIDEO",
+        // IMAGE mode + canvas-based detect() works reliably in WebKit2GTK.
+        // VIDEO mode + detectForVideo() has frame-format issues on Linux/Tauri.
+        runningMode: "IMAGE",
         numHands: 1,
-        minHandDetectionConfidence: 0.55,
-        minHandPresenceConfidence: 0.55,
-        minTrackingConfidence:     0.55,
+        minHandDetectionConfidence: 0.5,
+        minHandPresenceConfidence: 0.5,
+        minTrackingConfidence:     0.5,
       });
       this.handLandmarkerReady = true;
       return true;
@@ -181,7 +184,12 @@ class GestureEngine {
       return;
     }
 
-    // 4. Start RAF detection loop
+    // 4. Create offscreen canvas for frame extraction (IMAGE mode, WebKit2GTK compat)
+    this.frameCanvas = document.createElement("canvas");
+    this.frameCanvas.width  = 640;
+    this.frameCanvas.height = 480;
+
+    // 5. Start RAF detection loop
     this.isTracking = true;
     this.statusSubs.forEach((cb) => cb(true));
     this.runDetectionLoop();
@@ -189,35 +197,50 @@ class GestureEngine {
 
   private runDetectionLoop(): void {
     let consecutiveErrors = 0;
+    // Throttle to ~15 fps for detect() in IMAGE mode to avoid overwhelming CPU
+    let lastDetectTime = 0;
+    const DETECT_INTERVAL_MS = 66; // ~15 fps
 
     const loop = () => {
       if (!this.isTracking) return;
 
-      const video = this.videoEl;
+      const video    = this.videoEl;
       const detector = this.handLandmarker;
+      const canvas   = this.frameCanvas;
 
-      if (!video || !detector || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-        // Video not ready yet — keep polling
+      if (!video || !detector || !canvas ||
+          video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
         this.rafId = requestAnimationFrame(loop);
         return;
       }
 
+      const now = performance.now();
+      if (now - lastDetectTime < DETECT_INTERVAL_MS) {
+        this.rafId = requestAnimationFrame(loop);
+        return;
+      }
+      lastDetectTime = now;
+
       try {
-        const now = performance.now();
-        const results = detector.detectForVideo(video, now);
-        consecutiveErrors = 0; // reset on success
+        // Draw the current video frame into the offscreen canvas
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { this.rafId = requestAnimationFrame(loop); return; }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // detect() (IMAGE mode) is compatible with WebKit2GTK — no timestamp needed
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+        const results = detector.detect(canvas) as { landmarks?: Landmark[][] };
+        consecutiveErrors = 0;
 
         if (results.landmarks && results.landmarks.length > 0) {
-          const rawLandmarks = results.landmarks as Landmark[][];
-          this.landmarksSubs.forEach((cb) => cb(rawLandmarks));
-          const gesture = classifyGesture(rawLandmarks[0]);
+          this.landmarksSubs.forEach((cb) => cb(results.landmarks as Landmark[][]));
+          const gesture = classifyGesture(results.landmarks[0]);
           if (gesture) this.dispatchGesture(gesture);
         } else {
           this.landmarksSubs.forEach((cb) => cb(null));
         }
       } catch (err) {
         consecutiveErrors++;
-        // Tolerate transient WebKit2GTK frame glitches — stop only after 30 consecutive failures
         if (consecutiveErrors >= 30) {
           this.errorSubs.forEach((cb) =>
             cb(`Gesture detection stopped: ${err instanceof Error ? err.message : "unknown error"}`)
@@ -253,6 +276,8 @@ class GestureEngine {
       this.videoEl.parentNode?.removeChild(this.videoEl);
       this.videoEl = null;
     }
+
+    this.frameCanvas = null;
 
     this.statusSubs.forEach((cb) => cb(false));
     this.landmarksSubs.forEach((cb) => cb(null));

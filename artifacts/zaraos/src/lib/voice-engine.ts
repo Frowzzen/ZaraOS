@@ -93,9 +93,8 @@ class VoiceEngine {
   private speakingSubs: Set<(speaking: boolean) => void>  = new Set();
 
   // ── Wake word state ───────────────────────────────────────────────────────
-  private _wakeWordActive  = false;
-  private _wakeWordStream: MediaStream | null = null;
-  private _wakeWordSubs:   Set<() => void>    = new Set();
+  private _wakeWordActive = false;
+  private _wakeWordSubs:  Set<() => void> = new Set();
 
   // ── Capability detection ──────────────────────────────────────────────────
 
@@ -141,10 +140,8 @@ class VoiceEngine {
 
   stopWakeWordListening(): void {
     this._wakeWordActive = false;
-    if (this._wakeWordStream) {
-      this._wakeWordStream.getTracks().forEach((t) => t.stop());
-      this._wakeWordStream = null;
-    }
+    // Each _recordChunk opens and closes its own stream, so nothing to release here.
+    // The loop exits cleanly on the next iteration when _wakeWordActive is false.
   }
 
   get state(): VoiceState { return this._state; }
@@ -330,30 +327,34 @@ class VoiceEngine {
       : "";
   }
 
-  private async _ensureWakeWordStream(): Promise<boolean> {
-    if (this._wakeWordStream?.active) return true;
+  // Record a fixed-length audio chunk using a FRESH mic stream each call.
+  // Opening a new stream every iteration avoids the WebKit2GTK bug where
+  // MediaRecorder silently produces 0-byte blobs when reused from a shared stream.
+  private async _recordChunk(durationMs: number): Promise<Blob | null> {
+    let stream: MediaStream;
     try {
-      this._wakeWordStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      return true;
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      return false;
+      return null;
     }
-  }
 
-  // Record a fixed-length audio chunk from the persistent wake word stream.
-  private _recordChunk(durationMs: number): Promise<Blob | null> {
     return new Promise((resolve) => {
-      if (!this._wakeWordStream?.active) { resolve(null); return; }
       const mimeType = this._pickMimeType();
       const chunks: Blob[] = [];
       let rec: MediaRecorder;
       try {
-        rec = new MediaRecorder(this._wakeWordStream, mimeType ? { mimeType } : {});
-      } catch { resolve(null); return; }
+        rec = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+      } catch {
+        stream.getTracks().forEach((t) => t.stop());
+        resolve(null);
+        return;
+      }
+
       rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
       rec.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop()); // always release mic
         const blob = new Blob(chunks, { type: mimeType || "audio/webm" });
-        resolve(blob.size > 500 ? blob : null); // < 500 bytes = silence / empty
+        resolve(blob.size > 100 ? blob : null);
       };
       rec.start(200);
       setTimeout(() => { if (rec.state !== "inactive") rec.stop(); }, durationMs);
@@ -369,12 +370,9 @@ class VoiceEngine {
   // If found in same utterance → dispatch immediately.
   // If just "Zara" → record a follow-up command chunk, then dispatch.
   private async _wakeWordLoop(): Promise<void> {
-    const ok = await this._ensureWakeWordStream();
-    if (!ok) {
-      this._wakeWordActive = false;
-      this.setState("error", "Microphone unavailable for wake word listening.");
-      return;
-    }
+    // Verify mic access on first chunk — _recordChunk opens a fresh stream each time
+    const testBlob = await this._recordChunk(300);
+    if (testBlob === null && !this._wakeWordActive) return;
 
     while (this._wakeWordActive) {
       try {
@@ -434,11 +432,7 @@ class VoiceEngine {
       }
     }
 
-    // Cleanup on exit
-    if (this._wakeWordStream) {
-      this._wakeWordStream.getTracks().forEach((t) => t.stop());
-      this._wakeWordStream = null;
-    }
+    // Each chunk opened and closed its own stream — nothing to release here.
   }
 
   private _releaseMediaStream(): void {
