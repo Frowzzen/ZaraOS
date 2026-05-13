@@ -92,6 +92,11 @@ class VoiceEngine {
   private stateSubs:    Set<VoiceStateCallback>           = new Set();
   private speakingSubs: Set<(speaking: boolean) => void>  = new Set();
 
+  // ── Wake word state ───────────────────────────────────────────────────────
+  private _wakeWordActive  = false;
+  private _wakeWordStream: MediaStream | null = null;
+  private _wakeWordSubs:   Set<() => void>    = new Set();
+
   // ── Capability detection ──────────────────────────────────────────────────
 
   private get _isTauriRuntime(): boolean {
@@ -116,6 +121,30 @@ class VoiceEngine {
 
   get isListening(): boolean {
     return this._state === "listening" || this._state === "transcribing";
+  }
+
+  get isWakeWordActive(): boolean { return this._wakeWordActive; }
+
+  // Subscribe to wake word detection events (fires each time "Zara" is heard)
+  onWakeWord(cb: () => void): () => void {
+    this._wakeWordSubs.add(cb);
+    return () => this._wakeWordSubs.delete(cb);
+  }
+
+  // ── Wake word public API ──────────────────────────────────────────────────
+
+  startWakeWordListening(): void {
+    if (this._wakeWordActive) return;
+    this._wakeWordActive = true;
+    void this._wakeWordLoop();
+  }
+
+  stopWakeWordListening(): void {
+    this._wakeWordActive = false;
+    if (this._wakeWordStream) {
+      this._wakeWordStream.getTracks().forEach((t) => t.stop());
+      this._wakeWordStream = null;
+    }
   }
 
   get state(): VoiceState { return this._state; }
@@ -232,56 +261,47 @@ class VoiceEngine {
   //   sudo apt install ffmpeg          (needed by whisper to decode webm/ogg)
   // First transcription auto-downloads the 'tiny' model (~150 MB, ~1-2 min).
 
+  // ── Shared transcription kernel ───────────────────────────────────────────
+  // Returns: text | "NO_SPEECH" | "INSTALL_NEEDED" | "WHISPER_ERROR:<msg>"
+  private async _transcribeBlob(audioBlob: Blob): Promise<string> {
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(",")[1] ?? "");
+      reader.onerror = () => reject(new Error("FileReader failed"));
+      reader.readAsDataURL(audioBlob);
+    });
+    if (!base64) return "NO_SPEECH";
+
+    const { fsWriteText, shellExec } = await import("@/core/tauri/tauri-fs");
+    await fsWriteText("/tmp/zaraos-voice.b64", base64);
+
+    const pyScript = [
+      "import base64, os, warnings",
+      "warnings.filterwarnings('ignore')",
+      "os.environ['CUDA_VISIBLE_DEVICES'] = ''",
+      "audio = base64.b64decode(open('/tmp/zaraos-voice.b64').read())",
+      "open('/tmp/zaraos-voice.webm', 'wb').write(audio)",
+      "try:",
+      "    import whisper",
+      "    m = whisper.load_model('tiny', download_root='/tmp/.zaraos-whisper', device='cpu')",
+      "    r = m.transcribe('/tmp/zaraos-voice.webm', language='en', fp16=False)['text'].strip()",
+      "    print(r if r else 'NO_SPEECH')",
+      "except ImportError:",
+      "    print('INSTALL_NEEDED')",
+      "except Exception as e:",
+      "    print('WHISPER_ERROR:' + str(e)[:120])",
+    ].join("\n");
+
+    const result = await shellExec("python3", ["-c", pyScript]);
+    return result.stdout.trim() || "NO_SPEECH";
+  }
+
   private async _transcribeWithWhisper(audioBlob: Blob): Promise<void> {
     try {
-      // 1. Base64-encode the audio blob
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          resolve(dataUrl.split(",")[1] ?? "");
-        };
-        reader.onerror = () => reject(new Error("FileReader failed"));
-        reader.readAsDataURL(audioBlob);
-      });
-
-      if (!base64) {
-        this.setState("error", "No audio data recorded.");
-        return;
-      }
-
-      // 2. Write base64 to a temp file so Python can read it
-      const { fsWriteText } = await import("@/core/tauri/tauri-fs");
-      await fsWriteText("/tmp/zaraos-voice.b64", base64);
-
-      // 3. Run Python whisper — decode the file, then transcribe
-      const { shellExec } = await import("@/core/tauri/tauri-fs");
-      const pyScript = [
-        "import base64, os, warnings",
-        "warnings.filterwarnings('ignore')",
-        "os.environ['CUDA_VISIBLE_DEVICES'] = ''",
-        "audio = base64.b64decode(open('/tmp/zaraos-voice.b64').read())",
-        "open('/tmp/zaraos-voice.webm', 'wb').write(audio)",
-        "try:",
-        "    import whisper",
-        "    m = whisper.load_model('tiny', download_root='/tmp/.zaraos-whisper', device='cpu')",
-        "    r = m.transcribe('/tmp/zaraos-voice.webm', language='en', fp16=False)['text'].strip()",
-        "    print(r if r else 'NO_SPEECH')",
-        "except ImportError:",
-        "    print('INSTALL_NEEDED')",
-        "except Exception as e:",
-        "    msg = str(e)[:120]",
-        "    print('WHISPER_ERROR:' + msg)",
-      ].join("\n");
-
-      const result = await shellExec("python3", ["-c", pyScript]);
-      const out = result.stdout.trim();
+      const out = await this._transcribeBlob(audioBlob);
 
       if (out === "INSTALL_NEEDED") {
-        this.setState(
-          "error",
-          "Run: pip3 install openai-whisper && sudo apt install ffmpeg"
-        );
+        this.setState("error", "Run: pip3 install openai-whisper && sudo apt install ffmpeg");
         return;
       }
       if (out.startsWith("WHISPER_ERROR:")) {
@@ -296,10 +316,108 @@ class VoiceEngine {
       this.resultSubs.forEach((cb) => cb(out, true));
       this.setState("idle");
     } catch (err) {
-      this.setState(
-        "error",
-        `Transcription failed: ${err instanceof Error ? err.message : String(err)}`
-      );
+      this.setState("error", `Transcription failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  // ── Wake word helpers ─────────────────────────────────────────────────────
+
+  private _pickMimeType(): string {
+    return MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+      ? "audio/webm;codecs=opus"
+      : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm"
+      : MediaRecorder.isTypeSupported("audio/ogg;codecs=opus") ? "audio/ogg;codecs=opus"
+      : "";
+  }
+
+  private async _ensureWakeWordStream(): Promise<boolean> {
+    if (this._wakeWordStream?.active) return true;
+    try {
+      this._wakeWordStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Record a fixed-length audio chunk from the persistent wake word stream.
+  private _recordChunk(durationMs: number): Promise<Blob | null> {
+    return new Promise((resolve) => {
+      if (!this._wakeWordStream?.active) { resolve(null); return; }
+      const mimeType = this._pickMimeType();
+      const chunks: Blob[] = [];
+      let rec: MediaRecorder;
+      try {
+        rec = new MediaRecorder(this._wakeWordStream, mimeType ? { mimeType } : {});
+      } catch { resolve(null); return; }
+      rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      rec.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType || "audio/webm" });
+        resolve(blob.size > 500 ? blob : null); // < 500 bytes = silence / empty
+      };
+      rec.start(200);
+      setTimeout(() => { if (rec.state !== "inactive") rec.stop(); }, durationMs);
+    });
+  }
+
+  // Continuous loop: record short chunks, check each for the wake word "Zara".
+  // If found in same utterance → dispatch immediately.
+  // If just "Zara" → record a follow-up command chunk, then dispatch.
+  private async _wakeWordLoop(): Promise<void> {
+    const ok = await this._ensureWakeWordStream();
+    if (!ok) {
+      this._wakeWordActive = false;
+      this.setState("error", "Microphone unavailable for wake word listening.");
+      return;
+    }
+
+    while (this._wakeWordActive) {
+      // Record 2.5 s detection window
+      const blob = await this._recordChunk(2500);
+      if (!this._wakeWordActive) break;
+      if (!blob) continue;
+
+      const text = await this._transcribeBlob(blob);
+      if (!this._wakeWordActive) break;
+
+      // Skip errors / silence
+      if (!text || text === "NO_SPEECH" || text === "INSTALL_NEEDED"
+          || text.startsWith("WHISPER_ERROR:") || text.startsWith("ERROR:")) continue;
+
+      // Check for wake word anywhere in the utterance
+      const lower = text.toLowerCase().trim();
+      const match = lower.match(/\bzara[,.]?\s*/);
+      if (!match) continue;
+
+      // Notify UI of wake word detection (triggers visual flash)
+      this._wakeWordSubs.forEach((cb) => cb());
+
+      const afterWake = text.slice(match.index! + match[0].length).trim();
+
+      if (afterWake.length > 1) {
+        // Command in same utterance: "Zara, open settings"
+        this.resultSubs.forEach((cb) => cb(afterWake, true));
+      } else {
+        // Just "Zara" — record a follow-up command (up to 8 s)
+        this.setState("listening");
+        const cmdBlob = await this._recordChunk(8000);
+        if (!this._wakeWordActive) { this.setState("idle"); break; }
+        if (cmdBlob) {
+          this.setState("transcribing");
+          const cmd = await this._transcribeBlob(cmdBlob);
+          if (cmd && cmd !== "NO_SPEECH"
+              && !cmd.startsWith("WHISPER_ERROR:") && !cmd.startsWith("ERROR:")) {
+            this.resultSubs.forEach((cb) => cb(cmd, true));
+          }
+        }
+        this.setState("idle");
+      }
+    }
+
+    // Cleanup on exit
+    if (this._wakeWordStream) {
+      this._wakeWordStream.getTracks().forEach((t) => t.stop());
+      this._wakeWordStream = null;
     }
   }
 

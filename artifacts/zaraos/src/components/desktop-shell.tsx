@@ -129,9 +129,10 @@ export function DesktopShell() {
   const [zaraInline, setZaraInline] = useState<ZaraInlineResponse | null>(null);
 
   const isTauri = isTauriRuntime();
-  const { voiceActive, gestureActive, toggleVoice, toggleGesture, setVoice } = useInputMode();
+  const { voiceActive, gestureActive, toggleVoice, toggleGesture, setVoice, setGesture } = useInputMode();
   const inputRef = useRef<HTMLInputElement>(null);
   const windowsRef = useRef<WinState[]>([]);
+  const [wakeWordFlash, setWakeWordFlash] = useState(false);
 
   useEffect(() => { windowsRef.current = windows; }, [windows]);
 
@@ -147,6 +148,18 @@ export function DesktopShell() {
     return unsub;
   }, []);
 
+  // ── Auto-start mic (wake word) + camera on native launch ─────────────────
+  useEffect(() => {
+    if (!isTauri) return;
+    // Start gesture tracking (camera) — default on in native mode
+    setGesture(true);
+    void gestureEngine.startTracking(window.location.pathname);
+    // Start wake word listener — mic always on in native mode
+    setVoice(true);
+    voiceEngine.startWakeWordListening();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTauri]);
+
   // ── Voice engine wiring ───────────────────────────────────────────────────
   // handleCommandRef is initialised below (after handleCommand is defined).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -160,7 +173,8 @@ export function DesktopShell() {
       if (isFinal) {
         setInterimText("");
         void handleCommandRef.current(text);
-        setVoice(false);
+        // In Tauri (wake word) mode we stay listening — never turn mic off.
+        if (!isTauriRuntime()) setVoice(false);
       } else {
         setInterimText(text);
       }
@@ -169,7 +183,7 @@ export function DesktopShell() {
     const unsubState = voiceEngine.onStateChange((state, errorMsg) => {
       if (state === "error" && errorMsg) {
         setVoiceError(errorMsg);
-        setVoice(false);
+        if (!isTauriRuntime()) setVoice(false);
         setTimeout(() => setVoiceError(null), 5000);
       }
       if (state === "transcribing") {
@@ -177,33 +191,43 @@ export function DesktopShell() {
       }
       if (state === "idle") {
         setInterimText("");
-        setVoice(false);
+        if (!isTauriRuntime()) setVoice(false);
       }
     });
 
-    return () => { unsubResult(); unsubState(); };
+    // Wake word flash — brief visual when "Zara" is heard
+    const unsubWake = voiceEngine.onWakeWord(() => {
+      setWakeWordFlash(true);
+      setInterimText("Listening...");
+      setTimeout(() => setWakeWordFlash(false), 1200);
+    });
+
+    return () => { unsubResult(); unsubState(); unsubWake(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Start / stop recording based on voiceActive toggle.
-  // In Tauri: stopListening() triggers MediaRecorder.stop() → onstop → Ollama transcription.
-  // In browser: stopListening() ends the Web Speech session normally.
+  // Tauri:   voiceActive controls the wake word loop (always-on mic).
+  // Browser: voiceActive controls the Web Speech API session.
   useEffect(() => {
     if (voiceActive) {
       if (!voiceEngine.isSupported) {
-        setVoiceError(
-          isTauri
-            ? "Run 'ollama pull whisper' to enable mic input, then try again."
-            : "Voice input requires Chrome or Edge."
-        );
+        setVoiceError("Voice input requires Chrome or Edge.");
         setVoice(false);
         setTimeout(() => setVoiceError(null), 6000);
         return;
       }
-      voiceEngine.startListening();
+      if (isTauri) {
+        voiceEngine.startWakeWordListening();
+      } else {
+        voiceEngine.startListening();
+      }
     } else {
-      // stopListening (not abort) so Tauri records get transcribed
-      voiceEngine.stopListening();
+      if (isTauri) {
+        voiceEngine.stopWakeWordListening();
+      } else {
+        voiceEngine.stopListening();
+      }
       setInterimText("");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -403,18 +427,49 @@ export function DesktopShell() {
 
         <div className="flex-1" />
 
-        {/* Voice toggle */}
+        {/* Voice toggle — shows wake word state in Tauri mode */}
         <button
           onClick={toggleVoice}
           data-testid="button-toggle-voice"
-          title={voiceActive ? "Voice on" : "Voice off"}
-          className={`transition-colors ${voiceActive ? "text-indigo-500" : "text-slate-400 hover:text-slate-600"}`}
+          title={
+            isTauri
+              ? voiceActive
+                ? wakeWordFlash
+                  ? "Zara heard — listening for command"
+                  : "Wake word active — say Zara to start"
+                : "Wake word off — click to enable"
+              : voiceActive ? "Voice on" : "Voice off"
+          }
+          className={`relative transition-colors ${
+            wakeWordFlash
+              ? "text-violet-500"
+              : voiceActive
+              ? "text-indigo-500"
+              : "text-slate-400 hover:text-slate-600"
+          }`}
         >
           {voiceActive
             ? <Mic style={{ width: "0.75rem", height: "0.75rem" }} />
             : <MicOff style={{ width: "0.75rem", height: "0.75rem" }} />
           }
+          {/* Pulsing ring when wake word fires */}
+          {wakeWordFlash && (
+            <span
+              className="absolute inset-0 rounded-full animate-ping"
+              style={{ background: "rgba(139,92,246,0.35)" }}
+            />
+          )}
         </button>
+
+        {/* Wake word status label (Tauri only) */}
+        {isTauri && voiceActive && (
+          <span
+            className="text-[9px] font-mono select-none leading-none transition-colors"
+            style={{ color: wakeWordFlash ? "rgb(139,92,246)" : "rgba(99,102,241,0.55)" }}
+          >
+            {wakeWordFlash ? "ZARA HEARD" : "SAY ZARA"}
+          </span>
+        )}
 
         {/* Clock */}
         <div className="flex flex-col items-end leading-none gap-0.5 select-none">
