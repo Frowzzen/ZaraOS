@@ -361,10 +361,15 @@ class VoiceEngine {
     });
   }
 
-  // Whisper tiny often mishears "Zara" as "Sara", "Sarah", "Zarah", etc.
-  // This regex covers all known phonetic variants so the wake word fires reliably.
-  private static readonly WAKE_WORD_RE =
-    /\b(zar[ao]h?|z[aeiou]r[aeiou]h?|sara+h?|czar[ao]?|sora|zahara|xara)\b[,.]?\s*/i;
+  // Whisper tiny often mishears "Zara" as "Sara", "Sarah", "Zarah", "Zero", etc.
+  // Plain indexOf is more reliable than regex — immune to punctuation/quote artifacts
+  // that Whisper adds around proper nouns which break \b word-boundary matching.
+  private static readonly WAKE_VARIANTS = [
+    "zara", "zarah", "zorah",   // correct + near-correct spellings
+    "sara", "sarah",             // most common Whisper mishearing
+    "czara", "czar",             // phonetic variants
+    "zahara", "xara", "zare",    // longer/alternate forms
+  ];
 
   // Continuous loop: record short chunks, check each for the wake word "Zara".
   // If found in same utterance → dispatch immediately.
@@ -398,14 +403,27 @@ class VoiceEngine {
         // Show what was heard as interim text (useful for debugging)
         this.resultSubs.forEach((cb) => cb(text, false));
 
-        // Check for wake word — covers Whisper's common mishearings of "Zara"
-        const match = VoiceEngine.WAKE_WORD_RE.exec(text);
-        if (!match) continue;
+        // Check for wake word using indexOf — covers all Whisper mishearings of "Zara"
+        // and is immune to punctuation/quote artifacts that break regex \b matching.
+        const lower = text.toLowerCase();
+        let wakeIdx = -1;
+        let wakeLen = 0;
+        for (const v of VoiceEngine.WAKE_VARIANTS) {
+          const i = lower.indexOf(v);
+          if (i !== -1 && (wakeIdx === -1 || i < wakeIdx)) {
+            wakeIdx = i;
+            wakeLen = v.length;
+          }
+        }
+        if (wakeIdx === -1) continue;
 
         // Notify UI of wake word detection (triggers visual flash)
         this._wakeWordSubs.forEach((cb) => cb());
 
-        const afterWake = text.slice(match.index + match[0].length).trim();
+        // Strip trailing punctuation/spaces right after the wake word
+        let afterWakeRaw = text.slice(wakeIdx + wakeLen);
+        afterWakeRaw = afterWakeRaw.replace(/^[,.\s]+/, "").trim();
+        const afterWake = afterWakeRaw;
 
         if (afterWake.length > 1) {
           // Command in same utterance: "Zara, open settings"

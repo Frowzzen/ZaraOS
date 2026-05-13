@@ -222,14 +222,10 @@ class GestureEngine {
       lastDetectTime = now;
 
       try {
-        // Draw the current video frame into the offscreen canvas
-        const ctx = canvas.getContext("2d");
-        if (!ctx) { this.rafId = requestAnimationFrame(loop); return; }
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        // detect() (IMAGE mode) is compatible with WebKit2GTK — no timestamp needed
+        // Pass the video element directly — avoids canvas intermediary issues
+        // in WebKit2GTK where detect(canvas) throws due to frame format problems.
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-        const results = detector.detect(canvas) as { landmarks?: Landmark[][] };
+        const results = detector.detect(video) as { landmarks?: Landmark[][] };
         consecutiveErrors = 0;
 
         if (results.landmarks && results.landmarks.length > 0) {
