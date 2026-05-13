@@ -257,18 +257,21 @@ class VoiceEngine {
       // 3. Run Python whisper — decode the file, then transcribe
       const { shellExec } = await import("@/core/tauri/tauri-fs");
       const pyScript = [
-        "import base64, sys",
+        "import base64, os, warnings",
+        "warnings.filterwarnings('ignore')",
+        "os.environ['CUDA_VISIBLE_DEVICES'] = ''",
         "audio = base64.b64decode(open('/tmp/zaraos-voice.b64').read())",
         "open('/tmp/zaraos-voice.webm', 'wb').write(audio)",
         "try:",
         "    import whisper",
-        "    m = whisper.load_model('tiny', download_root='/tmp/.zaraos-whisper')",
+        "    m = whisper.load_model('tiny', download_root='/tmp/.zaraos-whisper', device='cpu')",
         "    r = m.transcribe('/tmp/zaraos-voice.webm', language='en', fp16=False)['text'].strip()",
         "    print(r if r else 'NO_SPEECH')",
         "except ImportError:",
         "    print('INSTALL_NEEDED')",
         "except Exception as e:",
-        "    print('WHISPER_ERROR:' + str(e))",
+        "    msg = str(e)[:120]",
+        "    print('WHISPER_ERROR:' + msg)",
       ].join("\n");
 
       const result = await shellExec("python3", ["-c", pyScript]);
@@ -282,7 +285,7 @@ class VoiceEngine {
         return;
       }
       if (out.startsWith("WHISPER_ERROR:")) {
-        this.setState("error", out.replace("WHISPER_ERROR:", "Whisper: "));
+        this.setState("error", out.replace("WHISPER_ERROR:", "Whisper error: ").slice(0, 120));
         return;
       }
       if (out === "NO_SPEECH" || !out) {
