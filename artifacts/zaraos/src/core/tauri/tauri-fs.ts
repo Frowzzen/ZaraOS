@@ -66,10 +66,20 @@ export async function fsExists(path: string): Promise<boolean> {
   }
 }
 
+export interface ShellResult {
+  stdout:   string;
+  stderr:   string;
+  exitCode: number;
+}
+
 /**
- * Execute a shell command and return its combined stdout+stderr output.
+ * Execute a program with arguments and return stdout, stderr, and exit code.
+ * Matches the Rust shell_exec command signature (program + args array, no shell).
  * Only available in the native Tauri app — throws in the browser.
  */
-export async function shellExec(command: string): Promise<string> {
-  return tauriInvoke<string>("shell_exec", { command });
+export async function shellExec(
+  program: string,
+  args: string[] = [],
+): Promise<ShellResult> {
+  return tauriInvoke<ShellResult>("shell_exec", { program, args });
 }

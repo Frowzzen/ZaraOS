@@ -163,7 +163,7 @@ class VoiceEngine {
   }
 
   // ── Tauri recording path ──────────────────────────────────────────────────
-  // getUserMedia() → MediaRecorder → blob → Ollama /v1/audio/transcriptions
+  // getUserMedia() → MediaRecorder → blob → base64 → /tmp → python3 whisper
 
   private async _startTauriRecording(): Promise<void> {
     // 1. Capture microphone stream
@@ -198,7 +198,7 @@ class VoiceEngine {
       if (e.data.size > 0) chunks.push(e.data);
     };
 
-    // 3. When recording stops, send to Ollama for transcription
+      // 3. When recording stops, transcribe via local Python whisper
     this.mediaRecorder.onstop = async () => {
       this._releaseMediaStream();
       if (chunks.length === 0) {
@@ -211,7 +211,7 @@ class VoiceEngine {
         type: mimeType || "audio/webm",
       });
 
-      await this._transcribeWithOllama(audioBlob);
+      await this._transcribeWithWhisper(audioBlob);
     };
 
     this.mediaRecorder.start(200);
@@ -223,43 +223,79 @@ class VoiceEngine {
     }, 12_000);
   }
 
-  private async _transcribeWithOllama(audioBlob: Blob): Promise<void> {
-    try {
-      const form = new FormData();
-      form.append("file", audioBlob, "recording.webm");
-      form.append("model", "whisper");
+  // ── Local Whisper transcription (openai-whisper Python package) ──────────
+  // Flow: Blob → base64 → /tmp/zaraos-voice.b64  (via Tauri FS)
+  //       python3 -c "decode + whisper.transcribe" → stdout text
+  //
+  // Install once on the Dell:
+  //   pip3 install openai-whisper
+  //   sudo apt install ffmpeg          (needed by whisper to decode webm/ogg)
+  // First transcription auto-downloads the 'tiny' model (~150 MB, ~1-2 min).
 
-      const res = await fetch("http://localhost:11434/v1/audio/transcriptions", {
-        method: "POST",
-        body: form,
+  private async _transcribeWithWhisper(audioBlob: Blob): Promise<void> {
+    try {
+      // 1. Base64-encode the audio blob
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          resolve(dataUrl.split(",")[1] ?? "");
+        };
+        reader.onerror = () => reject(new Error("FileReader failed"));
+        reader.readAsDataURL(audioBlob);
       });
 
-      if (!res.ok) {
-        // 404 usually means whisper model not installed
-        if (res.status === 404) {
-          this.setState(
-            "error",
-            "Whisper model not found. Run: ollama pull whisper"
-          );
-        } else {
-          this.setState("error", `Transcription failed (${res.status}). Is Ollama running?`);
-        }
+      if (!base64) {
+        this.setState("error", "No audio data recorded.");
         return;
       }
 
-      const json = (await res.json()) as { text?: string };
-      const text = json.text?.trim();
+      // 2. Write base64 to a temp file so Python can read it
+      const { fsWriteText } = await import("@/core/tauri/tauri-fs");
+      await fsWriteText("/tmp/zaraos-voice.b64", base64);
 
-      if (text) {
-        this.resultSubs.forEach((cb) => cb(text, true));
-        this.setState("idle");
-      } else {
-        this.setState("error", "No speech detected. Try speaking more clearly.");
+      // 3. Run Python whisper — decode the file, then transcribe
+      const { shellExec } = await import("@/core/tauri/tauri-fs");
+      const pyScript = [
+        "import base64, sys",
+        "audio = base64.b64decode(open('/tmp/zaraos-voice.b64').read())",
+        "open('/tmp/zaraos-voice.webm', 'wb').write(audio)",
+        "try:",
+        "    import whisper",
+        "    m = whisper.load_model('tiny', download_root='/tmp/.zaraos-whisper')",
+        "    r = m.transcribe('/tmp/zaraos-voice.webm', language='en', fp16=False)['text'].strip()",
+        "    print(r if r else 'NO_SPEECH')",
+        "except ImportError:",
+        "    print('INSTALL_NEEDED')",
+        "except Exception as e:",
+        "    print('WHISPER_ERROR:' + str(e))",
+      ].join("\n");
+
+      const result = await shellExec("python3", ["-c", pyScript]);
+      const out = result.stdout.trim();
+
+      if (out === "INSTALL_NEEDED") {
+        this.setState(
+          "error",
+          "Run: pip3 install openai-whisper && sudo apt install ffmpeg"
+        );
+        return;
       }
-    } catch {
+      if (out.startsWith("WHISPER_ERROR:")) {
+        this.setState("error", out.replace("WHISPER_ERROR:", "Whisper: "));
+        return;
+      }
+      if (out === "NO_SPEECH" || !out) {
+        this.setState("error", "No speech detected. Try speaking more clearly.");
+        return;
+      }
+
+      this.resultSubs.forEach((cb) => cb(out, true));
+      this.setState("idle");
+    } catch (err) {
       this.setState(
         "error",
-        "Could not reach Ollama. Make sure it is running on port 11434."
+        `Transcription failed: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }

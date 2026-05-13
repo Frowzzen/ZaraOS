@@ -109,8 +109,8 @@ export function FirstBootSetup({ onComplete }: FirstBootSetupProps) {
     setLog([`Pulling ${selected} from Ollama registry...`, ""]);
 
     try {
-      const output = await shellExec(`ollama pull ${selected}`);
-      const lines = output.split("\n").filter(Boolean);
+      const result = await shellExec("ollama", ["pull", selected]);
+      const lines = (result.stdout + result.stderr).split("\n").filter(Boolean);
       setLog(lines.length ? lines : ["Done."]);
       setPhase("done");
     } catch (e) {
